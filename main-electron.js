@@ -673,7 +673,12 @@ ipcMain.handle('save-ac-data-folder', async (event, folderPath, fileDataMap) => 
 
 			// 元のファイルがすでに存在する場合のみバックアップ領域へ退避
 			if (fs.existsSync(targetFilePath)) {
-				fs.copyFileSync(targetFilePath, backupFilePath);
+				// ★【追加】バックアップ用の金庫に「まだそのファイルが無い場合」だけコピーする（2回目以降の絶対上書き防止ロック！）
+				if (!fs.existsSync(backupFilePath)) {
+					fs.copyFileSync(targetFilePath, backupFilePath);
+				} else {
+					console.log(`🛡️ [BACKUP LOCK] ${fileName} は既に退避済みのため、元データの純度を守るために上書きをスキップしました。`);
+				}
 			}
 
 			// 3. 安全装置が働いたのを確認して、新しいデータを元の場所に上書き保存する
