@@ -334,8 +334,8 @@ export function parseINI(text) {
 	let currentSection = null;
 	const result = {};
 	lines.forEach((line) => {
-		// ★超重要修正: 行のどこにコメントがあっても、最初に真っ二つに割って後ろを捨てる
-		let processingLine = line.split(';')[0].split('//')[0].trim();
+		// ★修正：'//' で分割するとURL等も消えてしまうため、標準の ';' のみでコメントを判定します。
+		let processingLine = line.split(';')[0].trim();
 		// コメントを消した結果、文字が何も残らなければ（空行なら）スキップ
 		if (!processingLine) return;
 		// セクションの判定（[WING_0] などが確実に判定できるようになります）
@@ -346,10 +346,10 @@ export function parseINI(text) {
 		}
 		// 値の判定
 		if (currentSection && processingLine.includes('=')) {
-			const parts = processingLine.split('=');
-			const key = parts[0].trim();
-			// すでにコメントは消してあるので、残ったTAB文字を半角スペースに変えてキレイにするだけ
-			let cleanValue = parts.slice(1).join('=').replace(/\t/g, ' ').trim();
+			// ★修正：最初の '=' だけを区切り文字として扱う（値の中に '=' がある場合に対応）
+			const firstEqIdx = processingLine.indexOf('=');
+			const key = processingLine.substring(0, firstEqIdx).trim();
+			let cleanValue = processingLine.substring(firstEqIdx + 1).replace(/\t/g, ' ').trim();
 			result[currentSection][key] = cleanValue;
 		}
 	});
@@ -540,8 +540,17 @@ export function applyIniData(fileName, parsedData) {
 	}
 	// ★追加：car.ini の処理（上書きせず既存データと合体させる）
 	else if (fileName.includes('car.ini')) {
+		// ★修正：メモリをクリアにする際、コライダーデータ（[COLLIDER_0]など）だけは保護して引き継ぐ
+		const preservedColliders = {};
+		if (window.currentCarData) {
+			for (const key in window.currentCarData) {
+				if (key.startsWith('COLLIDER_')) {
+					preservedColliders[key] = window.currentCarData[key];
+				}
+			}
+		}
 		window.currentCarData = {
-			...window.currentCarData,
+			...preservedColliders,
 			...normalizedData
 		};
 		if (typeof window.updateCarEditorUI === 'function') {
@@ -550,6 +559,16 @@ export function applyIniData(fileName, parsedData) {
 	}
 	// ★追加：colliders.ini の処理（既存データと合体させ、即座に描画する）
 	else if (fileName.includes('colliders.ini')) {
+		// ★修正：既存の古いコライダーデータを消去してから、新しいコライダーデータを入れる
+		if (window.currentCarData) {
+			for (const key in window.currentCarData) {
+				if (key.startsWith('COLLIDER_')) {
+					delete window.currentCarData[key];
+				}
+			}
+		} else {
+			window.currentCarData = {};
+		}
 		window.currentCarData = {
 			...window.currentCarData,
 			...normalizedData
@@ -630,14 +649,17 @@ export async function handleMultiFileUpload(files) {
 					if (typeof window.parseFinalRto === 'function') {
 						window.parseFinalRto(content);
 					}
+				} else if (name === 'cameras.ini') {
+					// ★修正：cameras.ini は特殊な専用パーサーを通す
+					if (typeof window.parseIni === 'function') {
+						window.parseIni(content);
+					} else if (typeof window.parseCamerasINI === 'function') {
+						window.parseCamerasINI(content);
+					}
 				} else {
 					// 通常のINIファイル
 					const parsedData = parseINI(content);
-					if (name === 'suspensions.ini') {
-						await processSuspensionIni(file);
-					} else {
-						applyIniData(file.name, parsedData);
-					}
+					applyIniData(file.name, parsedData);
 				}
 			} else if (name.endsWith('.fbx') || name.endsWith('.glb') || name.endsWith('.gltf')) {
 				// 3Dモデル読み込み
@@ -713,18 +735,11 @@ document.addEventListener('DOMContentLoaded', () => {
 				const file = e.target.files[0];
 				if (!file) return;
 
-				const name = file.name.toLowerCase();
-				const content = await readTextFile(file);
-
-				if (name.endsWith('.lut')) {
-					if (typeof window.parsePowerLut === 'function') window.parsePowerLut(content);
-				} else if (name.endsWith('.rto')) {
-					if (typeof window.parseFinalRto === 'function') window.parseFinalRto(content);
-				} else if (name.includes('cameras.ini')) {
-					if (typeof window.parseIni === 'function') window.parseIni(content);
-				} else {
-					applyIniData(file.name, parseINI(content));
-				}
+				// ★修正：個別アップロード時も、一括読み込みと全く同じ「メインルート」を通すように統合
+				await handleMultiFileUpload([file]);
+				
+				// ★追加：連続して同じファイルを読み込めるように入力をリセットする
+				e.target.value = '';
 			});
 		}
 	});

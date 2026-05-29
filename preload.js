@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onTriggerSaveAndClose: (callback) => ipcRenderer.on('trigger-save-and-close', () => callback()),
 
   openProject: () => ipcRenderer.invoke('open-project'),
+  saveProject: (projectData) => ipcRenderer.invoke('save-project', projectData), // ★ここを追加
   getRecentProjects: () => ipcRenderer.invoke('get-recent-projects'),
   loadProjectPath: (path) => ipcRenderer.invoke('load-project-path', path),
   deleteProject: (path) => ipcRenderer.invoke('delete-project', path),
