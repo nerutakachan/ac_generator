@@ -560,65 +560,71 @@ ipcMain.handle('open-directory-dialog', async () => {
 	return result.canceled ? null : result.filePaths[0];
 });
 
-ipcMain.handle('export-files-to-folder', async (event, baseDir, folderName, files, sourceFolderPath) => {
+// ★引数を (event, baseDir, folderName, files, isOverwrite, sourcePath) に変更
+ipcMain.handle('export-files-to-folder', async (event, baseDir, folderName, files, isOverwrite, sourcePath) => {
 	try {
 		let targetDir = "";
 
-		// 1. 保存先フォルダの決定
-		if (sourceFolderPath) {
-			// 一括読み込み経由（元のパスがある）なら、そのフォルダ（dataフォルダ等）へ直接上書き
-			targetDir = sourceFolderPath;
+		if (isOverwrite) {
+			// 🔄 【スイッチON：元のデータに上書き】
+			if (!sourcePath) {
+				return { success: false, error: '元のフォルダパスが見つかりません。一括読み込みまたはD&Dからやり直してください。' };
+			}
+			targetDir = sourcePath; // 元の場所をそのままターゲットにする
 
-			// 2. data_backup の作成（★上書きの時・初回のみ作成するようにここに移動しました）
+			// ★ 上書き用バックアップフォルダの準備
 			const backupDir = path.join(targetDir, 'data_backup');
 			if (!fs.existsSync(backupDir)) {
-				// バックアップフォルダが存在しない場合のみ新規作成
 				fs.mkdirSync(backupDir, { recursive: true });
-				// 現在そのフォルダ内にある既存のファイルをすべて data_backup にコピーして保護
-				if (fs.existsSync(targetDir)) {
-					const existingFiles = fs.readdirSync(targetDir);
-					for (const fileName of existingFiles) {
-						const srcFile = path.join(targetDir, fileName);
-						const destFile = path.join(backupDir, fileName);
-						// フォルダ自体（自分自身や他のフォルダ）は除外し、ファイルのみを安全にコピー
-						if (fs.statSync(srcFile).isFile()) {
-							fs.copyFileSync(srcFile, destFile);
-						}
+			}
+
+			// ★ 修正：送られてきたファイル（書き出し予定のファイル）だけを狙い撃ちして保護する
+			for (const file of files) {
+				const srcFile = path.join(targetDir, file.name);
+				const destFile = path.join(backupDir, file.name);
+
+				// 元のフォルダにそのファイルが存在しており、かつ「まだバックアップされていない」場合のみコピー
+				// （これにより、複数回セーブしても一番最初のオリジナルが安全に維持されます）
+				if (fs.existsSync(srcFile) && !fs.existsSync(destFile)) {
+					if (fs.statSync(srcFile).isFile()) {
+						fs.copyFileSync(srcFile, destFile);
 					}
 				}
 			}
 		} else {
-			// 個別読み込み経由、または新規書き出しの場合
+			// 💾 【スイッチOFF：新規書き出し】
+			// ★バックアップは絶対に作らない
 			if (!baseDir) {
-				// 親フォルダの指定がなければ、ダイアログを開いてユーザーに保存先を選択してもらう
 				const result = await dialog.showOpenDialog({
 					properties: ['openDirectory', 'createDirectory'],
-					title: '保存先のフォルダ（dataフォルダなど）を選択してください'
+					title: '保存先の親フォルダを選択してください'
 				});
 				if (result.canceled || result.filePaths.length === 0) {
 					return { success: false, error: 'キャンセルされました' };
 				}
-				targetDir = result.filePaths[0];
+				targetDir = path.join(result.filePaths[0], folderName);
 			} else {
-				// 従来の選択済みの親フォルダの中に車両フォルダを作って書き出すルート
 				targetDir = path.join(baseDir, folderName);
 			}
 		}
 
-		// 3. 指定されたデータファイルの書き出し（上書き / 選択されたファイルのみの書き出し）
+		// 📁 共通：ファイルの書き出し処理
+		if (!fs.existsSync(targetDir)) {
+			fs.mkdirSync(targetDir, { recursive: true });
+		}
 		for (const file of files) {
 			const fullPath = path.join(targetDir, file.name);
-			
-			// ★追加：ratios.rto の場合、すでに保存先に存在していれば書き出さずにスキップする
+
+			// ratios.rto がすでに存在する場合はスキップ（上書きしない）
 			if (file.name === 'ratios.rto' && fs.existsSync(fullPath)) {
 				continue;
 			}
-			// ツールがクラッシュしないように try-catch で優しく包み込む
+
+			// アセットコルサ起動中などでファイルがロックされていてもクラッシュしないようにする
 			try {
 				fs.writeFileSync(fullPath, file.content, 'utf8');
 			} catch (writeErr) {
-				console.error(`ファイル ${file.name} の書き込みに失敗しました（スキップします）:`, writeErr.message);
-				// ここで continue しなくてもエラーは握りつぶされるので次のファイルの書き込みに進む
+				console.error(`ファイル ${file.name} の書き込みに失敗しました:`, writeErr.message);
 			}
 		}
 
