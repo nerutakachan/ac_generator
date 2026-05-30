@@ -35,5 +35,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   checkFolderExists: (baseDir, folderName) => ipcRenderer.invoke('check-folder-exists', baseDir, folderName),
   onMenuRequestExport: (callback) => ipcRenderer.on('menu-request-export', () => callback()),
   onAppVersion: (callback) => ipcRenderer.on('send-app-version', (event, version) => callback(version)),
-  setWindowTitle: (title) => ipcRenderer.invoke('set-window-title', title)
+  setWindowTitle: (title) => ipcRenderer.invoke('set-window-title', title),
+	onMenuImportFolderData: (callback) => ipcRenderer.on('menu-request-import-folder-data', (event, files) => callback(files)),
 });
