@@ -675,6 +675,11 @@ window.downloadSuspensionIni = function(isExport = false) {
 			return;
 		}
 		if (!data[secName]) return;
+		if (data[secName]._ENABLED === false) return;
+		// 2. メインの拡張物理スイッチがOFFの時、サス専用の拡張セクションは書き出さない
+		if ((secName === '_EXTENSION' || secName === '_EXTENSION_FLEX') && !window.isExtendedPhysicsEnabled) {
+			return;
+		}
 		iniContent += `[${secName}]\n`;
 		if (secDef.type === 'FIXED') {
 			for (const [key, val] of Object.entries(data[secName])) {
