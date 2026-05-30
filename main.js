@@ -842,6 +842,31 @@ if (window.electronAPI && window.electronAPI.onMenuSave) {
 		const btn = document.getElementById('hub-open-project');
 		if (btn) btn.click();
 	});
+	// =========================================================
+	// ★追加：メニューバーから「dataフォルダを一括読込」が選ばれた時の処理
+	// 既存のドラッグ＆ドロップ用ホワイトリスト処理をそのまま100%安全に使い回します
+	// =========================================================
+	if (window.electronAPI.onMenuImportFolderData) {
+		window.electronAPI.onMenuImportFolderData((filesToSend) => {
+			if (filesToSend && filesToSend.length > 0) {
+				console.log(`[MENU-IMPORT] 裏側から ${filesToSend.length} 個のファイルデータを受信しました。読み込みを開始します。`);
+				window.isMultiUploading = true;
+
+				import('./js/import.js').then(module => {
+					if (module.handleMultiFileUpload) {
+						// 既存のマルチアップロード処理へそのまま流し込む！
+						module.handleMultiFileUpload(filesToSend).then(() => {
+							window.isMultiUploading = false;
+							console.log("[MENU-IMPORT] メニューからのフォルダ一括読込がすべて完了しました！");
+						});
+					}
+				}).catch(err => {
+					console.error("[MENU-IMPORT] 処理中にエラーが発生しました:", err);
+					window.isMultiUploading = false;
+				});
+			}
+		});
+	}
 }
 /**
  * window.gearRtoList (または現在のデータ) から ratios.rto 用のテキストを生成する
@@ -947,5 +972,72 @@ document.addEventListener('keydown', (e) => {
 			e.target.dispatchEvent(new Event('input', { bubbles: true }));
 			e.target.dispatchEvent(new Event('change', { bubbles: true }));
 		}
+	}
+});
+// =========================================================
+// ★ 画面全体へのドラッグ＆ドロップ機能（フォルダ展開対応）
+// 既存の読み込み機能を一切潰さず、フォルダドロップ機能だけを強化します
+// =========================================================
+document.addEventListener('dragover', (e) => {
+	e.preventDefault();
+	e.stopPropagation();
+	// ここにドロップ時のエフェクト（画面を暗くするなど）を入れることも可能です
+});
+
+document.addEventListener('drop', async (e) => {
+	e.preventDefault();
+	e.stopPropagation();
+
+	// ファイルまたはフォルダがドロップされたか確認
+	if (!e.dataTransfer.items) return;
+
+	let filesToProcess = [];
+
+	// フォルダの中身を再帰的（奥の奥まで）に取得する関数
+	const traverseFileTree = (item) => {
+		return new Promise((resolve) => {
+			if (item.isFile) {
+				item.file(file => resolve([file]));
+			} else if (item.isDirectory) {
+				const dirReader = item.createReader();
+				dirReader.readEntries(async (entries) => {
+					let entryFiles = [];
+					for (let entry of entries) {
+						const files = await traverseFileTree(entry);
+						entryFiles = entryFiles.concat(files);
+					}
+					resolve(entryFiles);
+				});
+			} else {
+				resolve([]);
+			}
+		});
+	};
+
+	window.isMultiUploading = true;
+
+	// ドロップされたアイテム（ファイルやフォルダ）を順番に展開
+	for (let i = 0; i < e.dataTransfer.items.length; i++) {
+		const item = e.dataTransfer.items[i].webkitGetAsEntry();
+		if (item) {
+			const extractedFiles = await traverseFileTree(item);
+			filesToProcess = filesToProcess.concat(extractedFiles);
+		}
+	}
+
+	if (filesToProcess.length > 0) {
+		console.log(`[D&D] ${filesToProcess.length}個のファイルを検出しました。読み込みを開始します。`);
+		
+		// import.js の一括読み込み機能（handleMultiFileUpload）に取得したファイルの束をそのまま流し込む！
+		import('./js/import.js').then(module => {
+			if (module.handleMultiFileUpload) {
+				module.handleMultiFileUpload(filesToProcess).then(() => {
+					window.isMultiUploading = false;
+					console.log("[D&D] すべての読み込みが完了しました！");
+				});
+			}
+		});
+	} else {
+		window.isMultiUploading = false;
 	}
 });

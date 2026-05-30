@@ -680,22 +680,47 @@ export function applyIniData(fileName, parsedData) {
 /**
  * 複数ファイルアップロード時のメインエントリポイント
  */
+// （今後UIを追加したら、このリストに名前を足すだけで自動対応します）
+const ALLOWED_FILES = [
+	'aero.ini',
+	'cameras.ini',
+	'car.ini',
+	'colliders.ini',
+	'drivetrain.ini',
+	'engine.ini',
+	'final.rto',
+	'power.lut',
+	'setup.ini',
+	'suspensions.ini',
+	'tyres.ini'
+];
 export async function handleMultiFileUpload(files) {
 	for (const file of Array.from(files)) {
 		const name = file.name.toLowerCase();
 		try {
+			// ★追加：3Dモデル以外のファイルは、許可リストにあるかチェックする
+			if (!name.endsWith('.fbx') && !name.endsWith('.glb') && !name.endsWith('.gltf')) {
+				if (!ALLOWED_FILES.includes(name)) {
+					// 許可リストにないファイル（lights.iniなど）はここで華麗にスルー！
+					console.log(`[IMPORT] 対象外ファイルをスキップしました: ${name}`);
+					continue; 
+				}
+			}
+
 			if (name.endsWith('.ini') || name.endsWith('.lut') || name.endsWith('.rto')) {
 				
-				// ★追加：データファイル（ini等）だった場合のみ、その場所を「データ専用の箱」に記憶する
-				if (file.path) {
+				// ★修正：データファイル（ini等）だった場合のみ、その場所を「データ専用の箱」に記憶する
+				// ※ただし、ここは初回の一括読み込み時（またはパスが空の時）だけ記憶するように安全装置をかけます
+				if (file.path && !window.currentDataFolderPath) {
 					const filePath = file.path;
 					const lastSlashIdx = Math.max(filePath.lastIndexOf('\\'), filePath.lastIndexOf('/'));
 					if (lastSlashIdx !== -1) {
 						window.currentDataFolderPath = filePath.substring(0, lastSlashIdx);
+						console.log(`[IMPORT] メインの保存先をロックしました: ${window.currentDataFolderPath}`);
 					}
 				}
 
-				const content = await readTextFile(file);
+				const content = file.content !== undefined ? file.content : await readTextFile(file);
 				if (name.endsWith('.lut')) {
 					// LUTファイルの場合は専用のパース関数に直接渡す
 					if (typeof window.parsePowerLut === 'function') {
@@ -725,11 +750,22 @@ export async function handleMultiFileUpload(files) {
 					console.log("[IMPORT] モデルパスをプロジェクトに登録しました:", file.path);
 				}
 				
-				// ★追加：直接 model.js の読み込み関数（窓口）を呼び出す！
-				if (typeof window.handleModelFile === 'function') {
-					window.handleModelFile(file);
+				// =======================================================
+				// ★修正：メニューの一括読み込みから届いた「パス情報だけのオブジェクト」の場合
+				// プロジェクトロード時にも使われている、実績のある安全な自動復元ルートへ流します
+				// =======================================================
+				if (file.isModel && typeof window.loadModelByPath === 'function') {
+					console.log("[IMPORT] メニュー経由のため、安全なパス復元ルートでモデルを読み込みます:", file.path);
+					await window.loadModelByPath(file.path);
+				} else {
+					// =======================================================
+					// ★通常：手動D&D（本物のFileオブジェクト）の場合
+					// =======================================================
+					if (typeof window.handleModelFile === 'function') {
+						window.handleModelFile(file);
+					}
+					await load3DModel(file);
 				}
-				await load3DModel(file);
 				// ★修正：すでに編集データ(window.currentSuspensionData等)がある場合は、
 				// デフォルト値(ini_DATA)での上書きをスキップする
 				const hasExistingData = window.currentSuspensionData && Object.keys(window.currentSuspensionData).length > 0;

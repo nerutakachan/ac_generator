@@ -173,6 +173,56 @@ const template = [
 			{ label: '新規プロジェクトを作成', accelerator: 'CmdOrCtrl+N', click: () => { if (mainWindow) mainWindow.webContents.send('menu-request-new'); } },
 			{ label: '既存のプロジェクトを開く', accelerator: 'CmdOrCtrl+O', click: () => { if (mainWindow) mainWindow.webContents.send('menu-request-open'); } },
 			{ type: 'separator' },
+			{ 
+				label: 'dataフォルダを一括読込', 
+				click: async () => { 
+					if (!mainWindow) return;
+					const result = await dialog.showOpenDialog(mainWindow, {
+						properties: ['openDirectory'],
+						title: 'dataフォルダを選択してください'
+					});
+					if (result.canceled || result.filePaths.length === 0) return;
+					const folderPath = result.filePaths[0];
+					const ALLOWED_FILES = [
+						'aero.ini', 'cameras.ini', 'car.ini', 'colliders.ini', 'drivetrain.ini',
+						'engine.ini', 'final.rto', 'power.lut', 'setup.ini', 'suspensions.ini', 'tyres.ini'
+					];
+					const filesToSend = [];
+					try {
+						const files = fs.readdirSync(folderPath);
+						for (const file of files) {
+							const lowerFile = file.toLowerCase();
+							
+							// ① 通常の設定ファイル（テキスト）の場合
+							if (ALLOWED_FILES.includes(lowerFile)) {
+								const fullPath = path.join(folderPath, file);
+								if (fs.statSync(fullPath).isFile()) {
+									const content = fs.readFileSync(fullPath, 'utf8');
+									filesToSend.push({
+										name: file,
+										content: content,
+										path: fullPath
+									});
+								}
+							} 
+							else if (lowerFile.endsWith('.glb') || lowerFile.endsWith('.fbx')) {
+								const fullPath = path.join(folderPath, file);
+								if (fs.statSync(fullPath).isFile()) {
+									filesToSend.push({
+										name: file,
+										path: fullPath,
+										isModel: true
+									});
+								}
+							}
+						}
+						mainWindow.webContents.send('menu-request-import-folder-data', filesToSend);
+					} catch (err) {
+						console.error("裏側でのフォルダ一括読込に失敗しました:", err);
+					}
+				} 
+			},
+			{ type: 'separator' },
 			{ label: '保存', accelerator: 'CmdOrCtrl+S', click: () => { if (mainWindow) mainWindow.webContents.send('menu-request-save'); } },
 			{ label: '別名でプロジェクトを保存', accelerator: 'CmdOrCtrl+Shift+S', click: () => { if (mainWindow) mainWindow.webContents.send('menu-request-save-as'); } },
 			{ label: '復元', click: () => { if (mainWindow) mainWindow.webContents.send('menu-request-restore'); } },
