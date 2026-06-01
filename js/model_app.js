@@ -18,6 +18,46 @@ const extractNum = (val) => {
 };
 let colliderMesh = null;
 let colliderHelper = null;
+// ★追加：ミラー部品の検索とハイライト表示
+window.mirrorHelpers = [];
+window.updateMirrorsVisuals = function() {
+	// メインのシーンと読み込まれた3Dモデルを取得
+	const scene = window.scene || (window.scenes && window.scenes[0]);
+	const model = window.currentModel || (window.currentModels && window.currentModels[0]);
+	const data = window.currentMirrorsData;
+
+	// 古いハイライト（赤枠）が残っていたら一旦すべて消去する
+	if (window.mirrorHelpers && window.mirrorHelpers.length > 0) {
+		window.mirrorHelpers.forEach(helper => {
+			if (helper.parent) helper.parent.remove(helper);
+		});
+		window.mirrorHelpers = [];
+	}
+
+	// シーン、モデル、ミラーデータのいずれかが無ければここでストップ
+	if (!scene || !model || !data) return;
+
+	// mirrors.ini のデータから各ミラーのセクション（[MIRROR_0]など）をループ処理
+	for (const section in data) {
+		if (section.startsWith('MIRROR_')) {
+			const mirrorName = data[section].NAME;
+			if (mirrorName) {
+				// ★ここが要！ 3Dモデルの中から部品名（NAME）で検索をかける
+				const mirrorPart = model.getObjectByName(mirrorName);
+				
+				if (mirrorPart) {
+					console.log(`[MIRRORS] 🪞 ミラー部品を発見しました: ${mirrorName}`);
+					// 発見した部品を赤い枠線（BoxHelper）で囲んでハイライトする
+					const helper = new THREE.BoxHelper(mirrorPart, 0xff0000);
+					scene.add(helper);
+					window.mirrorHelpers.push(helper);
+				} else {
+					console.warn(`[MIRRORS] ⚠️ ミラー部品が見つかりません: ${mirrorName}`);
+				}
+			}
+		}
+	}
+};
 // 2. ワークベンチ・UI制御
 document.addEventListener('DOMContentLoaded', () => {
 	if (typeof window.initCameraUI === 'function') {

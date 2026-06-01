@@ -59,6 +59,7 @@ window.executeBulkExport = async function() {
 			if (file.id === 'engine' && !window.currentEngineData) continue;
 			if (file.id === 'aero' && !window.currentAeroData) continue;
 			if (file.id === 'setup' && !window.currentSetupData) continue;
+			if (file.id === 'mirrors' && !window.currentMirrorsData) continue;
 
 			const getFunc = window[file.func];
 			console.log(`📄 [DEBUG] ファイル収集中: ${file.name} (関数: ${file.func})`);
@@ -273,6 +274,41 @@ window.downloadFinalRto = function(isExport = false) {
 	const a = document.createElement('a');
 	a.href = url;
 	a.download = 'final.rto';
+	document.body.appendChild(a);
+	a.click();
+	setTimeout(() => {
+		document.body.removeChild(a);
+		window.URL.revokeObjectURL(url);
+	}, 0);
+};
+/**
+ * mirrors.ini の書き出し
+ */
+window.downloadMirrorsIni = function(isExport = false) {
+	const data = window.currentMirrorsData;
+	if (!data) {
+		alert("ミラーデータが存在しません。");
+		return;
+	}
+	let iniContent = "";
+	for (const section in data) {
+		iniContent += `[${section}]\n`;
+		for (const key in data[section]) {
+			iniContent += `${key}=${data[section][key]}\n`;
+		}
+		iniContent += "\n";
+	}
+	// ★ 重要：一括書き出し時はここでテキストを返して終了
+	if (isExport === true) return iniContent;
+
+	// 個別保存用のフォールバック処理
+	const blob = new Blob([iniContent], {
+		type: 'text/plain'
+	});
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = 'mirrors.ini';
 	document.body.appendChild(a);
 	a.click();
 	setTimeout(() => {

@@ -83,7 +83,11 @@ window.updateCarEditorUI = function(data) {
 				
 				return `<select class="text-input" data-idx="${i}">${optionsHtml}</select>`;
 			}
-
+			// ★追加：USE_ANIMATED_SUSPENSIONS や VIRTUAL_MIRROR_ENABLED などのON/OFFフラグはチェックボックスにする
+			if (key === 'USE_ANIMATED_SUSPENSIONS' || key === 'VIRTUAL_MIRROR_ENABLED') {
+				const isChecked = parseInt(v) === 1 ? 'checked' : '';
+				return `<input type="checkbox" class="suspension-item-toggle text-input" data-idx="${i}" ${isChecked} style="width:auto; height:auto; transform:scale(1.2); margin-left:5px; cursor:pointer;">`;
+			}
 			const editorRule = window.getEditorStep(key, val);
 			const currentStep = typeof editorRule === 'object' ? editorRule.step : editorRule;
 			const currentMin = typeof editorRule === 'object' && editorRule.min !== "" ? ` min="${editorRule.min}"` : "";
@@ -106,7 +110,13 @@ window.updateCarEditorUI = function(data) {
 					const newVals = Array.from(inputs).map(i => i.value);
 					window.currentCarData[section][key] = newVals.join(',');
 				} else {
-					window.currentCarData[section][key] = inputs[0].value;
+					// ★修正：対象がチェックボックスの場合は 1 / 0 を、それ以外は通常の value を取得して記憶する
+					if (inputs[0].type === 'checkbox') {
+						window.currentCarData[section][key] = inputs[0].checked ? '1' : '0';
+					} else {
+						window.currentCarData[section][key] = inputs[0].value;
+					}
+					
 					if (key === 'STEER_LOCK' || key === 'STEER_RATIO') {
 						const steerSlider = document.getElementById('steer-tester');
 						if (steerSlider) {
@@ -124,7 +134,18 @@ window.updateCarEditorUI = function(data) {
 				if (window.updateCameraPreviewWithCurrentData) {
 					window.updateCameraPreviewWithCurrentData();
 				}
-				
+				// ★追加：カメラ・目線・ミラー位置のいずれかの数値が変わったら3Dのミラー表示も更新する
+				const cameraKeys = [
+					'DRIVEREYES', 'ON_BOARD_PITCH_ANGLE', 
+					'BUMPER_CAMERA_POS', 'BUMPER_CAMERA_PITCH', 
+					'BONNET_CAMERA_POS', 'BONNET_CAMERA_PITCH', 
+					'CHASE_CAMERA_PITCH', 'MIRROR_POSITION'
+				];
+				if (cameraKeys.includes(key)) {
+					if (typeof window.updateMirrorsVisuals === 'function') {
+						window.updateMirrorsVisuals();
+					}
+				}
 				if (typeof window.requestRender === 'function') window.requestRender();
 			});
 
@@ -239,21 +260,45 @@ window.movePreviewCameraToCarVision = function(posX, posY, posZ, pitchAngleDeg, 
 	const pitch = parseFloat(pitchAngleDeg) || 0;
 
 	// 2. 最終座標の決定
-	// ★修正：ACのモデルは「Zプラス方向が前」なので、数値を一切加工せずにそのまま使う！
-	const finalX = x;
-	const finalY = y;
-	const finalZ = z;
+  // ★修正：ACのモデルは「Zプラス方向が前」なので、数値を一切加工せずにそのまま使う！
+  const finalX = x;
+  const finalY = y;
+  const finalZ = z;
 
-	// 3. カメラを移動
-	targetCamera.position.set(finalX, finalY, finalZ);
+  // 3. カメラを移動
+  targetCamera.position.set(finalX, finalY, finalZ);
 
-	// 4. 視点の向き（方向とピッチ角）を設定
-	// ★修正：車の正面（Z軸のプラス方向）を真っ直ぐ見つめるようにセット
-	const targetPoint = new THREE.Vector3(finalX, finalY, finalZ + 10);
-	targetCamera.lookAt(targetPoint);
-	
-	// ピッチ角（上下の傾き）を適用
-	// もし上下の向きが逆（数値を上げると上を向いてしまう等）の場合は、ここのマイナス(-)を外してください。
+  // ★修正：車体・複数に分かれたモデル要素・タイヤパーツをすべて一括で非表示・表示制御する
+  const isHide = (label === 'DRIVER' || label === 'MIRROR');
+
+  // 1. 複数に分かれて保持されているすべてのモデル要素を一括制御
+  if (Array.isArray(window.currentModels)) {
+    window.currentModels.forEach(m => {
+      if (m) m.visible = !isHide;
+    });
+  }
+
+  // 2. 3D空間の直下にある車体グループやWHEELパーツを一括制御
+  if (window.suspensionScene) {
+    window.suspensionScene.children.forEach(child => {
+      if (child) {
+        // 名前が Scene のもの、または WHEEL_ から始まるパーツを対象にする
+        if (child.name === 'Scene' || child.name.startsWith('WHEEL_')) {
+          child.visible = !isHide;
+        }
+      }
+    });
+  }
+
+  // 4. 視点の向き（方向とピッチ角）を設定
+  // ★修正：ミラー用視点なら真後ろ（Zマイナス方向）、その他（ボンネット等）は正面（Zプラス方向）を向く
+  let targetPoint;
+  if (label === 'DRIVER' || label === 'MIRROR') {
+    targetPoint = new THREE.Vector3(finalX, finalY, finalZ - 10);
+  } else {
+    targetPoint = new THREE.Vector3(finalX, finalY, finalZ + 10);
+  }
+  targetCamera.lookAt(targetPoint);
 	targetCamera.rotateX(-pitch * (Math.PI / 180));
 
 	// 5. プレビュー画面上に現在の視点名をオーバーレイ表示する
@@ -285,6 +330,10 @@ window.movePreviewCameraToCarVision = function(posX, posY, posZ, pitchAngleDeg, 
 window.resetPreviewCameraVision = function() {
 	const overlay = document.getElementById('vision-overlay');
 	if (overlay) overlay.style.display = 'none';
+	
+	// ★追加：非表示になっていた車体モデルを再表示させる
+	const model = window.currentModel || (window.currentModels && window.currentModels[0]);
+	if (model) model.visible = true;
 };
 // ==========================================
 // ★追加：現在のデータから座標と角度を抽出してカメラを移動する司令塔
