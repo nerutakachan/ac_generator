@@ -1,8 +1,34 @@
 // js/car.js
 
-/**
- * 車両設定（car.ini）の詳細版UI生成
- */
+// ==========================================
+// ★追加：フォーカスを破壊しない、綺麗なカスタムポップアップを表示する関数
+// ==========================================
+window.showCustomPopup = function(messageHtml) {
+	const overlay = document.createElement('div');
+	overlay.className = 'custom-popup-overlay';
+
+	const box = document.createElement('div');
+	box.className = 'custom-popup-box';
+	box.innerHTML = messageHtml;
+
+	const btnWrap = document.createElement('div');
+	btnWrap.className = 'custom-popup-btn-wrap';
+
+	const btn = document.createElement('button');
+	btn.className = 'custom-popup-btn';
+	btn.textContent = 'OK';
+
+	// OKボタンを押したらポップアップを消す
+	btn.onclick = () => {
+		document.body.removeChild(overlay);
+	};
+
+	btnWrap.appendChild(btn);
+	box.appendChild(btnWrap);
+	overlay.appendChild(box);
+	document.body.appendChild(overlay);
+};
+
 /**
  * 車両設定（car.ini）の詳細版UI生成
  */
@@ -27,11 +53,19 @@ window.updateCarEditorUI = function(data) {
 		label: 'GRAPHICS',
 		items: [{
 			section: 'GRAPHICS',
-			title: 'F1 CAMERA SETTINGS', // ★追加：F1キーで変わるカメラ用のサブタイトル
-			keys: ['DRIVEREYES', 'ON_BOARD_PITCH_ANGLE', 'BUMPER_CAMERA_POS', 'BUMPER_CAMERA_PITCH', 'BONNET_CAMERA_POS', 'BONNET_CAMERA_PITCH', 'CHASE_CAMERA_PITCH']
+			title: '💺 シートポジション設定 (view.ini)', // ★修正：view.ini専用グループ
+			keys: ['DRIVEREYES', 'ON_BOARD_PITCH_ANGLE']
 		}, {
 			section: 'GRAPHICS',
-			title: 'GRAPHICS & SYSTEM SETCHNIGS', // ★追加：システム・画面効果用のサブタイトル
+			title: 'メーター・ダッシュボード視点 (dash_cam.ini)', // ★修正：dash_cam.ini専用グループ
+			keys: ['DASH_CAM_POS', 'DASH_CAM_PITCH']
+		}, {
+			section: 'GRAPHICS',
+			title: 'F1 CAMERA SETTINGS (car.ini)', // ★修正：car.iniの外部カメラグループ
+			keys: ['BUMPER_CAMERA_POS', 'BUMPER_CAMERA_PITCH', 'BONNET_CAMERA_POS', 'BONNET_CAMERA_PITCH', 'CHASE_CAMERA_PITCH']
+		}, {
+			section: 'GRAPHICS',
+			title: 'GRAPHICS & SYSTEM SETTINGS', // ★修正：システム・画面効果用のサブタイトル（スペルミス修正）
 			keys: ['ONBOARD_EXPOSURE', 'OUTBOARD_EXPOSURE', 'MIRROR_POSITION', 'SHAKE_MUL', 'USE_ANIMATED_SUSPENSIONS', 'FUEL_LIGHT_MIN_LITERS', 'VIRTUAL_MIRROR_ENABLED']
 		}]
 	}, {
@@ -154,9 +188,30 @@ window.updateCarEditorUI = function(data) {
 			// ==========================================
 			input.addEventListener('focus', () => {
 				// カメラ関連のキー（座標またはピッチ角）かどうかを判定
-				const cameraKeys = ['DRIVEREYES', 'ON_BOARD_PITCH_ANGLE', 'BUMPER_CAMERA_POS', 'BUMPER_CAMERA_PITCH', 'BONNET_CAMERA_POS', 'BONNET_CAMERA_PITCH', 'MIRROR_POSITION'];
+				// ★修正：ダッシュボード視点（DASH_CAM_POS 等）も追加
+				const cameraKeys = ['DRIVEREYES', 'ON_BOARD_PITCH_ANGLE', 'DASH_CAM_POS', 'DASH_CAM_PITCH', 'BUMPER_CAMERA_POS', 'BUMPER_CAMERA_PITCH', 'BONNET_CAMERA_POS', 'BONNET_CAMERA_PITCH', 'MIRROR_POSITION'];
 				
+				// ★修正：特殊なファイル（マイドキュメントの view.ini）に保存されるキーの判定（dash_camは除外）
+				const specialFileKeys = ['DRIVEREYES', 'ON_BOARD_PITCH_ANGLE'];
+
 				if (cameraKeys.includes(key)) {
+					
+					// ★追加：特殊な視点を初めて触った時だけ、ブラウザの記憶（localStorage）を利用して1回だけ案内を出す
+					if (specialFileKeys.includes(key)) {
+						const isNoticed = localStorage.getItem('view_ini_noticed');
+						// localStorage.removeItem('view_ini_noticed'); // ★テストが終わったらこの行は消すかコメントアウトしてください
+						
+						if (!isNoticed) {
+							localStorage.setItem('view_ini_noticed', 'true'); // 案内済みフラグを立てる
+							
+							// ★修正：案内文から dash_cam.ini を削除し、view.ini 専用の案内に変更
+							const msg = "💡 アセットコルサの仕様上、シートポジション（DRIVEREYES 等）は <b>view.ini</b> という特別なファイルに保存されます。<br><br>このツールでは書き出し時に自動でマイドキュメント内のフォルダを探し、安全にバックアップを取りながら保存を行います。";
+							window.showCustomPopup(msg);
+						}
+					}
+
+					// 1. グローバル変数に現在のキーを記憶させる
+
 					// 1. グローバル変数に現在のキーを記憶させる
 					window.currentActiveCameraKey = key;
 					

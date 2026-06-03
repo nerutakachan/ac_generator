@@ -37,4 +37,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onAppVersion: (callback) => ipcRenderer.on('send-app-version', (event, version) => callback(version)),
   setWindowTitle: (title) => ipcRenderer.invoke('set-window-title', title),
 	onMenuImportFolderData: (callback) => ipcRenderer.on('menu-request-import-folder-data', (event, files) => callback(files)),
+	
+  // ★追加：マイドキュメントの view.ini とやり取りするための新しい窓口
+  readViewIni: (carName) => ipcRenderer.invoke('read-view-ini', carName),
+  saveViewIni: (carName, content) => ipcRenderer.invoke('save-view-ini', carName, content),
 });

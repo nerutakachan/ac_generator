@@ -713,3 +713,51 @@ ipcMain.handle('read-model-file', async (event, filePath) => {
 		throw error;
 	}
 });
+
+// ==========================================
+// ★ マイドキュメントの view.ini との通信処理
+// ==========================================
+ipcMain.handle('read-view-ini', async (event, carName) => {
+	try {
+		// 1. OSから「マイドキュメント」のパスを安全に取得する
+		const docsPath = app.getPath('documents');
+		// 2. アセットコルサの保存先ルールに合わせてパスを組み立てる
+		const targetDir = path.join(docsPath, 'Assetto Corsa', 'cfg', 'cars', carName);
+		const targetFile = path.join(targetDir, 'view.ini');
+
+		if (fs.existsSync(targetFile)) {
+			const content = fs.readFileSync(targetFile, 'utf8');
+			return { success: true, content: content };
+		}
+		return { success: false, reason: 'not_found' };
+	} catch (error) {
+		console.error(`【裏側】view.ini の読み込みに失敗:`, error);
+		return { success: false, error: error.message };
+	}
+});
+
+ipcMain.handle('save-view-ini', async (event, carName, content) => {
+	try {
+		const docsPath = app.getPath('documents');
+		const targetDir = path.join(docsPath, 'Assetto Corsa', 'cfg', 'cars', carName);
+
+		// 1. 保存先のフォルダが無ければ自動で作る
+		if (!fs.existsSync(targetDir)) {
+			fs.mkdirSync(targetDir, { recursive: true });
+		}
+
+		const targetFile = path.join(targetDir, 'view.ini');
+		
+		// 2. 既に古いファイルが存在する場合は、安全のために「.bak」をつけてバックアップ
+		if (fs.existsSync(targetFile)) {
+			fs.copyFileSync(targetFile, path.join(targetDir, 'view.ini.bak'));
+		}
+
+		// 3. 新しい設定データを書き込む
+		fs.writeFileSync(targetFile, content, 'utf8');
+		return { success: true, path: targetFile };
+	} catch (error) {
+		console.error(`【裏側】view.ini の保存に失敗:`, error);
+		return { success: false, error: error.message };
+	}
+});

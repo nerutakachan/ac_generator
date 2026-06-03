@@ -1531,3 +1531,49 @@ label {
 	transition: box-shadow 0.3s ease;
 	background-color: rgba(95, 175, 185, 0.1);
 }
+/* ==========================================
+   カスタムポップアップ（view.iniなどの案内用）
+   ========================================== */
+.custom-popup-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100vw;
+	height: 100vh;
+	background-color: rgba(0, 0, 0, 0.6);
+	z-index: 9999;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.custom-popup-box {
+	background-color: #2c2c2c;
+	color: #ffffff;
+	padding: 20px 30px;
+	border-radius: 8px;
+	max-width: 450px;
+	box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+	line-height: 1.6;
+	font-size: 14px;
+}
+
+.custom-popup-btn-wrap {
+	margin-top: 20px;
+	text-align: right;
+}
+
+.custom-popup-btn {
+	padding: 8px 24px;
+	cursor: pointer;
+	background-color: #00ffff;
+	color: #000;
+	border: none;
+	border-radius: 4px;
+	font-weight: bold;
+	transition: opacity 0.2s;
+}
+
+.custom-popup-btn:hover {
+	opacity: 0.7;
+}
