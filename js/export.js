@@ -59,10 +59,7 @@ window.executeBulkExport = async function() {
 			if (file.id === 'engine' && !window.currentEngineData) continue;
 			if (file.id === 'aero' && !window.currentAeroData) continue;
 			if (file.id === 'setup' && !window.currentSetupData) continue;
-<<<<<<< HEAD
-=======
 			if (file.id === 'mirrors' && !window.currentMirrorsData) continue;
->>>>>>> 42bdbbc1ef977415370b6a481cf2a44b26d68340
 
 			const getFunc = window[file.func];
 			console.log(`📄 [DEBUG] ファイル収集中: ${file.name} (関数: ${file.func})`);
@@ -284,8 +281,6 @@ window.downloadFinalRto = function(isExport = false) {
 		window.URL.revokeObjectURL(url);
 	}, 0);
 };
-<<<<<<< HEAD
-=======
 /**
  * mirrors.ini の書き出し
  */
@@ -321,7 +316,6 @@ window.downloadMirrorsIni = function(isExport = false) {
 		window.URL.revokeObjectURL(url);
 	}, 0);
 };
->>>>>>> 42bdbbc1ef977415370b6a481cf2a44b26d68340
 window.downloadDrivetrainIni = function(isExport = false) {
 	const activeSet = window.gearSetList[window.mainGearIdx] || window.gearSetList[window.activeGearIdx] || window.gearSetList[0];
 	if (!activeSet || !activeSet.data) {

@@ -24,10 +24,6 @@ import {
 // --- 1. データ保持・状態管理 ---
 window.THREE = THREE;
 // 各ファイルの編集状態（false:未編集, true:編集済み）を管理するオブジェクト
-<<<<<<< HEAD
-=======
-
->>>>>>> 42bdbbc1ef977415370b6a481cf2a44b26d68340
 window.modifiedStatus = {
 	suspensions: false,
 	car: false,
@@ -39,12 +35,8 @@ window.modifiedStatus = {
 	drivetrain: false,
 	final: false,
 	setup: false,
-<<<<<<< HEAD
-	cameras: false
-=======
 	cameras: false,
 	mirrors: false
->>>>>>> 42bdbbc1ef977415370b6a481cf2a44b26d68340
 };
 // ★追加：拡張物理のマスターステート
 window.isExtendedPhysicsEnabled = false;
@@ -685,8 +677,6 @@ export function applyIniData(fileName, parsedData) {
 			window.loadSetupIniForGears(window.currentSetupData);
 		}
 	}
-<<<<<<< HEAD
-=======
 	// ★追加：mirrors.ini の処理
 	else if (fileName.includes('mirrors.ini')) {
 		window.currentMirrorsData = normalizedData;
@@ -696,7 +686,6 @@ export function applyIniData(fileName, parsedData) {
 			window.updateMirrorsVisuals();
 		}
 	}
->>>>>>> 42bdbbc1ef977415370b6a481cf2a44b26d68340
 }
 /**
  * 複数ファイルアップロード時のメインエントリポイント
@@ -713,12 +702,8 @@ const ALLOWED_FILES = [
 	'power.lut',
 	'setup.ini',
 	'suspensions.ini',
-<<<<<<< HEAD
-	'tyres.ini'
-=======
 	'tyres.ini',
 	'mirrors.ini'
->>>>>>> 42bdbbc1ef977415370b6a481cf2a44b26d68340
 ];
 export async function handleMultiFileUpload(files) {
 	for (const file of Array.from(files)) {
@@ -978,12 +963,8 @@ window.EXPORT_CONFIG = [
 	{ id: 'drivetrain', name: 'drivetrain.ini', func: 'downloadDrivetrainIni' },
 	{ id: 'final', name: 'final.rto', func: 'downloadFinalRto' },
 	{ id: 'setup', name: 'setup.ini', func: 'downloadSetupIni' },
-<<<<<<< HEAD
-	{ id: 'cameras', name: 'cameras.ini', func: 'downloadCamerasIni' } // ★追加
-=======
 	{ id: 'cameras', name: 'cameras.ini', func: 'downloadCamerasIni' },
 	{ id: 'mirrors', name: 'mirrors.ini', func: 'downloadMirrorsIni' }
->>>>>>> 42bdbbc1ef977415370b6a481cf2a44b26d68340
 ];
 
 // モーダルを開く処理

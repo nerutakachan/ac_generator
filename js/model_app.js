@@ -18,8 +18,6 @@ const extractNum = (val) => {
 };
 let colliderMesh = null;
 let colliderHelper = null;
-<<<<<<< HEAD
-=======
 // ★追加：ミラー部品の検索とハイライト表示
 window.mirrorHelpers = [];
 window.updateMirrorsVisuals = function() {
@@ -60,7 +58,6 @@ window.updateMirrorsVisuals = function() {
 		}
 	}
 };
->>>>>>> 42bdbbc1ef977415370b6a481cf2a44b26d68340
 // 2. ワークベンチ・UI制御
 document.addEventListener('DOMContentLoaded', () => {
 	if (typeof window.initCameraUI === 'function') {
