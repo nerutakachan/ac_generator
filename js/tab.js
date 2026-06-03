@@ -18,6 +18,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	tabs.forEach(tab => {
 		tab.addEventListener('click', () => {
+			// ★追加：メインタブを切り替えた際に、視点と透過状態を必ずリセットする
+			if (window.resetPreviewCameraVision) {
+				window.resetPreviewCameraVision();
+			}
+
 			const target = tab.dataset.tab; // editor, suspension, engine, tire など
 			const subTarget = tab.dataset.sub; // sus-editor, tyre-editor, 等
 

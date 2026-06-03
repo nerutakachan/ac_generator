@@ -190,6 +190,11 @@ window.updateCarEditorUI = function(data) {
 			contentArea.querySelectorAll('.suspension-tab-panel').forEach(p => p.classList.remove('active'));
 			btn.classList.add('active');
 			panel.classList.add('active');
+			
+			// ★追加：タブが切り替わったらカメラを通常視点にリセットする
+			if (window.resetPreviewCameraVision) {
+				window.resetPreviewCameraVision();
+			}
 		});
 		tab.items.forEach(itemDef => {
 			if (!itemDef.isCustom && !data[itemDef.section]) return;
@@ -247,11 +252,77 @@ window.updateCarEditorUI = function(data) {
 // ==========================================
 // ★追加：car.iniの視点座標へカメラを移動させる関数
 // ==========================================
+window.savedPreviewCameraState = null; // ★追加：元のカメラ状態を記憶する変数
+// ==========================================
+// ★追加：カメラを滑らかにアニメーションさせる共通関数
+// ==========================================
+window.currentCameraAnimation = null;
+
+window.animateCameraTransition = function(targetCamera, endPos, endQuat, endTarget, duration, onComplete) {
+	// 既にアニメーション中なら前の動きをキャンセル（連続クリック対策）
+	if (window.currentCameraAnimation) {
+		cancelAnimationFrame(window.currentCameraAnimation);
+	}
+	
+	const startPos = targetCamera.position.clone();
+	const startQuat = targetCamera.quaternion.clone();
+	
+	let startTarget = null;
+	if (window.controls) {
+		startTarget = window.controls.target.clone();
+	}
+
+	let startTime = performance.now();
+
+	function update() {
+		const now = performance.now();
+		const elapsed = now - startTime;
+		let t = Math.min(elapsed / duration, 1.0);
+		
+		// イージング関数 (滑らかに加速して滑らかに減速する計算式)
+		const easeT = t * t * (3 - 2 * t);
+		
+		// 位置と角度を少しずつ目標へ近づける
+		targetCamera.position.lerpVectors(startPos, endPos, easeT);
+		targetCamera.quaternion.slerpQuaternions(startQuat, endQuat, easeT);
+		
+		// OrbitControlsの注視点も一緒に移動させる
+		if (window.controls && endTarget && startTarget) {
+			window.controls.target.lerpVectors(startTarget, endTarget, easeT);
+			window.controls.update();
+		}
+
+		if (window.requestRender) window.requestRender();
+
+		// まだ時間が来ていなければ次のコマ（フレーム）を描画
+		if (t < 1.0) {
+			window.currentCameraAnimation = requestAnimationFrame(update);
+		} else {
+			window.currentCameraAnimation = null;
+			if (onComplete) onComplete(); // 終わったら完了報告
+		}
+	}
+	window.currentCameraAnimation = requestAnimationFrame(update);
+};
 window.movePreviewCameraToCarVision = function(posX, posY, posZ, pitchAngleDeg, label) {
 	if (!window.camera || !window.suspensionScene) return;
 
 	// サスペンション用カメラの制御を一時的に上書きする
 	const targetCamera = window.camera; 
+
+	// ★追加：元のカメラ位置とOrbitControlsのターゲットを記憶する（まだ記憶していなければ）
+	if (!window.savedPreviewCameraState) {
+		window.savedPreviewCameraState = {
+			position: targetCamera.position.clone(),
+			quaternion: targetCamera.quaternion.clone(),
+			target: window.controls ? window.controls.target.clone() : new THREE.Vector3()
+		};
+	}
+	
+	// ★追加：OrbitControlsが動いていると視点がマウスに引っ張られるため一時的に無効化する
+	if (window.controls) {
+		window.controls.enabled = false;
+	}
 
 	// 1. 座標のパース
 	const x = parseFloat(posX) || 0;
@@ -313,15 +384,25 @@ window.movePreviewCameraToCarVision = function(posX, posY, posZ, pitchAngleDeg, 
   hideOnlyCarMeshes(window.suspensionScene);
   hideOnlyCarMeshes(window.scene);
   // 4. 視点の向き（方向とピッチ角）を設定
-  // ★修正：ミラー用視点なら真後ろ（Zマイナス方向）、その他（ボンネット等）は正面（Zプラス方向）を向く
-  let targetPoint;
-  if (label === 'DRIVER' || label === 'MIRROR') {
-    targetPoint = new THREE.Vector3(finalX, finalY, finalZ - 10);
-  } else {
-    targetPoint = new THREE.Vector3(finalX, finalY, finalZ + 10);
+  // ★修正：ワールドのZ軸ではなく、車体の「現在の向き」に合わせてカメラを向かせる
+  let lookDirection = new THREE.Vector3(0, 0, (label === 'MIRROR') ? -1 : 1); // Z軸プラスが前、マイナスが後ろ
+  
+  if (carGroup) {
+      // 車体の回転情報を方向ベクトルに適用
+      lookDirection.applyQuaternion(carGroup.quaternion);
   }
-  targetCamera.lookAt(targetPoint);
-	targetCamera.rotateX(-pitch * (Math.PI / 180));
+  
+  // カメラ位置から、上で計算した方向へ少し先のポイントを見る
+  const targetPoint = new THREE.Vector3(finalX, finalY, finalZ).add(lookDirection.multiplyScalar(10));
+  
+  // ★修正：瞬時に移動させず、まずは「最終的な目標の姿（ダミー）」を計算する
+  const dummyCamera = targetCamera.clone();
+  dummyCamera.position.set(finalX, finalY, finalZ);
+  dummyCamera.lookAt(targetPoint);
+  dummyCamera.rotateX(-pitch * (Math.PI / 180));
+
+  // ★追加：上で計算した「最終的な姿（位置と角度）」に向けて、800ミリ秒（0.8秒）かけて滑らかに移動する
+  window.animateCameraTransition(targetCamera, dummyCamera.position, dummyCamera.quaternion, targetPoint, 800);
 
 	// 5. プレビュー画面上に現在の視点名をオーバーレイ表示する
 	let overlay = document.getElementById('vision-overlay');
@@ -353,9 +434,50 @@ window.resetPreviewCameraVision = function() {
 	const overlay = document.getElementById('vision-overlay');
 	if (overlay) overlay.style.display = 'none';
 	
-	// ★追加：非表示になっていた車体モデルを再表示させる
-	const model = window.currentModel || (window.currentModels && window.currentModels[0]);
-	if (model) model.visible = true;
+	// ★修正：非表示になっていた車体モデルを「メッシュ単位で」確実に再表示させる
+	const showOnlyCarMeshes = (sceneObj) => {
+		if (!sceneObj) return;
+		sceneObj.children.forEach(child => {
+			if (child && (child.name === 'Scene' || child.name.startsWith('WHEEL_'))) {
+				child.traverse((node) => {
+					if (node.isMesh || node.type === 'Mesh') {
+						node.visible = true;
+					}
+				});
+			}
+		});
+	};
+	showOnlyCarMeshes(window.suspensionScene);
+	showOnlyCarMeshes(window.scene);
+
+	// ★追加：カメラを元あった場所へ復旧させる
+	if (window.savedPreviewCameraState && window.camera) {
+		// ★修正：瞬時に戻さず、記憶しておいた状態に向けて800ミリ秒かけて滑らかに戻る
+		window.animateCameraTransition(
+			window.camera,
+			window.savedPreviewCameraState.position,
+			window.savedPreviewCameraState.quaternion,
+			window.savedPreviewCameraState.target,
+			800, // アニメーション時間（ミリ秒）
+			() => {
+				// ★アニメーションが完了した「後」に実行する処理
+				if (window.controls) {
+					window.controls.enabled = true; // OrbitControlsの操作を再有効化
+				}
+				
+				// メモリをクリア
+				window.savedPreviewCameraState = null;
+				
+				// フォーカスによるハイライトを消す
+				document.querySelectorAll('.active-camera-item').forEach(el => {
+					el.classList.remove('active-camera-item');
+				});
+				window.currentActiveCameraKey = null;
+			}
+		);
+	}
+	
+	if (window.requestRender) window.requestRender();
 };
 // ==========================================
 // ★追加：現在のデータから座標と角度を抽出してカメラを移動する司令塔
