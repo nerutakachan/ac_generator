@@ -46,6 +46,7 @@ window.executeBulkExport = async function() {
 		}
 	}
 
+	let viewIniContent = null; // ★追加：マイドキュメント仕分け用の変数
 	const filesToExport = [];
 	// --- 3. 選択されたファイルのデータを順番に収集 ---
 	for (const file of window.EXPORT_CONFIG) {
@@ -53,6 +54,9 @@ window.executeBulkExport = async function() {
 		if (checkbox && checkbox.checked) {
 
 			// 🔒 安全ガード：インポートされていない空欄のデータは、チェックが入っていても書き出し対象から除外
+			// ★修正：view と dash_cam の安全ガードを追加（carデータがあれば書き出し可能）
+			if (file.id === 'view' && !window.currentCarData) continue;
+			if (file.id === 'dash_cam' && !window.currentCarData) continue;
 			if (file.id === 'tyres' && (!window.tyreCompoundList || window.tyreCompoundList.length === 0)) continue;
 			if (file.id === 'suspension' && !window.currentSuspensionData) continue;
 			if (file.id === 'car' && !window.currentCarData) continue;
@@ -68,11 +72,19 @@ window.executeBulkExport = async function() {
 					// 引数に true を渡して文字列を取得
 					const content = getFunc(true);
 					if (content) {
-						filesToExport.push({
-							name: file.name,
-							content: content
-						});
-						console.log(`   └ ✅ データ取得成功 (${content.length} 文字)`);
+						// ==========================================
+						// ★ここが3分岐の仕分けコア：view.ini の場合は data フォルダに入れない
+						// ==========================================
+						if (file.id === 'view') {
+							viewIniContent = content;
+							console.log(`   └ 💺 view.ini はマイドキュメント保存用に別ルートへ仕分けました`);
+						} else {
+							filesToExport.push({
+								name: file.name,
+								content: content
+							});
+							console.log(`   └ ✅ データ取得成功 (${content.length} 文字)`);
+						}
 					} else {
 						console.warn(`   └ ⚠️ 関数から空のデータが返されました: ${file.func}`);
 					}
@@ -220,13 +232,50 @@ window.executeBulkExport = async function() {
 		}
 	}
 	// --- 4. Electronのメインプロセスに「フォルダ作成」と「一括保存」を依頼 ---
-	const result = await window.electronAPI.exportFilesToFolder(baseDir, exportFolderName, filesToExport, isOverwrite, window.currentDataFolderPath || null);
-	console.log("🏁 [DEBUG] 書き出し結果:", result);
-	if (result && result.success) {
-		alert(`「${exportFolderName}」フォルダに ${filesToExport.length} 個のファイルを書き出しました。\n場所: ${result.path}`);
+	let exportSuccess = true;
+	let dataResultPath = "";
+
+	if (filesToExport.length > 0) {
+		const result = await window.electronAPI.exportFilesToFolder(baseDir, exportFolderName, filesToExport, isOverwrite, window.currentDataFolderPath || null);
+		console.log("🏁 [DEBUG] 書き出し結果:", result);
+		if (result && result.success) {
+			dataResultPath = result.path;
+		} else {
+			exportSuccess = false;
+			alert("書き出しに失敗しました。\n" + (result ? result.error : "不明なエラー"));
+			return;
+		}
+	}
+
+	// ==========================================
+	// 💺 【3分岐の自動仕分け】収集された viewIniContent があれば、マイドキュメントへダイレクトに保存
+	// ==========================================
+	if (viewIniContent) {
+		if (window.electronAPI && window.electronAPI.saveViewIni) {
+			// インポート時にガチッと特定した本物の「車名（小文字対応）」のフォルダへ送る
+			const carName = window.currentCarDirectoryName || exportFolderName;
+			const viewResult = await window.electronAPI.saveViewIni(carName, viewIniContent);
+			if (viewResult && viewResult.success) {
+				console.log(`💺 [発見] マイドキュメントの view.ini 自動仕分け保存に成功しました: ${viewResult.path}`);
+			} else {
+				exportSuccess = false;
+				alert("マイドキュメントへの view.ini 保存に失敗しました。\n" + (viewResult ? viewResult.error : ""));
+				return;
+			}
+		}
+	}
+
+	// すべての保存ルートが成功したら、わかりやすい仕分け内訳をポップアップで報告
+	if (exportSuccess) {
+		let successMsg = `🎉 書き出しが完全に完了しました！\n\n`;
+		if (filesToExport.length > 0) {
+			successMsg += `📁 dataフォルダ ➔ ${filesToExport.length} 個のファイルを保存しました\n`;
+		}
+		if (viewIniContent) {
+			successMsg += `💺 マイドキュメント ➔ view.ini を適切なフォルダへ自動仕分け保存しました\n`;
+		}
+		alert(successMsg);
 		document.getElementById('exportModal').style.display = 'none';
-	} else {
-		alert("書き出しに失敗しました。\n" + (result ? result.error : "不明なエラー"));
 	}
 };
 // =========================================================
@@ -831,17 +880,60 @@ window.downloadTyreIni = function(isExport = false) {
 		window.URL.revokeObjectURL(url);
 	}, 0);
 };
+// ★追加：マイドキュメント用の view.ini テキストを生成する関数
+window.downloadViewIni = function(isExport = false) {
+	const graphics = window.currentCarData?.GRAPHICS || {};
+	let res = "[CAMERA]\n";
+	res += `ON_BOARD_PITCH_ANGLE=${graphics.ON_BOARD_PITCH_ANGLE !== undefined ? graphics.ON_BOARD_PITCH_ANGLE : '0'}\n`;
+	res += `ON_BOARD_YAW_ANGLE=${graphics.ON_BOARD_YAW_ANGLE !== undefined ? graphics.ON_BOARD_YAW_ANGLE : '0'}\n\n`;
+	res += "[DRIVER_EYES_POSITION]\n";
+	res += `DRIVEREYES=${graphics.DRIVEREYES !== undefined ? graphics.DRIVEREYES : '0, 1.0, 0'}\n`;
+
+	if (isExport === true) return res;
+
+	const blob = new Blob([res], { type: 'text/plain' });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = 'view.ini';
+	a.click();
+	URL.revokeObjectURL(url);
+};
+
+// ★追加：dataフォルダ用の dash_cam.ini テキストを生成する関数
+window.downloadDashCamIni = function(isExport = false) {
+	const graphics = window.currentCarData?.GRAPHICS || {};
+	let res = "[DASH_CAM]\n";
+	res += `POS=${graphics.DASH_CAM_POS !== undefined ? graphics.DASH_CAM_POS : '0, 1.0, 0'}\n`;
+
+	if (isExport === true) return res;
+
+	const blob = new Blob([res], { type: 'text/plain' });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = 'dash_cam.ini';
+	a.click();
+	URL.revokeObjectURL(url);
+};
+
 window.downloadCarIni = function(isExport = false) {
 	if (!window.currentCarData) {
 		alert("車両データが存在しません。");
 		return;
 	}
 	let iniContent = "";
+	// ★追加：マイドキュメントや個別のiniに仕分けされたカメラ座標キーのリスト
+	const specialCameraKeys = ['DRIVEREYES', 'ON_BOARD_PITCH_ANGLE', 'ON_BOARD_YAW_ANGLE', 'DASH_CAM_POS'];
+
 	for (const section in window.currentCarData) {
 		// COLLIDER_ から始まる設定は colliders.ini 用なので弾く
 		if (section.startsWith('COLLIDER_')) continue;
 		iniContent += `[${section}]\n`;
 		for (const key in window.currentCarData[section]) {
+			// ★修正：特殊ファイルへ仕分けされたキーは、car.ini 側に混ざらないよう完全にガードして除外する
+			if (section === 'GRAPHICS' && specialCameraKeys.includes(key)) continue;
+
 			iniContent += `${key}=${window.currentCarData[section][key]}\n`;
 		}
 		iniContent += "\n";

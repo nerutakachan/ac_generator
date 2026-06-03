@@ -1062,6 +1062,8 @@ function openExportModal() {
 window.EXPORT_CONFIG = [
 	{ id: 'suspensions', name: 'suspensions.ini', func: 'downloadSuspensionIni' },
 	{ id: 'car', name: 'car.ini', func: 'downloadCarIni' },
+	{ id: 'view', name: 'view.ini', func: 'downloadViewIni' },
+	{ id: 'dash_cam', name: 'dash_cam.ini', func: 'downloadDashCamIni' },
 	{ id: 'tyres', name: 'tyres.ini', func: 'downloadTyreIni' },
 	{ id: 'colliders', name: 'colliders.ini', func: 'downloadCollidersIni' },
 	{ id: 'aero', name: 'aero.ini', func: 'downloadAeroIni' },
