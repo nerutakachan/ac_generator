@@ -5,7 +5,7 @@
 	"author": "nerutakachan",
 	"main": "main-electron.js",
 	"scripts": {
-		"start": "nodemon --watch main-electron.js --watch preload.js --exec electron .",
+		"start": "chcp 65001 && nodemon --watch main-electron.js --watch preload.js --exec electron .",
 		"build": "electron-builder --win"
 	},
 	"devDependencies": {
