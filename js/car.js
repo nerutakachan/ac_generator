@@ -418,8 +418,8 @@ window.movePreviewCameraToCarVision = function(posX, posY, posZ, pitchAngleDeg, 
   // 3. カメラを移動
   targetCamera.position.set(finalX, finalY, finalZ);
 
-  // ★修正：環境（床や空）のメッシュを完全に保護し、車体モデル（SceneグループとWHEELパーツ）の配下だけを非表示にする
-  const isHide = (label === 'DRIVER' || label === 'MIRROR');
+  // ★修正：DRIVER（運転席調整）の時は内装が見えるように残し、MIRRORの時だけ車体を非表示にする
+  const isHide = (label === 'MIRROR');
 
   const hideOnlyCarMeshes = (sceneObj) => {
     if (!sceneObj) return;

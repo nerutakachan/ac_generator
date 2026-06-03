@@ -709,31 +709,39 @@ const ALLOWED_FILES = [
 	'mirrors.ini'
 ];
 export async function handleMultiFileUpload(files) {
-	// ==========================================
-	// ★追加：ドラッグ＆ドロップされたファイルのパスから「車名」を完璧に特定する処理
-	// ==========================================
-	let detectedCarName = "名称未設定";
 	const fileArray = Array.from(files); // 使い回せるように一度配列に変換しておく
-	for (let i = 0; i < fileArray.length; i++) {
-		const f = fileArray[i];
-		// Electron(D&D)からは path、ブラウザ標準なら webkitRelativePath が入る
-		const filePath = f.path || f.webkitRelativePath || "";
-		if (filePath) {
-			const parts = filePath.split(/[\\/]/); // パスをフォルダごとに分割
-			if (parts.length >= 2) {
-				const parentDir = parts[parts.length - 2];
-				// もし親フォルダが "data" なら、さらにその上が車名フォルダ
-				if (parentDir.toLowerCase() === 'data' && parts.length >= 3) {
-					detectedCarName = parts[parts.length - 3];
-				} else {
-					detectedCarName = parentDir;
+
+	// ★追加：ドロップされたファイルの中に設定ファイル（.ini）が1つでもあるかチェック
+	const hasIniFiles = fileArray.some(f => f.name && f.name.toLowerCase().endsWith('.ini'));
+
+	// ==========================================
+	// ★修正：INIファイルが含まれている（dataフォルダ等のドロップ）場合のみ車名を特定・更新する
+	// ==========================================
+	if (hasIniFiles) {
+		let detectedCarName = "名称未設定";
+		for (let i = 0; i < fileArray.length; i++) {
+			const f = fileArray[i];
+			// Electron(D&D)からは path、ブラウザ標準なら webkitRelativePath が入る
+			const filePath = f.path || f.webkitRelativePath || "";
+			if (filePath) {
+				const parts = filePath.split(/[\\/]/); // パスをフォルダごとに分割
+				if (parts.length >= 2) {
+					const parentDir = parts[parts.length - 2];
+					// もし親フォルダが "data" なら、さらにその上が車名フォルダ
+					if (parentDir.toLowerCase() === 'data' && parts.length >= 3) {
+						detectedCarName = parts[parts.length - 3];
+					} else {
+						detectedCarName = parentDir;
+					}
+					break; // 車名が見つかったらループ終了
 				}
-				break; // 車名が見つかったらループ終了
 			}
 		}
+		window.currentCarDirectoryName = detectedCarName;
+		console.log("[MULTI-IMPORT] 特定した車名:", window.currentCarDirectoryName);
+	} else {
+		console.log("[MULTI-IMPORT] 3Dモデル単体等のため、既存の正しい車名を維持します:", window.currentCarDirectoryName);
 	}
-	window.currentCarDirectoryName = detectedCarName;
-	console.log("[MULTI-IMPORT] 特定した車名:", window.currentCarDirectoryName);
 
 	// 特定が終わってから、本来のファイル読み込みループを開始する
 	for (const file of fileArray) {
@@ -807,8 +815,7 @@ export async function handleMultiFileUpload(files) {
 					}
 					await load3DModel(file);
 				}
-				// ★修正：すでに編集データ(window.currentSuspensionData等)がある場合は、
-				// デフォルト値(ini_DATA)での上書きをスキップする
+				// ★修正：すでに編集データがある場合は、デフォルト値での上書きをスキップする
 				const hasExistingData = window.currentSuspensionData && Object.keys(window.currentSuspensionData).length > 0;
 				if (hasExistingData) {
 					console.log("[IMPORT] 既存データがあるため、3Dモデルの配置更新のみ行います。");
@@ -821,11 +828,11 @@ export async function handleMultiFileUpload(files) {
 						window.updateColliderVisuals();
 					}
 					// ★追加：エアロの更新（これでモデル到着後にエアロが表示されます）
-				if (typeof window.updateAeroVisuals === 'function') {
-					window.updateAeroVisuals();
-				}
-			} else {
-				console.log("[IMPORT] データがないため、デフォルト値を適用します。");
+					if (typeof window.updateAeroVisuals === 'function') {
+						window.updateAeroVisuals();
+					}
+				} else { // ✅「 } 」を足して綺麗に仕分けました
+					console.log("[IMPORT] データがないため、デフォルト値を適用します。");
 				Object.keys(window.ini_DATA).forEach(key => {
 					applyIniData(key, window.ini_DATA[key]);
 				});
@@ -833,70 +840,78 @@ export async function handleMultiFileUpload(files) {
 			// 共通の描画更新
 			if (typeof window.requestRender === 'function') window.requestRender();
 		}
-	} catch (err) {
+} catch (err) {
 		// console.error(`[import.js] ファイル処理失敗: ${file.name}`, err);
 	}
 } // ← ここでファイルの読み込みループ(for)が終了
 
 	// ==========================================
-	// ★追加：view.ini と dash_cam.ini のデータ補完（予測を排除した安全なひな形ロード）
+	// ★修正：設定ファイル（.ini）がドロップされた時だけ view.ini の補完を行う
+	// 3Dモデル単体のドロップ時に、既存の本物データをダミー値で上書き破壊するのを防ぎます
 	// ==========================================
-	// 1. dash_cam.ini の補完 (すでに入っていればそれを使用、なければひな形)
-	let dashCamParsed = null;
-	const dashCamFile = fileArray.find(f => f.name && f.name.toLowerCase() === 'dash_cam.ini');
-	if (dashCamFile) {
-		const text = (typeof dashCamFile.text === 'function') ? await dashCamFile.text() : (dashCamFile.content !== undefined ? dashCamFile.content : await readTextFile(dashCamFile));
-		dashCamParsed = parseINI(text);
-	} else {
-		dashCamParsed = parseINI(default_dash_cam_ini);
-	}
+	if (hasIniFiles) {
+		// 1. dash_cam.ini の補完 (すでに入っていればそれを使用、なければひな形)
+		let dashCamParsed = null;
+		const dashCamFile = fileArray.find(f => f.name && f.name.toLowerCase() === 'dash_cam.ini');
+		if (dashCamFile) {
+			const text = (typeof dashCamFile.text === 'function') ? await dashCamFile.text() : (dashCamFile.content !== undefined ? dashCamFile.content : await readTextFile(dashCamFile));
+			dashCamParsed = parseINI(text);
+		} else {
+			dashCamParsed = parseINI(default_dash_cam_ini);
+		}
 
-	// 2. view.ini の補完 (Electron経由でマイドキュメントへ確実な車名で探しに行く)
-	let viewIniParsed = null;
-	if (window.electronAPI && window.electronAPI.readViewIni) {
-		try {
-			// 先ほど完璧に特定した車名を使ってアクセスする
-			const result = await window.electronAPI.readViewIni(window.currentCarDirectoryName);
-			if (result.success) {
-				viewIniParsed = parseINI(result.content);
-			} else {
+		// 2. view.ini の補完 (Electron経由でマイドキュメントへ確実な車名で探しに行く)
+		let viewIniParsed = null;
+		if (window.electronAPI && window.electronAPI.readViewIni) {
+			try {
+				// 先ほど完璧に特定した車名を使ってアクセスする
+				const result = await window.electronAPI.readViewIni(window.currentCarDirectoryName);
+				if (result.success) {
+					viewIniParsed = parseINI(result.content);
+				} else {
+					viewIniParsed = parseINI(default_view_ini);
+				}
+			} catch (e) {
 				viewIniParsed = parseINI(default_view_ini);
 			}
-		} catch (e) {
+		} else {
 			viewIniParsed = parseINI(default_view_ini);
 		}
+
+		// 3. 取得した座標データを car.ini (GRAPHICS) の中に安全に注入する
+		if (window.currentCarData) {
+			if (!window.currentCarData.GRAPHICS) window.currentCarData.GRAPHICS = {};
+			
+			// dash_cam.ini の反映
+			if (dashCamParsed && dashCamParsed.DASH_CAM && dashCamParsed.DASH_CAM.POS) {
+				window.currentCarData.GRAPHICS.DASH_CAM_POS = dashCamParsed.DASH_CAM.POS;
+			}
+			
+			// view.ini の反映
+			if (viewIniParsed) {
+				if (viewIniParsed.CAMERA) {
+					if (viewIniParsed.CAMERA.ON_BOARD_PITCH_ANGLE) {
+						window.currentCarData.GRAPHICS.ON_BOARD_PITCH_ANGLE = viewIniParsed.CAMERA.ON_BOARD_PITCH_ANGLE;
+					}
+					if (viewIniParsed.CAMERA.ON_BOARD_YAW_ANGLE) {
+						window.currentCarData.GRAPHICS.ON_BOARD_YAW_ANGLE = viewIniParsed.CAMERA.ON_BOARD_YAW_ANGLE;
+					}
+				}
+				if (viewIniParsed.DRIVER_EYES_POSITION && viewIniParsed.DRIVER_EYES_POSITION.DRIVEREYES) {
+					window.currentCarData.GRAPHICS.DRIVEREYES = viewIniParsed.DRIVER_EYES_POSITION.DRIVEREYES;
+				}
+			}
+		}
+
+		// UI側（car.js等）を更新して画面に数値を出す
+		if (typeof window.updateCarEditorUI === 'function' && window.currentCarData) {
+			window.updateCarEditorUI(window.currentCarData);
+		}
 	} else {
-		viewIniParsed = parseINI(default_view_ini);
-	}
-
-	// 3. 取得した座標データを car.ini (GRAPHICS) の中に安全に注入する
-	if (window.currentCarData) {
-		if (!window.currentCarData.GRAPHICS) window.currentCarData.GRAPHICS = {};
-		
-		// dash_cam.ini の反映
-		if (dashCamParsed && dashCamParsed.DASH_CAM && dashCamParsed.DASH_CAM.POS) {
-			window.currentCarData.GRAPHICS.DASH_CAM_POS = dashCamParsed.DASH_CAM.POS;
+		// 3Dモデル単体ロード時も、注入済みの既存データでUIを再描画
+		if (typeof window.updateCarEditorUI === 'function' && window.currentCarData) {
+			window.updateCarEditorUI(window.currentCarData);
 		}
-		
-		// view.ini の反映
-		if (viewIniParsed) {
-			if (viewIniParsed.CAMERA) {
-				if (viewIniParsed.CAMERA.ON_BOARD_PITCH_ANGLE) {
-					window.currentCarData.GRAPHICS.ON_BOARD_PITCH_ANGLE = viewIniParsed.CAMERA.ON_BOARD_PITCH_ANGLE;
-				}
-				if (viewIniParsed.CAMERA.ON_BOARD_YAW_ANGLE) {
-					window.currentCarData.GRAPHICS.ON_BOARD_YAW_ANGLE = viewIniParsed.CAMERA.ON_BOARD_YAW_ANGLE;
-				}
-			}
-			if (viewIniParsed.DRIVER_EYES_POSITION && viewIniParsed.DRIVER_EYES_POSITION.DRIVEREYES) {
-				window.currentCarData.GRAPHICS.DRIVEREYES = viewIniParsed.DRIVER_EYES_POSITION.DRIVEREYES;
-			}
-		}
-	}
-
-	// UI側（car.js等）を更新して画面に数値を出す
-	if (typeof window.updateCarEditorUI === 'function' && window.currentCarData) {
-		window.updateCarEditorUI(window.currentCarData);
 	}
 
 } // ← ここで handleMultiFileUpload 関数全体が終了
