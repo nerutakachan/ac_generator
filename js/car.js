@@ -414,16 +414,26 @@ window.movePreviewCameraToCarVision = function(posX, posY, posZ, pitchAngleDeg, 
     finalY = localPos.y;
     finalZ = localPos.z;
   }
-	// ★追加：BONNETとBUMPERの場合のみ、GRAPHICS_OFFSETのY軸を加算対象から除外（相殺）する
-		if (label === 'BONNET' || label === 'BUMPER') {
-			if (window.currentCarData && window.currentCarData.BASIC && window.currentCarData.BASIC.GRAPHICS_OFFSET) {
-				const offsetParts = String(window.currentCarData.BASIC.GRAPHICS_OFFSET).split(',');
-				if (offsetParts.length >= 2) {
-					const offsetY = parseFloat(offsetParts[1].trim()) || 0;
-					finalY -= offsetY; // 車体マトリクスで加算された高さを引き算して元に戻す
+	// ★修正：各視点ごとに GRAPHICS_OFFSET の不要な軸を加算対象から除外（相殺）する
+	if (label === 'DRIVER' || label === 'DASH_CAM' || label === 'BONNET' || label === 'BUMPER') {
+		if (window.currentCarData && window.currentCarData.BASIC && window.currentCarData.BASIC.GRAPHICS_OFFSET) {
+			const offsetParts = String(window.currentCarData.BASIC.GRAPHICS_OFFSET).split(',');
+			if (offsetParts.length === 3) {
+				const offsetX = parseFloat(offsetParts[0].trim()) || 0;
+				const offsetY = parseFloat(offsetParts[1].trim()) || 0;
+				const offsetZ = parseFloat(offsetParts[2].trim()) || 0;
+				
+				// 4つの視点すべてで X軸 と Z軸 は除外する
+				finalX -= offsetX;
+				finalZ -= offsetZ;
+				
+				// BONNET と BUMPER の場合のみ、Y軸（高さ）も除外する（DRIVER と DASH_CAM はY軸を残す）
+				if (label === 'BONNET' || label === 'BUMPER') {
+					finalY -= offsetY;
 				}
 			}
 		}
+	}
   // 3. カメラを移動
   targetCamera.position.set(finalX, finalY, finalZ);
 

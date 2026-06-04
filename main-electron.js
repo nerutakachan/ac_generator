@@ -721,7 +721,7 @@ ipcMain.handle('read-model-file', async (event, filePath) => {
 // ヘルパー関数：本物の Assetto Corsa フォルダを探し出す
 function getAssettoCorsaCfgPath(carName) {
 	// ★追加：アセットコルサの仕様（マイドキュメント内はすべて小文字）に自動で強制変換する
-	if (carName) carName = carName.toLowerCase();
+	// if (carName) carName = carName.toLowerCase();
 
 	const profile = process.env.USERPROFILE || '';
 	// 可能性のある「ドキュメント」のパスをすべてリストアップ
