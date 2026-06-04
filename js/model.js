@@ -64,7 +64,7 @@ function init() {
 		const scene = new THREE.Scene();
 		scenes.push(scene);
 		if (i === 0) window.scene = scene;
-		const cam = new THREE.PerspectiveCamera(60, 16 / 9, 0.01, 2000);
+		const cam = new THREE.PerspectiveCamera(75, 16 / 9, 0.01, 2000);
 		cameras.push(cam);
 		const canvas = document.getElementById(`canvas-${i}`);
 		if (canvas) {
@@ -101,7 +101,7 @@ function init() {
 	// --- サスペンション用シーン・カメラの初期化 ---
 	window.suspensionScene = new THREE.Scene();
 	suspensionScene = window.suspensionScene;
-	window.suspensionCamera = new THREE.PerspectiveCamera(45, 1, 0.01, 2000);
+	window.suspensionCamera = new THREE.PerspectiveCamera(60, 1, 0.01, 2000);
 	suspensionCamera = window.suspensionCamera;
 	window.camera = suspensionCamera; // model_app.jsからの操作を許可
 	suspensionCamera.position.set(3, 2, 5);
