@@ -2,7 +2,7 @@
 // ==========================================
 // ★追加：フォーカスを破壊しない、綺麗なカスタムポップアップを表示する関数
 // ==========================================
-window.showCustomPopup = function(messageHtml) {
+window.showCustomPopup = function(messageHtml, parentElement = document.body) {
 	const overlay = document.createElement('div');
 	overlay.className = 'custom-popup-overlay';
 	const box = document.createElement('div');
@@ -20,7 +20,7 @@ window.showCustomPopup = function(messageHtml) {
 	btnWrap.appendChild(btn);
 	box.appendChild(btnWrap);
 	overlay.appendChild(box);
-	document.body.appendChild(overlay);
+	parentElement.appendChild(overlay);
 };
 /**
  * 車両設定（car.ini）の詳細版UI生成
@@ -181,10 +181,9 @@ window.updateCarEditorUI = function(data) {
 							localStorage.setItem('view_ini_noticed', 'true'); // 案内済みフラグを立てる
 							// ★修正：案内文から dash_cam.ini を削除し、view.ini 専用の案内に変更
 							const msg = "💡 アセットコルサの仕様上、シートポジション（DRIVEREYES 等）は <b>view.ini</b> という特別なファイルに保存されます。<br><br>このツールでは書き出し時に自動でマイドキュメント内のフォルダを探し、安全にバックアップを取りながら保存を行います。";
-							window.showCustomPopup(msg);
+							window.showCustomPopup(msg, document.getElementById('preview-suspension'));
 						}
 					}
-					// 1. グローバル変数に現在のキーを記憶させる
 					// 1. グローバル変数に現在のキーを記憶させる
 					window.currentActiveCameraKey = key;
 					// 2. 他のすべてのハイライトを消す
@@ -421,16 +420,6 @@ window.movePreviewCameraToCarVision = function(posX, posY, posZ, pitchAngleDeg, 
 	if (!overlay) {
 		overlay = document.createElement('div');
 		overlay.id = 'vision-overlay';
-		overlay.style.position = 'absolute';
-		overlay.style.top = '16%;';
-		overlay.style.left = '47vw';
-		overlay.style.padding = '5px 10px';
-		overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-		overlay.style.color = '#00ffff';
-		overlay.style.fontWeight = 'bold';
-		overlay.style.borderRadius = '5px';
-		// overlay.style.pointerEvents = 'none'; // マウス操作の邪魔にならないように
-		overlay.style.zIndex = '1000';
 		// プレビューエリアに追加
 		const previewArea = document.querySelector('.preview_inner_box') || document.body;
 		previewArea.appendChild(overlay);

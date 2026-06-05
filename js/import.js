@@ -910,6 +910,24 @@ document.addEventListener('DOMContentLoaded', () => {
 			});
 		}
 	});
+	// =========================================================
+	// ★追加: 画面全体（window）でのドラッグ＆ドロップ監視
+	// =========================================================
+	window.addEventListener('dragover', (e) => {
+		e.preventDefault(); // これがないとドロップが許可されない
+	});
+
+	window.addEventListener('drop', async (e) => {
+		e.preventDefault(); // ブラウザが勝手にファイルを開くのを防ぐ
+
+		const files = e.dataTransfer.files;
+		if (files && files.length > 0) {
+			window.isMultiUploading = true;
+			// 取得したファイルを既存の処理に流し込む
+			await handleMultiFileUpload(Array.from(files));
+			window.isMultiUploading = false;
+		}
+	});
 	// まとめてアップロード（マルチ）用の処理
 	const multiFileInput = document.getElementById('multiFileUpload');
 	if (multiFileInput) {
