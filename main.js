@@ -567,7 +567,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				if (result.success) {
 					console.log("💾 [SAVE] ファイル書き込み成功");
 					window.currentProjectPath = result.path; // パスを記憶
-					btnSaveProject.textContent = "✅ 保存完了！";
+					btnSaveProject.textContent = "✅ 保存完了";
 					// 履歴リストを更新
 					refreshRecentList();
 				} else {

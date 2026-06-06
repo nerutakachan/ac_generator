@@ -30,7 +30,7 @@
 			<div class="h2-title_box">
 				<h2 class="h2-title">AC FILE GENERATOR（β版）</h2>
 				<div>
-					<button id="btn-save-project" class="primary">💾 保存</button>
+					<button id="btn-save-project" class="primary save-btn">💾 保存</button>
 					<button id="btn-restore-project" class="secondary-btn" title="前回の保存状態に戻す">⏪ 復元</button>
 				</div>
 				<div class="info-icon_box">使い方はこちら　☞ <button type="button" class="info-icon" id="info-btn">📖</button>
@@ -82,7 +82,7 @@
 							<label for="earthColorPicker">床色：</label>
 							<input type="color" id="earthColorPicker" value="#5fafb9">
 						</div>
-						<div class="file-input-group">
+						<div class="file-input-group sky-bg-img_box">
 							<label for="bgImageFile">背景画像：</label>
 							<input type="file" id="bgImageFile" accept="image/*">
 						</div>
@@ -661,6 +661,7 @@
 									<div class="alignment-preview-group">
 										<div class="loading-label">アライメントプレビュー</div>
 										<canvas id="canvas-suspension"></canvas>
+										<article id="vision-overlay"></article>
 										<article id="alignment-data-outer_box">
 											<div id="camber_box" class="alignment-inner-data_box">
 												<div class="alignment-data-title_box">

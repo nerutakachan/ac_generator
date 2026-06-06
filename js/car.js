@@ -417,15 +417,10 @@ window.movePreviewCameraToCarVision = function(posX, posY, posZ, pitchAngleDeg, 
 	window.animateCameraTransition(targetCamera, dummyCamera.position, dummyCamera.quaternion, targetPoint, 800);
 	// 5. プレビュー画面上に現在の視点名をオーバーレイ表示する
 	let overlay = document.getElementById('vision-overlay');
-	if (!overlay) {
-		overlay = document.createElement('div');
-		overlay.id = 'vision-overlay';
-		// プレビューエリアに追加
-		const previewArea = document.querySelector('.preview_inner_box') || document.body;
-		previewArea.appendChild(overlay);
+	if (overlay) {
+		overlay.textContent = `👁️ ${label} VIEW`;
+		overlay.style.display = 'block';
 	}
-	overlay.textContent = `👁️ ${label} VIEW`;
-	overlay.style.display = 'block';
 	if (window.requestRender) window.requestRender();
 };
 // 視点リセット（通常視点に戻す）用の関数
