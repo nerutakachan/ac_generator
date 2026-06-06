@@ -60,9 +60,6 @@ h5 {
 	flex-direction: column;
 	gap: 20px;
 }
-.h2-title_box {
-	width: 21rem;
-}
 .h2-title-text {
 	text-align: end;
 }

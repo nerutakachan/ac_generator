@@ -106,7 +106,7 @@ function init() {
 	window.suspensionCamera = new THREE.PerspectiveCamera(60, 1, 0.01, 2000);
 	suspensionCamera = window.suspensionCamera;
 	window.camera = suspensionCamera; // model_app.jsからの操作を許可
-	suspensionCamera.position.set(3, 2, 5);
+	suspensionCamera.position.set(-2, 1.5, 3);
 	suspensionCamera.lookAt(0, 0, 0);
 	const suspCanvas = document.getElementById('canvas-suspension');
 	if (suspCanvas) {
@@ -117,8 +117,8 @@ function init() {
 		});
 		suspensionRenderer.outputColorSpace = THREE.SRGBColorSpace;
 	}
-	suspensionScene.add(new THREE.AmbientLight(0xffffff, 1.0));
-	const suspSun = new THREE.DirectionalLight(0xffffff, 1.2);
+	suspensionScene.add(new THREE.AmbientLight(0xffffff, 1.5));
+	const suspSun = new THREE.DirectionalLight(0xffffff, 1.5);
 	suspSun.position.set(5, 10, 7.5);
 	suspensionScene.add(suspSun);
 	const planeGeo = new THREE.PlaneGeometry(50, 50);
@@ -176,6 +176,12 @@ function autoLoadDefaultSky() {
 
 	// CSS側の背景設定（3D描画前の隙間埋め用）
 	document.querySelectorAll('.preview-area').forEach(el => {
+		// ★追加：特定のIDを持つエリアには背景画像を適用しない（除外設定）
+		const excludeIds = ['preview-tires', 'preview-gear', 'preview-engine', 'preview-setup'];
+		if (excludeIds.includes(el.id)) {
+			return; // このIDの要素だった場合は、以下の処理をせずに次の要素へ進む
+		}
+
 		el.style.backgroundImage = `url(${localSkyPath})`;
 		el.style.backgroundSize = 'cover';
 		el.style.backgroundPosition = 'center';
@@ -379,17 +385,20 @@ function applyModelPatches(model) {
 		if (child.isMesh && child.material) {
 			const mats = Array.isArray(child.material) ? child.material : [child.material];
 			mats.forEach(mat => {
-				const meshName = child.name.toLowerCase();
-				if (meshName.includes('glass') || meshName.includes('steklo')) {
-					mat.transparent = true;
-					mat.opacity = 0.0;
-					mat.depthWrite = false;
+			const meshName = child.name.toLowerCase();
+			if (meshName.includes('glass') || meshName.includes('window') || meshName.includes('vetro') || meshName.includes('windshield') || meshName.includes('steklo')) {
+				mat.transparent = true;
+				mat.opacity = 0.4; 
+				mat.roughness = 0.2;
+				mat.metalness = 0.5;
+				mat.alphaTest = 0.5;
+				mat.depthWrite = false;
 				} else {
 					mat.side = THREE.DoubleSide;
 					mat.map = null;
 					mat.color.set(modelBaseColor);
-					mat.roughness = 0.6;
-					mat.metalness = 0.2;
+					mat.roughness = 0.3;
+					mat.metalness = 0.5;
 					mat.transparent = false;
 					mat.depthWrite = true;
 				}

@@ -44,6 +44,9 @@ body {
 #setup-preview-container .engine-section .preview-area_box .preview-area {
 	--bg-image: url(../image/tool.jpg);
 }
+#preview-tires {
+	--bg-image: url(../image/tyres.jpg);
+}
 #preview-gear,
 #preview-engine {
 	padding: 1rem;
@@ -145,10 +148,11 @@ input, textarea {
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
+	gap: 0.5em;
 }
 .main-setting-outer_box {
 	padding: 0.5rem 1rem;
-	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+	/* box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); */
 	border-radius: 0.5rem;
 	gap: 1rem;
 }
@@ -1468,6 +1472,10 @@ label {
 	font-family: monospace;
 	color: #fff;
 	padding: 10px;
+	font-size: 0.8em;
+}
+.indicator_box .tyre-peak-monitor h4{
+	font-size: 0.9em;
 }
 /* =========================================
 	タイヤエディター (tires.js) 用の追加スタイル
@@ -1593,7 +1601,7 @@ label {
 	color: rgb(0, 255, 255);
 	font-weight: bold;
 	border-radius: 5px;
-	z-index: 1000;
+	z-index: 100;
 	display: block;
 	/* overlay.style.pointerEvents = 'none';  */
 }
