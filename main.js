@@ -190,6 +190,36 @@ document.addEventListener('DOMContentLoaded', async () => {
 			}
 		});
 	}
+	// ★修正：裏側からバージョン番号を受け取ってHTMLを更新し、変更があればお知らせを出す
+	if (window.electronAPI && window.electronAPI.onAppVersion) {
+		window.electronAPI.onAppVersion((version) => {
+			window.appVersion = version; 
+			const versionDisplay = document.getElementById('app-version-display');
+			if (versionDisplay) {
+				versionDisplay.textContent = `Version ${version}`;
+			}
+
+			// --- ここから追加：バージョン変更検知ロジック ---
+			const lastSeenVersion = localStorage.getItem('app_last_seen_version');
+			
+			// 初回起動時、またはバージョン番号が前回と違う場合
+			if (lastSeenVersion && lastSeenVersion !== version) {
+				const infoModal = document.getElementById('info-modal');
+				const updateTabBtn = document.getElementById('tab-btn-update');
+				
+				if (infoModal && updateTabBtn) {
+					// 1. モーダルを表示
+					infoModal.classList.remove('hidden');
+					// 2. アップデート情報のタブを自動でクリック（表示切替）
+					updateTabBtn.click();
+				}
+			}
+			
+			// 現在のバージョンを「確認済み」として記憶
+			localStorage.setItem('app_last_seen_version', version);
+			// --- ここまで追加 ---
+		});
+	}
 });
 // ↓ ここから下は、既存の function updateProjectFileState(...) などが続きます
 //テスト終わり
