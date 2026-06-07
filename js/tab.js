@@ -1,5 +1,17 @@
 // js/tab.js
 document.addEventListener('DOMContentLoaded', () => {
+	const autoManualPages = document.querySelectorAll('.manual-page');
+	autoManualPages.forEach((page, index) => {
+		page.setAttribute('data-page', index + 1);
+	});
+	// 注意事項以外のページにあるタイトルボックスのみを対象にする
+	const titleBoxes = document.querySelectorAll('.manual-page-title_box');
+	titleBoxes.forEach((box, index) => {
+			const h2 = box.querySelector('h2');
+			if (h2) {
+					h2.setAttribute('data-page', index + 1);
+			}
+	});
 	// ==========================================
 	// 1. メイン & エディタータブ切り替え
 	// ==========================================
@@ -247,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	});
 	let currentManualPage = 1;
-	const manualPages = document.querySelectorAll('.manual-page');
+	const manualPages = document.querySelectorAll('#modaltab-manual .manual-page');
 	const totalManualPages = manualPages.length;
 	const btnPrev = document.getElementById('manual-prev');
 	const btnNext = document.getElementById('manual-next');
@@ -285,9 +297,18 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 	const manualPageBtns = document.querySelectorAll('.manual-page-btn');
 	const manualPageContents = document.querySelectorAll('.manual-page-content');
+	const pageIndicator = document.getElementById('manual-page-indicator');
+
+	// 初期表示
+	updateManualPage();
+
 	manualPageBtns.forEach(btn => {
 		btn.addEventListener('click', () => {
 			const pageNum = btn.dataset.page;
+			currentManualPage = parseInt(pageNum); // 変数を更新
+
+			updateIndicator(currentManualPage); // 関数を呼び出して更新
+
 			manualPageBtns.forEach(b => b.classList.remove('active'));
 			btn.classList.add('active');
 			manualPageContents.forEach(content => {
