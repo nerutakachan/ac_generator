@@ -1126,9 +1126,14 @@ window.openExportModal = function() {
 		const div = document.createElement('div');
 		div.className = `export-item ${isModified ? 'is-modified' : ''}`;
 		div.innerHTML = `
-			<input type="checkbox" id="check-${file.id}" ${isModified ? 'checked' : ''}>
-			<label for="check-${file.id}">${file.name}</label>
-			${isModified ? '<span class="modified-badge">MODIFIED</span>' : ''}
+			<span class="switch-label">${file.name}</span>
+			<div class="export-select_box">
+				${isModified ? '<span class="modified-badge">MODIFIED</span>' : ''}
+				<label class="toggle-switch">
+					<input type="checkbox" id="check-${file.id}" ${isModified ? 'checked' : ''}>
+					<span class="toggle-slider round"></span>
+				</label>
+			</div>
 		`;
 		listContainer.appendChild(div);
 	});

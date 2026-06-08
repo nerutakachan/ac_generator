@@ -88,7 +88,7 @@
 .toggle-switch {
 	position: relative;
 	display: inline-block;
-	width: 2.2rem;
+	width: 2.15rem;
 	height: 1.2rem;
 }
 .toggle-switch input { 
@@ -108,7 +108,7 @@
 	content: "";
 	width: 0.85rem;
 	left: 2px;
-	bottom: 3px;
+	bottom: 2.3px;
 	background-color: white;
 	transition: .4s;
 	aspect-ratio: 1;

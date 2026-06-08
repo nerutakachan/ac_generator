@@ -1286,11 +1286,19 @@ label {
 .export-item {
 	display: flex;
 	align-items: center;
+	justify-content: space-between;
 	padding: 12px;
 	background: #2a2a2a;
 	border-radius: 4px;
 	transition: background 0.2s;
 	border-left: 4px solid transparent;
+}
+.export-select_box{
+	display: flex;
+	align-items: center;
+}
+.export-item .switch-label{
+	color: #fff;
 }
 
 /* 編集済みファイルの色（オレンジ系） */
