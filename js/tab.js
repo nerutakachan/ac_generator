@@ -322,21 +322,47 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	});
 	// ==========================================
-	// 4. 全表示/非表示トグル制御
+	// 4. 全表示/非表示トグル制御（記憶・復元機能付き）
 	// ==========================================
 	const toggleAllBtn = document.getElementById('toggle-all-visibility');
 	if (toggleAllBtn) {
-		toggleAllBtn.addEventListener('click', () => {
-			const newState = !window.suspensionVisibility.arms;
-			for (let key in window.suspensionVisibility) {
-				window.suspensionVisibility[key] = newState;
-			}
-			const mapping = ['check-arms', 'check-steer', 'check-wheels', 'check-rim-offset', 'check-collider', 'check-tank', 'check-wing'];
-			mapping.forEach(id => {
+		// ボタン形式ではなくトグル形式で反応するように change イベントに変更
+		toggleAllBtn.addEventListener('change', (e) => {
+			const isMasterOn = e.target.checked; // マスターがONかOFFか
+			
+			// IDとデータキーの紐付けリスト
+			const mapping = {
+				'check-arms': 'arms',
+				'check-steer': 'steer',
+				'check-wheels': 'wheels',
+				'check-rim-offset': 'rimOffset',
+				'check-collider': 'collider',
+				'check-tank': 'tank',
+				'check-wing': 'wing'
+			};
+
+			Object.entries(mapping).forEach(([id, key]) => {
 				const el = document.getElementById(id);
-				if (el) el.checked = newState;
+				if (el) {
+					// ★ここが核心：
+					// マスターONなら「強制的に表示(true)」
+					// マスターOFFなら「記憶していた手動設定(manualVisibilityState)」に戻す
+					const nextState = isMasterOn ? true : window.manualVisibilityState[key];
+					
+					el.checked = nextState;
+					window.suspensionVisibility[key] = nextState;
+
+					// コライダーの特殊処理
+					if (key === 'collider' && window.colliderHelper) {
+						window.colliderHelper.visible = nextState;
+					}
+				}
 			});
-			if (window.updateSuspensionVisuals) window.updateSuspensionVisuals();
+
+			// 3D画面を最新の状態に更新する
+			if (window.updateSuspensionVisuals) {
+				window.updateSuspensionVisuals(window.currentSuspensionData);
+			}
 		});
 	}
 });

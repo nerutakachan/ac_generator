@@ -80,6 +80,16 @@ window.suspensionVisibility = {
 	tank: false,
 	wing: false
 };
+window.manualVisibilityState = {
+	arms: false,
+	steer: false,
+	wheels: false,
+	rimOffset: false,
+	collider: false,
+	tank: false,
+	wing: false
+};
+
 // --- ここから追加：位置とピッチの共通計算関数 ---
 window.calculateCarAlignmentAtZ = function(worldZ, safeData, carData) {
 	const wb = extractNum(safeData?.BASIC?.WHEELBASE) || 2.73;
@@ -1216,8 +1226,10 @@ function setupVisibilityListeners() {
 		if (el) {
 			el.addEventListener('change', (e) => {
 				const isChecked = e.target.checked;
-				window.suspensionVisibility[key] = isChecked;
 				// COLLIDERの場合、メッシュの表示を直接切り替える
+				window.suspensionVisibility[key] = isChecked;
+				// ユーザーが手動で変えたこの状態を「最新の手動設定」として記憶する
+				window.manualVisibilityState[key] = isChecked;
 				if (key === 'collider' && window.colliderHelper) {
 					window.colliderHelper.visible = isChecked;
 				}
