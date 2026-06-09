@@ -141,13 +141,18 @@ function createMainWindow() {
 			noLink: true // ← 左のアローを消す
 		});
 		// 0: 終了 (保存しない)
-		// 1: 保存して終了
-		// 2: キャンセル
-		if (choice === 0) {
-			app.exit();
-		} else if (choice === 1) {
-			mainWindow.webContents.send('trigger-save-and-close');
+	// 1: 保存して終了
+	// 2: キャンセル
+	if (choice === 0) {
+		// ★「終了（保存しない）」なら、連動中であれば【復元】してから終了する
+		if (activeSyncFolderPath) {
+			cleanupSyncBackup(activeSyncFolderPath, true);
 		}
+		app.exit();
+	} else if (choice === 1) {
+		// 「保存して終了」の場合はプロジェクト保存後に force-quit が来るので、そちらで処理します
+		mainWindow.webContents.send('trigger-save-and-close');
+	}
 		// キャンセルの場合は何もしない（ウィンドウを開いたままにする）
 	});
 	mainWindow.webContents.on('context-menu', (event, params) => {
@@ -613,6 +618,10 @@ app.on('window-all-closed', () => {
 	if (process.platform !== 'darwin') app.quit();
 });
 ipcMain.on('force-quit', () => {
+	// ★「保存して終了」した場合は、復元はせず【バックアップを破棄】して終了する
+	if (activeSyncFolderPath) {
+		cleanupSyncBackup(activeSyncFolderPath, false);
+	}
 	app.exit();
 });
 // ==========================================
@@ -962,6 +971,55 @@ ipcMain.handle('save-view-ini', async (event, carName, content) => {
 			error: error.message
 		};
 	}
+});
+// ★追加：裏側でも現在連動中のフォルダパスを覚えておく変数
+let activeSyncFolderPath = null;
+
+// ★共通の後片付け（復元・削除）関数
+function cleanupSyncBackup(folderPath, shouldRestore) {
+	try {
+		const backupDir = path.join(folderPath, 'sync_backup');
+		if (fs.existsSync(backupDir)) {
+			if (shouldRestore) {
+				// 「終了（保存しない）」の場合は、バックアップから元に戻す
+				const files = fs.readdirSync(backupDir);
+				files.forEach(f => {
+					const src = path.join(backupDir, f);
+					const dest = path.join(folderPath, f);
+					if (fs.existsSync(src)) fs.copyFileSync(src, dest);
+				});
+				console.log("🧹 [LIVE SYNC] 元のデータを復元しました。");
+			}
+			// いずれの場合も一時的なバックアップフォルダを消す
+			fs.rmSync(backupDir, { recursive: true, force: true });
+			console.log("🧹 [LIVE SYNC] sync_backup フォルダを削除しました。");
+		}
+		activeSyncFolderPath = null;
+		return true;
+	} catch (e) {
+		console.error("❌ LIVE SYNC 後片付けに失敗:", e.message);
+		return false;
+	}
+}
+
+// ★前回追加した sync-backup-start を少し書き換えて、パスを記憶するようにします
+ipcMain.handle('sync-backup-start', async (event, folderPath, files) => {
+	try {
+		const backupDir = path.join(folderPath, 'sync_backup');
+		activeSyncFolderPath = folderPath; // ★重要：パスを記憶
+		if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
+		
+		files.forEach(fileName => {
+			const src = path.join(folderPath, fileName);
+			if (fs.existsSync(src)) fs.copyFileSync(src, path.join(backupDir, fileName));
+		});
+		return { success: true };
+	} catch (e) { return { success: false, error: e.message }; }
+});
+
+// ★前回追加した sync-restore-end も共通関数を使うように書き換えます
+ipcMain.handle('sync-restore-end', async (event, folderPath) => {
+	return { success: cleanupSyncBackup(folderPath, true) };
 });
 // ★追加：一時連動（LIVE SYNC）用の処理
 ipcMain.handle('sync-backup-start', async (event, folderPath, files) => {
