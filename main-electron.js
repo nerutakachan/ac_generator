@@ -963,3 +963,28 @@ ipcMain.handle('save-view-ini', async (event, carName, content) => {
 		};
 	}
 });
+// ★追加：一時連動（LIVE SYNC）用の処理
+ipcMain.handle('sync-backup-start', async (event, folderPath, files) => {
+	try {
+		const backupDir = path.join(folderPath, 'sync_backup');
+		if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
+		
+		files.forEach(fileName => {
+			const src = path.join(folderPath, fileName);
+			if (fs.existsSync(src)) fs.copyFileSync(src, path.join(backupDir, fileName));
+		});
+		return { success: true };
+	} catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('sync-restore-end', async (event, folderPath) => {
+	try {
+		const backupDir = path.join(folderPath, 'sync_backup');
+		if (fs.existsSync(backupDir)) {
+			const files = fs.readdirSync(backupDir);
+			files.forEach(f => fs.copyFileSync(path.join(backupDir, f), path.join(folderPath, f)));
+			fs.rmSync(backupDir, { recursive: true, force: true });
+		}
+		return { success: true };
+	} catch (e) { return { success: false, error: e.message }; }
+});

@@ -298,6 +298,30 @@ document.addEventListener('DOMContentLoaded', () => {
 		execBtn.onclick = window.executeBulkExport;
 	}
 });
+// ★追加：リアルタイム連動（デバウンス）ロジック
+let syncTimer = null;
+window.triggerLiveSync = function() {
+	const syncSwitch = document.getElementById('liveSyncSwitch');
+	if (!syncSwitch || !syncSwitch.checked || !window.currentDataFolderPath) return;
+
+	// すでにタイマーが動いていたらリセット（操作が止まるまで待つ）
+	if (syncTimer) clearTimeout(syncTimer);
+
+	syncTimer = setTimeout(async () => {
+		console.log("🔄 [LIVE SYNC] 自動書き出しを実行中...");
+		// executeBulkExportを「上書きモード」かつ「通知なし」で実行する仕組み
+		// ここでは簡易的に、現在編集中の全ファイルを data フォルダへ流し込みます
+		const filesToExport = [];
+		for (const file of window.EXPORT_CONFIG) {
+			const getFunc = window[file.func];
+			if (typeof getFunc === 'function') {
+				const content = getFunc(true);
+				if (content) filesToExport.push({ name: file.name, content: content });
+			}
+		}
+		await window.electronAPI.exportFilesToFolder(null, "", filesToExport, true, window.currentDataFolderPath);
+	}, 300); // 0.3秒間操作が止まったら書き出し
+};
 window.downloadFinalRto = function(isExport = false) {
 	let res = "\n";
 	window.finalRtoList.forEach(item => {

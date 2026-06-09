@@ -372,12 +372,38 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 });
 // ★追加：「解説ポップアップ」トグルの文字と色を切り替える設定
-	const tyreTooltipSwitch = document.getElementById('toggle-tyre-tooltip');
-	const tyreTooltipStatus = document.getElementById('tyreTooltipStatusText');
-	if (tyreTooltipSwitch && tyreTooltipStatus) {
-		tyreTooltipSwitch.addEventListener('change', (e) => {
-			const isChecked = e.target.checked;
-			tyreTooltipStatus.textContent = isChecked ? 'ON' : 'OFF';
-			tyreTooltipStatus.className = isChecked ? 'status-text on' : 'status-text off';
-		});
+const tyreTooltipSwitch = document.getElementById('toggle-tyre-tooltip');
+const tyreTooltipStatus = document.getElementById('tyreTooltipStatusText');
+if (tyreTooltipSwitch && tyreTooltipStatus) {
+	tyreTooltipSwitch.addEventListener('change', (e) => {
+		const isChecked = e.target.checked;
+		tyreTooltipStatus.textContent = isChecked ? 'ON' : 'OFF';
+		tyreTooltipStatus.className = isChecked ? 'status-text on' : 'status-text off';
+	});
+}
+document.getElementById('liveSyncSwitch')?.addEventListener('change', async (e) => {
+	const isON = e.target.checked;
+	const folder = window.currentDataFolderPath;
+	if (!folder) {
+		alert("dataフォルダが読み込まれていません。");
+		e.target.checked = false;
+		return;
 	}
+
+	if (isON) {
+		// 連動開始：バックアップ作成
+		const fileNames = window.EXPORT_CONFIG.map(f => f.name);
+		// ★ .invoke ではなく .syncBackupStart に変更
+		await window.electronAPI.syncBackupStart(folder, fileNames); 
+		
+		document.getElementById('liveSyncStatusText').textContent = "ON";
+		document.getElementById('liveSyncStatusText').className = "status-text on";
+	} else {
+		// 連動終了：復元して削除
+		// ★ .invoke ではなく .syncRestoreEnd に変更
+		await window.electronAPI.syncRestoreEnd(folder); 
+		
+		document.getElementById('liveSyncStatusText').textContent = "OFF";
+		document.getElementById('liveSyncStatusText').className = "status-text off";
+	}
+});
