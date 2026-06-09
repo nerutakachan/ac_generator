@@ -347,7 +347,7 @@ window.triggerLiveSync = function() {
 	}, 300); // 0.3秒間操作が止まったら書き出し
 };
 window.downloadFinalRto = function(isExport = false) {
-	let res = "\n";
+	let res = "";
 	window.finalRtoList.forEach(item => {
 		if (item.label && item.value) {
 			res += `${item.label}|${item.value}\n`;
