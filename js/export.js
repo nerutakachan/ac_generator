@@ -521,10 +521,15 @@ window.downloadAeroIni = function(isExport = false) {
 	for (const section in data) {
 		// 【🚨追加必須1】HEADERが二重に書き出されるのを防ぐ
 		if (section === 'HEADER') continue;
+		
+		// 【🚨追加必須4】不要なDATAセクションを書き出さない
+		if (section === 'DATA') continue;
+
 		// 【🚨追加必須2】個別スイッチがOFFの項目は書き出さない
 		if (data[section]._ENABLED === false) continue;
 		// 拡張物理がOFFの時、[FIN_0] セクションは書き出さない
 		if (section === 'FIN_0' && !window.isExtendedPhysicsEnabled) continue;
+		
 		iniContent += `[${section}]\n`;
 		for (const key in data[section]) {
 			// 【🚨追加必須3】システム用の裏側フラグ（_ENABLED）を文字として書き出さない
