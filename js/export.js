@@ -303,10 +303,8 @@ let syncTimer = null;
 window.triggerLiveSync = function() {
 	const syncSwitch = document.getElementById('liveSyncSwitch');
 	if (!syncSwitch || !syncSwitch.checked || !window.currentDataFolderPath) return;
-
 	// すでにタイマーが動いていたらリセット（操作が止まるまで待つ）
 	if (syncTimer) clearTimeout(syncTimer);
-
 	syncTimer = setTimeout(async () => {
 		console.log("🔄 [LIVE SYNC] 自動書き出しを実行中...");
 		// executeBulkExportを「上書きモード」かつ「通知なし」で実行する仕組み
@@ -324,18 +322,19 @@ window.triggerLiveSync = function() {
 			if (file.id === 'setup' && !window.currentSetupData) continue;
 			if (file.id === 'mirrors' && !window.currentMirrorsData) continue;
 			if (file.id === 'drivetrain' && !window.currentDrivetrainData) continue;
-
 			// 2. ⚡ 効率化 ＆ クラッシュ防止：
 			// マウス操作で実際に編集された（modifiedStatusがtrue）ファイルのみを処理対象にします。
 			// これにより、起動時の「自動復元」による勝手な上書きを完全にブロックします。
 			const statusKey = (file.id === 'view' || file.id === 'dash_cam') ? 'car' : file.id;
 			if (!window.modifiedStatus || !window.modifiedStatus[statusKey]) continue;
-
 			const getFunc = window[file.func];
 			if (typeof getFunc === 'function') {
 				const content = getFunc(true); // 一括書き出しモードで呼び出し
 				if (content) {
-					filesToExport.push({ name: file.name, content: content });
+					filesToExport.push({
+						name: file.name,
+						content: content
+					});
 				}
 			}
 		}
@@ -426,9 +425,9 @@ window.downloadDrivetrainIni = function(isExport = false) {
 		// 【要件】setup.iniあり、または 編集ありの場合
 		if (!baseExportData.GEARS) baseExportData.GEARS = {};
 		// ➡ 修正：FINALを含め、UIで編集・選択されたすべてのギア設定を反映させます
-			for (let key in activeSet.data.GEARS) {
-				baseExportData.GEARS[key] = activeSet.data.GEARS[key];
-			}
+		for (let key in activeSet.data.GEARS) {
+			baseExportData.GEARS[key] = activeSet.data.GEARS[key];
+		}
 	}
 	// ギア(GEARS)以外の全セクション（GEARBOX、AUTOCLUTCHなど）は、UIの編集結果を全て反映させる
 	for (const section in activeSet.data) {
@@ -543,15 +542,12 @@ window.downloadAeroIni = function(isExport = false) {
 	for (const section in data) {
 		// 【🚨追加必須1】HEADERが二重に書き出されるのを防ぐ
 		if (section === 'HEADER') continue;
-		
 		// 【🚨追加必須4】不要なDATAセクションを書き出さない
 		if (section === 'DATA') continue;
-
 		// 【🚨追加必須2】個別スイッチがOFFの項目は書き出さない
 		if (data[section]._ENABLED === false) continue;
 		// 拡張物理がOFFの時、[FIN_0] セクションは書き出さない
 		if (section === 'FIN_0' && !window.isExtendedPhysicsEnabled) continue;
-		
 		iniContent += `[${section}]\n`;
 		for (const key in data[section]) {
 			// 【🚨追加必須3】システム用の裏側フラグ（_ENABLED）を文字として書き出さない
@@ -626,57 +622,51 @@ window.downloadPowerLut = function(isExport = false) {
 };
 // 3. setup.ini のダウンロード機能（ギアの自動合流つき）
 // 3. setup.ini のダウンロード機能（ギアの自動合流つき）
-	window.downloadSetupIni = function(isExport = false) {
-		const data = window.currentSetupData;
-		if (!data) return alert("セットアップデータが存在しません。");
-
-		let iniContent = "";
-		// 🛠️ ヘッダー情報の追加
-		iniContent += "[DISPLAY_METHOD]\nSHOW_CLICKS=1\n\n";
-		const currentUseGearset = (data['GEARS'] && data['GEARS']['USE_GEARSET'] !== undefined) ? data['GEARS']['USE_GEARSET'] : '1';
-		iniContent += `[GEARS]\nUSE_GEARSET=${currentUseGearset}\n\n`;
-
-		// ★ ここからが、あなたが提示された「選択されたギア数による分岐」の最新版です
-		if (window.gearSetList && window.gearSetList.length === 1) {
-			// 1つの時：協議した通りの「固定ギア(rto)」用ブロックを書き出す
-			iniContent += `[GEAR_1]\nRATIOS=ratios.rto\nNAME=First Gear\nPOS_X=0.5\nPOS_Y=0\nHELP=HELP_REAR_GEAR\n\n`;
-			iniContent += `[GEAR_2]\nRATIOS=ratios.rto\nNAME=Second Gear\nPOS_X=0.5\nPOS_Y=1.5\nHELP=HELP_REAR_GEAR\n\n`;
-			iniContent += `[GEAR_3]\nRATIOS=ratios.rto\nNAME=Third Gear\nPOS_X=0.5\nPOS_Y=3\nHELP=HELP_REAR_GEAR\n\n`;
-			iniContent += `[GEAR_4]\nRATIOS=ratios.rto\nNAME=Fourth Gear\nPOS_X=0.5\nPOS_Y=4.5\nHELP=HELP_REAR_GEAR\n\n`;
-			iniContent += `[GEAR_5]\nRATIOS=ratios.rto\nNAME=Fifth Gear\nPOS_X=0.5\nPOS_Y=6\nHELP=HELP_REAR_GEAR\n\n`;
-			iniContent += `[GEAR_6]\nRATIOS=ratios.rto\nNAME=Sixth Gear\nPOS_X=0.5\nPOS_Y=7.5\nHELP=HELP_REAR_GEAR\n\n`;
-
-		} else if (window.gearSetList && window.gearSetList.length > 1) {
-			// 2つ以上の時：✨メインギアを [GEAR_SET_0] に固定して出力（新ロジック）
-			const mainIdx = window.mainGearIdx || 0;
-			const gearSets = window.gearSetList;
-
-			// 共通の書き出し処理
-			const writeGearSet = (set, outIdx) => {
-				let block = `[GEAR_SET_${outIdx}]\n`;
-				block += `NAME=${set.name}\n`;
-				const gears = set.data.GEARS || {};
-				let keys = Object.keys(gears).filter(k => k.startsWith('GEAR_') && k !== 'GEAR_R');
-				keys.sort((a, b) => parseInt(a.replace('GEAR_', '')) - parseInt(b.replace('GEAR_', '')));
-				keys.forEach(k => {
-					if (gears[k] !== undefined && gears[k] !== "") {
-						block += `${k}=${gears[k]}\n`;
-					}
-				});
-				return block + "\n";
-			};
-
-			// ① メインギアを 0番 として最初に出す
-			iniContent += writeGearSet(gearSets[mainIdx], 0);
-
-			// ② 残りを 1番以降 として出す
-			let currentOutIdx = 1;
-			gearSets.forEach((set, idx) => {
-				if (idx === mainIdx) return; // メインは既に書いたのでスキップ
-				iniContent += writeGearSet(set, currentOutIdx);
-				currentOutIdx++;
+window.downloadSetupIni = function(isExport = false) {
+	const data = window.currentSetupData;
+	if (!data) return alert("セットアップデータが存在しません。");
+	let iniContent = "";
+	// 🛠️ ヘッダー情報の追加
+	iniContent += "[DISPLAY_METHOD]\nSHOW_CLICKS=1\n\n";
+	const currentUseGearset = (data['GEARS'] && data['GEARS']['USE_GEARSET'] !== undefined) ? data['GEARS']['USE_GEARSET'] : '1';
+	iniContent += `[GEARS]\nUSE_GEARSET=${currentUseGearset}\n\n`;
+	// ★ ここからが、あなたが提示された「選択されたギア数による分岐」の最新版です
+	if (window.gearSetList && window.gearSetList.length === 1) {
+		// 1つの時：協議した通りの「固定ギア(rto)」用ブロックを書き出す
+		iniContent += `[GEAR_1]\nRATIOS=ratios.rto\nNAME=First Gear\nPOS_X=0.5\nPOS_Y=0\nHELP=HELP_REAR_GEAR\n\n`;
+		iniContent += `[GEAR_2]\nRATIOS=ratios.rto\nNAME=Second Gear\nPOS_X=0.5\nPOS_Y=1.5\nHELP=HELP_REAR_GEAR\n\n`;
+		iniContent += `[GEAR_3]\nRATIOS=ratios.rto\nNAME=Third Gear\nPOS_X=0.5\nPOS_Y=3\nHELP=HELP_REAR_GEAR\n\n`;
+		iniContent += `[GEAR_4]\nRATIOS=ratios.rto\nNAME=Fourth Gear\nPOS_X=0.5\nPOS_Y=4.5\nHELP=HELP_REAR_GEAR\n\n`;
+		iniContent += `[GEAR_5]\nRATIOS=ratios.rto\nNAME=Fifth Gear\nPOS_X=0.5\nPOS_Y=6\nHELP=HELP_REAR_GEAR\n\n`;
+		iniContent += `[GEAR_6]\nRATIOS=ratios.rto\nNAME=Sixth Gear\nPOS_X=0.5\nPOS_Y=7.5\nHELP=HELP_REAR_GEAR\n\n`;
+	} else if (window.gearSetList && window.gearSetList.length > 1) {
+		// 2つ以上の時：✨メインギアを [GEAR_SET_0] に固定して出力（新ロジック）
+		const mainIdx = window.mainGearIdx || 0;
+		const gearSets = window.gearSetList;
+		// 共通の書き出し処理
+		const writeGearSet = (set, outIdx) => {
+			let block = `[GEAR_SET_${outIdx}]\n`;
+			block += `NAME=${set.name}\n`;
+			const gears = set.data.GEARS || {};
+			let keys = Object.keys(gears).filter(k => k.startsWith('GEAR_') && k !== 'GEAR_R');
+			keys.sort((a, b) => parseInt(a.replace('GEAR_', '')) - parseInt(b.replace('GEAR_', '')));
+			keys.forEach(k => {
+				if (gears[k] !== undefined && gears[k] !== "") {
+					block += `${k}=${gears[k]}\n`;
+				}
 			});
-		}
+			return block + "\n";
+		};
+		// ① メインギアを 0番 として最初に出す
+		iniContent += writeGearSet(gearSets[mainIdx], 0);
+		// ② 残りを 1番以降 として出す
+		let currentOutIdx = 1;
+		gearSets.forEach((set, idx) => {
+			if (idx === mainIdx) return; // メインは既に書いたのでスキップ
+			iniContent += writeGearSet(set, currentOutIdx);
+			currentOutIdx++;
+		});
+	}
 	iniContent += "[FINAL_GEAR_RATIO]\nRATIOS=final.rto\nNAME=Final Gear Ratio\nPOS_X=1\nPOS_Y=0\nHELP=HELP_REAR_GEAR\n\n";
 	// 元々のセットアップデータ（足回り・エアロ等）を書き出す
 	for (const section in data) {
