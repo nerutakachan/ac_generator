@@ -890,6 +890,29 @@ export async function processSuspensionIni(file) {
 		console.error("[import.js] suspensions.ini 解析失敗", err);
 	}
 }
+// ★LIVE SYNC スイッチの初期化（グローバルで管理）
+document.addEventListener('DOMContentLoaded', () => {
+	const liveSyncSwitch = document.getElementById('liveSyncSwitch');
+	if (liveSyncSwitch) {
+		liveSyncSwitch.addEventListener('change', (e) => {
+			if (e.target.checked) {
+				// ONにした時：
+				// 1. バックアップをとる
+				window.syncBackupData = JSON.parse(JSON.stringify(window.currentSetupData));
+				// 2. ★即座に書き出しを実行
+				if (typeof window.triggerLiveSync === 'function') {
+					window.triggerLiveSync();
+				}
+			} else if (window.syncBackupData) {
+				// OFFにした時：バックアップから復元
+				window.currentSetupData = JSON.parse(JSON.stringify(window.syncBackupData));
+				if (typeof window.initSetupEditor === 'function') {
+					window.initSetupEditor(window.currentSetupData);
+				}
+			}
+		});
+	}
+});
 // 他のINI（car.ini, tyres.ini等）も同様に applyIniData を通すように統一
 //二重読み込みーーーーーーーーーーーーーーーーーーーーーーーーー
 // すべてのファイル入力を一括で監視する「統合センター」
@@ -933,23 +956,23 @@ document.addEventListener('DOMContentLoaded', () => {
 	if (multiFileInput) {
 		multiFileInput.addEventListener('change', async (e) => {
 			window.isMultiUploading = true;
-			// ★追加：LIVE SYNC の ON/OFF 切り替え時のデータ復元処理
-				const liveSyncSwitch = document.getElementById('liveSyncSwitch');
-				if (liveSyncSwitch) {
-					liveSyncSwitch.addEventListener('change', (e) => {
-						if (e.target.checked) {
-							// ONにした時：現在のデータをバックアップとして保存
-							window.syncBackupData = JSON.parse(JSON.stringify(window.currentSetupData));
-						} else if (window.syncBackupData) {
-							// OFFにした時：保存しておいたデータを復元
-							window.currentSetupData = JSON.parse(JSON.stringify(window.syncBackupData));
-							// エディタのUIを再読み込み
-							if (typeof window.initSetupEditor === 'function') {
-								window.initSetupEditor(window.currentSetupData);
-							}
-						}
-					});
-				}
+			// // ★追加：LIVE SYNC の ON/OFF 切り替え時のデータ復元処理
+			// 	const liveSyncSwitch = document.getElementById('liveSyncSwitch');
+			// 	if (liveSyncSwitch) {
+			// 		liveSyncSwitch.addEventListener('change', (e) => {
+			// 			if (e.target.checked) {
+			// 				// ONにした時：現在のデータをバックアップとして保存
+			// 				window.syncBackupData = JSON.parse(JSON.stringify(window.currentSetupData));
+			// 			} else if (window.syncBackupData) {
+			// 				// OFFにした時：保存しておいたデータを復元
+			// 				window.currentSetupData = JSON.parse(JSON.stringify(window.syncBackupData));
+			// 				// エディタのUIを再読み込み
+			// 				if (typeof window.initSetupEditor === 'function') {
+			// 					window.initSetupEditor(window.currentSetupData);
+			// 				}
+			// 			}
+			// 		});
+			// 	}
 			const files = Array.from(e.target.files);
 			// ★修正：ここでは一括でパスを記憶せず（3Dモデルのパスを誤認するのを防ぐため）、
 			// 上記の handleMultiFileUpload 内でデータファイルごとに記憶するように処理を移動しました。
@@ -960,6 +983,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 });
+
 // =========================================================
 // 各エディタ内での変更を監視し、編集フラグを立てる処理
 // =========================================================
