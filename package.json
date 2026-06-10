@@ -1,13 +1,10 @@
 {
-	"name": "ac-file-generator",
-	"version": "0.0.3",
-	"description": "Assetto Corsa File Generator",
-	"author": "nerutakachan",
-	"main": "main-electron.js",
-	"scripts": {
-		"start": "chcp 65001 && nodemon --watch main-electron.js --watch preload.js --exec electron .",
-		"build": "electron-builder --win"
-	},
+  "name": "ac-file-generator",
+  "version": "0.0.3",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/takashi1128f-create/ac_generator.git"
+  },
 	"devDependencies": {
 		"electron": "^28.3.3",
 		"electron-builder": "^24.13.3",
@@ -15,13 +12,14 @@
 		"nodemon": "^3.1.14"
 	},
 	"build": {
-		"appId": "com.example.ac-file-generator",
-		"productName": "AC FILE GENERATOR",
-		"win": {
-			"target": "nsis",
-			"icon": "image/icon.ico",
-			"requestedExecutionLevel": "asInvoker"
-		},
+    "appId": "com.example.ac-file-generator",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "takashi1128f-create",
+        "repo": "ac_generator"
+      }
+    ],
 		"nsis": {
 			"oneClick": false,
 			"perMachine": true,

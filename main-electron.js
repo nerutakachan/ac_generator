@@ -8,6 +8,7 @@ const {
 	protocol
 } = require('electron');
 const path = require('path');
+const { autoUpdater } = require('electron-updater');
 const fs = require('fs');
 const http = require('http');
 const {
@@ -329,35 +330,28 @@ app.whenReady().then(async () => {
 			console.error(error);
 		}
 	});
-	// ★ アップデート確認（Bのマイルドな警告）
-	try {
-		const currentVersion = app.getVersion();
-		const CHECK_URL = 'https://gist.githubusercontent.com/takashi1128f-create/934c8931f8e2a39bc12596d5fbd1b0ed/raw/update.json';
-		const response = await fetch(CHECK_URL + '?' + Date.now());
-		const data = await response.json();
-		if (data.latestVersion !== currentVersion) {
-			const result = await dialog.showMessageBox({
-				type: 'info',
-				title: 'アップデートのお知らせ',
-				message: `新しいバージョン（${data.latestVersion}）が公開されています！`,
-				detail: `現在のバージョン：${currentVersion} -> 最新：${data.latestVersion}\n\n「今すぐ更新」を押すとダウンロードを先に移動します。`,
-				buttons: ['今すぐ更新', '後で'],
-				defaultId: 0,
-				cancelId: 1
-			});
-			if (result.response === 0) {
-				isUpdating = true; // 旗を揚げる
-				// ★修正：普段使っているブラウザを開いて、そこにダウンロードを任せる
-				shell.openExternal(data.downloadUrl);
-				// ★修正：ブラウザが開いたら、このアプリ自体はスパッと終了させる
-				app.exit();
-			}
-		}
-	} catch (err) {
-		console.log('アップデート確認に失敗しました（オフライン等）');
-	}
-	if (isUpdating) return;
-	// 外部ブラウザでリンクを開く窓口（エラー回避用）
+	// ✨ 自動アップデートの実行（electron-updater）
+	// GitHub Releasesをチェックし、新版があればバックグラウンドでダウンロードを開始します。
+	autoUpdater.checkForUpdatesAndNotify();
+
+	// アップデートが見つかった時のログ（開発用）
+	autoUpdater.on('update-available', () => {
+		console.log('📦 新しいバージョンが見つかりました。ダウンロードを開始します...');
+	});
+
+	// ダウンロードが完了した時の処理
+	autoUpdater.on('update-downloaded', () => {
+		dialog.showMessageBox({
+			type: 'info',
+			title: '更新の準備完了',
+			message: '最新版のダウンロードが完了しました。アプリを再起動して更新を適用しますか？',
+			buttons: ['今すぐ再起動', '後で'],
+			defaultId: 0
+		}).then((result) => {
+			// 「今すぐ再起動」が押されたら、アプリを閉じてインストールを実行
+			if (result.response === 0) autoUpdater.quitAndInstall();
+		});
+	});
 	ipcMain.handle('open-external', (event, url) => shell.openExternal(url));
 	// ★修正：ダウンロードしてインストーラーを起動する専用の箱（関数）
 	function startBackgroundUpdate(url) {
