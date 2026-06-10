@@ -933,6 +933,23 @@ document.addEventListener('DOMContentLoaded', () => {
 	if (multiFileInput) {
 		multiFileInput.addEventListener('change', async (e) => {
 			window.isMultiUploading = true;
+			// ★追加：LIVE SYNC の ON/OFF 切り替え時のデータ復元処理
+				const liveSyncSwitch = document.getElementById('liveSyncSwitch');
+				if (liveSyncSwitch) {
+					liveSyncSwitch.addEventListener('change', (e) => {
+						if (e.target.checked) {
+							// ONにした時：現在のデータをバックアップとして保存
+							window.syncBackupData = JSON.parse(JSON.stringify(window.currentSetupData));
+						} else if (window.syncBackupData) {
+							// OFFにした時：保存しておいたデータを復元
+							window.currentSetupData = JSON.parse(JSON.stringify(window.syncBackupData));
+							// エディタのUIを再読み込み
+							if (typeof window.initSetupEditor === 'function') {
+								window.initSetupEditor(window.currentSetupData);
+							}
+						}
+					});
+				}
 			const files = Array.from(e.target.files);
 			// ★修正：ここでは一括でパスを記憶せず（3Dモデルのパスを誤認するのを防ぐため）、
 			// 上記の handleMultiFileUpload 内でデータファイルごとに記憶するように処理を移動しました。
