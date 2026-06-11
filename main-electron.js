@@ -1,12 +1,5 @@
-const {
-	app,
-	BrowserWindow,
-	Menu,
-	dialog,
-	shell,
-	ipcMain,
-	protocol
-} = require('electron');
+const { app, BrowserWindow, Menu, dialog, shell, ipcMain, protocol } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -320,7 +313,6 @@ if (IS_DEV_MODE) {
 // ★ 起動司令塔
 // ==========================================
 app.whenReady().then(async () => {
-	let isUpdating = false; // ★追加：アップデート中かどうかを覚える旗
 	protocol.registerFileProtocol('local-model', (request, callback) => {
 		const url = request.url.replace('local-model://', '');
 		try {
@@ -329,58 +321,47 @@ app.whenReady().then(async () => {
 			console.error(error);
 		}
 	});
-	// ★ アップデート確認（Bのマイルドな警告）
-	try {
-		const currentVersion = app.getVersion();
-		const CHECK_URL = 'https://gist.githubusercontent.com/takashi1128f-create/934c8931f8e2a39bc12596d5fbd1b0ed/raw/update.json';
-		const response = await fetch(CHECK_URL + '?' + Date.now());
-		const data = await response.json();
-		if (data.latestVersion !== currentVersion) {
-			const result = await dialog.showMessageBox({
-				type: 'info',
-				title: 'アップデートのお知らせ',
-				message: `新しいバージョン（${data.latestVersion}）が公開されています！`,
-				detail: `現在のバージョン：${currentVersion} -> 最新：${data.latestVersion}\n\n「今すぐ更新」を押すとダウンロードを先に移動します。`,
-				buttons: ['今すぐ更新', '後で'],
-				defaultId: 0,
-				cancelId: 1
-			});
-			if (result.response === 0) {
-				isUpdating = true; // 旗を揚げる
-				// ★修正：普段使っているブラウザを開いて、そこにダウンロードを任せる
-				shell.openExternal(data.downloadUrl);
-				// ★修正：ブラウザが開いたら、このアプリ自体はスパッと終了させる
-				app.exit();
-			}
+
+	// ★ ルートB：自動アップデート機能（electron-updater）
+	// アップデートが見つかった時の動作
+	autoUpdater.on('update-available', (info) => {
+		dialog.showMessageBox({
+			type: 'info',
+			title: 'アップデートのお知らせ',
+			message: `新しいバージョン（${info.version}）が見つかりました。\nバックグラウンドでダウンロードを開始します。`,
+			noLink: true,
+			buttons: ['OK'],
+			defaultId: 0,
+			cancelId: 0
+		});
+	});
+
+	// ダウンロードが完了した時の動作
+	autoUpdater.on('update-downloaded', () => {
+		const result = dialog.showMessageBoxSync({
+			type: 'info',
+			title: 'ダウンロード完了',
+			message: '最新バージョンのダウンロードが完了しました。\n今すぐ再起動してインストールしますか？',
+			buttons: ['今すぐ再起動', '後で']
+		});
+		if (result === 0) {
+			autoUpdater.quitAndInstall(); // 勝手に再起動してインストールします
 		}
-	} catch (err) {
-		console.log('アップデート確認に失敗しました（オフライン等）');
+	});
+
+	// エラー発生時（開発用ログ出力）
+	autoUpdater.on('error', (err) => {
+		console.log('アップデート確認エラー:\n' + err);
+	});
+
+	// アプリ起動時にアップデートを確認（開発モード時はスキップされます）
+	if (!IS_DEV_MODE) {
+		autoUpdater.checkForUpdates();
 	}
-	if (isUpdating) return;
+
 	// 外部ブラウザでリンクを開く窓口（エラー回避用）
 	ipcMain.handle('open-external', (event, url) => shell.openExternal(url));
-	// ★修正：ダウンロードしてインストーラーを起動する専用の箱（関数）
-	function startBackgroundUpdate(url) {
-		const tempPath = path.join(app.getPath('temp'), 'ac-generator-setup.exe');
-		const file = fs.createWriteStream(tempPath);
-		https.get(url, (response) => {
-			// リダイレクト（Googleドライブなど）に対応
-			if (response.statusCode === 301 || response.statusCode === 302) {
-				startBackgroundUpdate(response.headers.location);
-				return;
-			}
-			response.pipe(file);
-			file.on('finish', () => {
-				file.close();
-				// ★修正：execよりも確実な shell.openPath でインストーラーを起動させます
-				shell.openPath(tempPath).then(() => {
-					app.exit(); // インストーラーに任せてアプリを完全に終了
-				});
-			});
-		}).on('error', (err) => {
-			if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
-		});
-	}
+
 	Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 	createMainWindow();
 	// ★ 賢い分岐ルート（Aの強み）
