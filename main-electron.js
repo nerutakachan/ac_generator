@@ -16,12 +16,12 @@ if (IS_DEV_MODE) {
 	}
 }
 // ★追加：ビルドされた完成品（本番環境）の時だけ、ログ出力を空っぽ（無効）にする
-if (!IS_DEV_MODE) {
-	console.log = function() {};
-	console.info = function() {};
-	console.warn = function() {};
-	// ※ console.error は致命的なクラッシュ原因を探るために残すことが多いです
-}
+// if (!IS_DEV_MODE) {
+// 	console.log = function() {};
+// 	console.info = function() {};
+// 	console.warn = function() {};
+// 	// ※ console.error は致命的なクラッシュ原因を探るために残すことが多いです
+// }
 // ==========================================
 // ★ アプリ全体の設定管理（司令塔）
 // ==========================================
@@ -298,7 +298,10 @@ const template = [{
 	}, {
 		role: 'selectAll',
 		label: 'すべて選択 (Ctrl+A)'
-	},
+	},{
+		role: 'toggleDevTools',
+		label: 'デバッグツール (F12)'
+	}
 ]
 }];
 // ★開発モード（npm start）の時だけ「開発」メニューを配列の最後に追加する
@@ -362,8 +365,11 @@ app.whenReady().then(async () => {
 			buttons: ['今すぐ再起動', '後で']
 		});
 		if (result === 0) {
+			isUpdating = true;
 			autoUpdater.quitAndInstall();
 		}
+
+			isUpdating = true;
 	});
 
 	// エラー発生時（開発用ログ出力）
