@@ -25,6 +25,10 @@
 </head>
 
 <body class="drop-zone">
+	<div id="update-area" style="display: none; position: fixed; top: 0; width: 100%; background: rgba(0,0,0,0.8); color: white; padding: 10px; text-align: center; z-index: 10000;">
+		ダウンロード中: <span id="progress-text">0%</span>
+		<progress id="update-progress" value="0" max="100" style="width: 80%; margin-left: 10px;"></progress>
+	</div>
 	<main id="wrapper">
 		<section class="guide_box">
 			<div class="h2-title_box">

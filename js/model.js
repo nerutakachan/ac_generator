@@ -326,6 +326,7 @@ function updateUIFromConfig(id) {
 		cam.updateProjectionMatrix();
 	}
 }
+
 //requestAnimationFrame を使ったループ）に対して、**「データが変わったから、次のフレームで画面を書き直してね」**と合図を送っています。
 function requestRender() {
 	needsUpdate = true;

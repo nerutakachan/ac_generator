@@ -5,6 +5,8 @@ const {
 contextBridge.exposeInMainWorld('electronAPI', {
 	onFileOpened: (callback) => ipcRenderer.on('file-opened', (event, data) => callback(data)),
 	resizeWindow: (width, height) => ipcRenderer.send('resize-window', width, height),
+	// ★追加：ダウンロード進捗を受け取る窓口
+	onDownloadProgress: (callback) => ipcRenderer.on('download-progress', (event, value) => callback(value)),
 	openExternalLink: (url) => ipcRenderer.invoke('open-external', url),
 	// 引数名をurlからauthResultに修正（実際のデータに合わせるため）
 	onDiscordCallback: (callback) => ipcRenderer.on('discord-auth-callback', (event, authResult) => callback(authResult)),

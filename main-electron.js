@@ -294,7 +294,8 @@ const template = [{
 	}, {
 		role: 'selectAll',
 		label: 'すべて選択 (Ctrl+A)'
-	}]
+	},
+]
 }];
 // ★開発モード（npm start）の時だけ「開発」メニューを配列の最後に追加する
 if (IS_DEV_MODE) {
@@ -334,6 +335,17 @@ app.whenReady().then(async () => {
 			defaultId: 0,
 			cancelId: 0
 		});
+		autoUpdater.downloadUpdate();
+	});
+	// アップロードされた進捗をメインプロセスで受け取り、フロントエンドへ転送する
+	autoUpdater.on('download-progress', (progressObj) => {
+		// mainWindowが存在し、読み込み済みであることを確認
+		if (mainWindow && !mainWindow.isDestroyed()) {
+			// 進捗率（percent）をフロントエンドへ送信
+			mainWindow.webContents.send('download-progress', Math.round(progressObj.percent));
+		} else {
+			console.log('進捗イベント: mainWindowがまだ準備されていません');
+		}
 	});
 
 	// ダウンロードが完了した時の動作
@@ -355,9 +367,12 @@ app.whenReady().then(async () => {
 	});
 
 	// アプリ起動時にアップデートを確認（開発モード時はスキップされます）
-	if (!IS_DEV_MODE) {
-		autoUpdater.checkForUpdates();
-	}
+	// if (!IS_DEV_MODE) {
+	// 	autoUpdater.checkForUpdates();
+	// }
+
+	// 修正後（強制実行）
+	autoUpdater.checkForUpdates();
 
 	// 外部ブラウザでリンクを開く窓口（エラー回避用）
 	ipcMain.handle('open-external', (event, url) => shell.openExternal(url));
@@ -999,5 +1014,5 @@ ipcMain.handle('sync-backup-start', async (event, folderPath, files) => {
 });
 
 ipcMain.handle('sync-restore-end', async (event, folderPath) => {
-		return { success: cleanupSyncBackup(folderPath, true) };
-	});
+	return { success: cleanupSyncBackup(folderPath, true) };
+});

@@ -109,6 +109,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 		});
 	}
 	// 3. 自動ログインのチェック
+	// ★追加：ダウンロード進捗の監視
+	if (window.electronAPI && window.electronAPI.onDownloadProgress) {
+		window.electronAPI.onDownloadProgress((percent) => {
+			const updateArea = document.getElementById('update-area');
+			if (updateArea) {
+				updateArea.style.display = 'block';
+				const progressBar = document.getElementById('update-progress');
+				const progressText = document.getElementById('progress-text');
+				if (progressBar) progressBar.value = percent;
+				if (progressText) progressText.innerText = percent + '%';
+			}
+		});
+	}
 	if (window.electronAPI && window.electronAPI.onMainWindowShown) {
 		window.electronAPI.onMainWindowShown(() => {
 			setTimeout(() => {
