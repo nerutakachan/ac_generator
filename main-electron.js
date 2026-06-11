@@ -60,6 +60,7 @@ const PATHS = {
 };
 let mainWindow;
 let splash;
+let isUpdating = false;
 const PROTOCOL = 'ac-file-gen';
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
@@ -121,6 +122,11 @@ function createMainWindow() {
 	// 	e.preventDefault();
 	// });
 	mainWindow.on('close', (e) => {
+		if (isUpdating) {
+			// アップデート時はデフォルト動作（終了）を許可しつつ、プロセスを確実に殺す
+			app.exit(0);
+			return;
+		}
 		e.preventDefault();
 		// ★修正：ボタンの並び順とテキストを変更
 		const choice = dialog.showMessageBoxSync(mainWindow, {
@@ -357,7 +363,10 @@ app.whenReady().then(async () => {
 			buttons: ['今すぐ再起動', '後で']
 		});
 		if (result === 0) {
-			autoUpdater.quitAndInstall(); // 勝手に再起動してインストールします
+			isUpdating = true; // ← このフラグを立てる
+			// ★修正: 確実に終了させるため、まず終了処理を走らせる
+			app.removeAllListeners('window-all-closed'); // 終了を阻害するリスナーを解除
+			autoUpdater.quitAndInstall(false, true); 
 		}
 	});
 
