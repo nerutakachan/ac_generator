@@ -7,6 +7,11 @@ window.currentProject = {
 	},
 	files: {} // ここに各iniファイルの内容が { suspensions: { currentData: {...} }, ... } の形で入る
 };
+// プロジェクトを開いた時に実行
+window.electronAPI.setProjectLoaded(true);
+
+// プロジェクトを閉じた時（または終了時）に実行
+window.electronAPI.setProjectLoaded(false);
 window.currentProjectPath = ""; // 現在開いているプロジェクトのパス
 // ==========================================
 // ★ アプリ全体の設定管理（フロントエンド）

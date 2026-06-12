@@ -1,5 +1,6 @@
 const { app, BrowserWindow, Menu, dialog, shell, ipcMain, protocol } = require('electron');
 const { autoUpdater } = require('electron-updater');
+autoUpdater.autoDownload = false;
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -59,6 +60,7 @@ const PATHS = {
 	root: path.join(app.getPath('documents'), 'AC_Generator_Projects')
 };
 let mainWindow;
+let isProjectLoaded = false;
 let splash;
 const PROTOCOL = 'ac-file-gen';
 const gotTheLock = app.requestSingleInstanceLock();
@@ -121,6 +123,7 @@ function createMainWindow() {
 	// 	e.preventDefault();
 	// });
 	mainWindow.on('close', (e) => {
+		if (!isProjectLoaded) return;
 		e.preventDefault();
 		// ★修正：ボタンの並び順とテキストを変更
 		const choice = dialog.showMessageBoxSync(mainWindow, {
@@ -326,16 +329,18 @@ app.whenReady().then(async () => {
 	// ★ ルートB：自動アップデート機能（electron-updater）
 	// アップデートが見つかった時の動作
 	autoUpdater.on('update-available', (info) => {
-		dialog.showMessageBox({
+		const result = dialog.showMessageBoxSync({
 			type: 'info',
 			title: 'アップデートのお知らせ',
-			message: `新しいバージョン（${info.version}）が見つかりました。\nバックグラウンドでダウンロードを開始します。`,
+			message: `新しいバージョン（${info.version}）が見つかりました。\nダウンロードしてアップデートを開始しますか？`,
 			noLink: true,
-			buttons: ['OK'],
+			buttons: ['はい', 'いいえ'],
 			defaultId: 0,
-			cancelId: 0
+			cancelId: 1
 		});
-		autoUpdater.downloadUpdate();
+		if (result === 0) {
+			autoUpdater.downloadUpdate();
+		}
 	});
 	// アップロードされた進捗をメインプロセスで受け取り、フロントエンドへ転送する
 	autoUpdater.on('download-progress', (progressObj) => {
@@ -349,30 +354,16 @@ app.whenReady().then(async () => {
 	});
 
 	// ダウンロードが完了した時の動作
-	autoUpdater.on('update-downloaded', () => {
-		const result = dialog.showMessageBoxSync({
-			type: 'info',
-			title: 'ダウンロード完了',
-			message: '最新バージョンのダウンロードが完了しました。\n今すぐ再起動してインストールしますか？',
-			buttons: ['今すぐ再起動', '後で']
-		});
-		if (result === 0) {
-			autoUpdater.quitAndInstall(); // 勝手に再起動してインストールします
-		}
+	autoUpdater.removeAllListeners('update-downloaded');
+	autoUpdater.on('update-downloaded', (info) => {
+		isUpdating = true;
+		autoUpdater.quitAndInstall();
 	});
 
 	// エラー発生時（開発用ログ出力）
 	autoUpdater.on('error', (err) => {
 		console.log('アップデート確認エラー:\n' + err);
 	});
-
-	// アプリ起動時にアップデートを確認（開発モード時はスキップされます）
-	// if (!IS_DEV_MODE) {
-	// 	autoUpdater.checkForUpdates();
-	// }
-
-	// 修正後（強制実行）
-	autoUpdater.checkForUpdates();
 
 	// 外部ブラウザでリンクを開く窓口（エラー回避用）
 	ipcMain.handle('open-external', (event, url) => shell.openExternal(url));
@@ -412,6 +403,7 @@ function startSplashFlow() {
 						// 完全に透明になったら、タイマーを止めて窓を完全に破壊する
 						clearInterval(fadeInterval);
 						if (!splash.isDestroyed()) splash.destroy();
+						autoUpdater.checkForUpdates();
 					} else {
 						// まだ透明じゃなければ、薄さを更新する
 						if (!splash.isDestroyed()) splash.setOpacity(opacity);
@@ -619,6 +611,9 @@ ipcMain.on('force-quit', () => {
 		cleanupSyncBackup(activeSyncFolderPath, false);
 	}
 	app.exit();
+});
+ipcMain.on('set-project-loaded', (event, status) => {
+	isProjectLoaded = status;
 });
 // ==========================================
 // ★ プロジェクト管理システム

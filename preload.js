@@ -41,4 +41,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
 	saveViewIni: (carName, content) => ipcRenderer.invoke('save-view-ini', carName, content),
 	syncBackupStart: (folderPath, files) => ipcRenderer.invoke('sync-backup-start', folderPath, files),
 	syncRestoreEnd: (folderPath) => ipcRenderer.invoke('sync-restore-end', folderPath),
+	setProjectLoaded: (status) => ipcRenderer.send('set-project-loaded', status),
 });
