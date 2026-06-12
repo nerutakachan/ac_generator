@@ -1629,3 +1629,42 @@ label {
 /* .suspension-tab-content .suspension-tab-panel {
 	grid-template-columns: repeat(5, 1fr);
 } */
+/* アップデート */
+#update-area{
+	display: none;
+	position: fixed;
+	top: 50%;
+	width: 580px;
+	background: rgb(28 28 28);
+	color: white;
+	padding: 1rem;
+	text-align: center;
+	z-index: 10000;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	border: 1px solid #fff;
+	border-radius: 0.5em;
+	box-shadow: 6px 6px 10px 0px rgba(255, 255, 255, 0.4);
+}
+#update-progress{
+	width: 100%;
+	/* margin-left: 10px; */
+	height: 20px;
+	border-radius: 0;
+}
+.update-title{
+	text-align: start;
+	font-size: 1.2em;
+	margin-bottom: 1em;
+	border-bottom: 1px solid #fff;
+}
+.update-text_box{
+	margin-bottom: 0.5;
+}
+.update-text_box,
+.update-data_box p{
+	padding-bottom: 0.5em;
+}
+.update-data_box p{
+	text-align: start;
+}
