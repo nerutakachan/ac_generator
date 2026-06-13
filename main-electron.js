@@ -104,6 +104,7 @@ function createSplashWindow() {
 		}
 	});
 	splash.loadFile('splash.html');
+	splash.setIgnoreMouseEvents(true);
 }
 // --- 部品B：メインエディター画面 ---
 function createMainWindow() {
