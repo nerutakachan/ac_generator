@@ -1,5 +1,7 @@
 @charset "utf-8";
-
+.drop-zone .update-modal-overlay {
+	z-index: 700;
+}
 /* ==========================================
    マニュアル：メンバーシップ注意事項（重要項目）
    ========================================== */
@@ -244,6 +246,8 @@ img{
 }
 .manual-page ul li p {
 	padding-left: 1.5rem;
+}.manual-page ul li p:not(:last-child){
+	margin-bottom: 0.5em;
 }
 .manual-page ul li {
 	margin-bottom: 1rem;
@@ -372,4 +376,20 @@ img{
 	height: auto;
 	display: block;
 	border-radius: 8px; /* お好みで角丸に */
+}
+/* アップデート更新 */
+.update-content_box h3{
+	display: flex;
+	gap: 0.5em;
+	align-items: baseline;
+}
+.update-content_box h3 small{
+	font-size: 0.8em;
+}
+.update-content_box > ul > li > ul{
+	list-style: inside;
+	padding-left: 0.5em;
+}
+.manual-pages-container .update-content_box > ul > li > ul li{
+	margin-bottom: 0;
 }
