@@ -37,7 +37,7 @@ const SERVER_CONFIG = {
 	},
 	auth: {
 		trialDays: 7, // 毎月の試用可能日数（合計7日間）
-		trialFreeDays: 7, // 完全無料枠（Discord参加のみ）の試用日数
+		trialFreeDays: 3, // 完全無料枠（Discord参加のみ）の試用日数
 		guildId: 
 			'838421006011990047', // DiscordサーバーのID
 		roles: {
@@ -341,7 +341,7 @@ app.whenReady().then(async () => {
 		const result = dialog.showMessageBoxSync({
 			type: 'info',
 			title: 'アップデートのお知らせ',
-			message: `新しいバージョン（v${info.version}）が見つかりました。\nダウンロードしてアップデートを開始しますか？`,
+			message: `新しいバージョン（${info.version}）が見つかりました。\nダウンロードしてアップデートを開始しますか？`,
 			noLink: true,
 			buttons: ['はい', 'いいえ'],
 			defaultId: 0,
@@ -955,9 +955,9 @@ ipcMain.handle('save-view-ini', async (event, carName, content) => {
 			});
 		}
 		const targetFile = path.join(targetDir, 'view.ini');
-		// 2. 既に古いファイルが存在する場合は、安全のために「_old」をつけてバックアップ
+		// 2. 既に古いファイルが存在する場合は、安全のために「.bak」をつけてバックアップ
 		if (fs.existsSync(targetFile)) {
-			fs.copyFileSync(targetFile, path.join(targetDir, 'view.ini_old'));
+			fs.copyFileSync(targetFile, path.join(targetDir, 'view.ini.bak'));
 		}
 		// 3. 新しい設定データを書き込む
 		fs.writeFileSync(targetFile, content, 'utf8');
@@ -979,19 +979,6 @@ let activeSyncFolderPath = null;
 // ★共通の後片付け（復元・削除）関数
 function cleanupSyncBackup(folderPath, shouldRestore) {
 	try {
-		// ★【修正】view.ini の復元処理（マイドキュメントのパスへアクセス）
-		const carName = path.basename(path.dirname(folderPath));
-		const docViewIni = path.join(app.getPath('documents'), 'Assetto Corsa', 'cfg', 'cars', carName, 'view.ini');
-		const viewIniOld = path.join(path.dirname(docViewIni), 'view.ini_old');
-
-		if (shouldRestore && fs.existsSync(viewIniOld)) {
-			fs.copyFileSync(viewIniOld, docViewIni);
-			fs.unlinkSync(viewIniOld);
-			console.log("🧹 [LIVE SYNC] view.ini を復元しました。");
-		} else if (fs.existsSync(viewIniOld)) {
-			fs.unlinkSync(viewIniOld);
-		}
-
 		const backupDir = path.join(folderPath, 'sync_backup');
 		if (fs.existsSync(backupDir)) {
 			if (shouldRestore) {
@@ -1019,30 +1006,13 @@ function cleanupSyncBackup(folderPath, shouldRestore) {
 // ★前回追加した sync-backup-start を少し書き換えて、パスを記憶するようにします
 ipcMain.handle('sync-backup-start', async (event, folderPath, files) => {
 	try {
-		// ★【修正】view.ini だけ別処理を行い、sync_backup には入れない
-		if (files.includes('view.ini')) {
-			const carName = path.basename(path.dirname(folderPath));
-			const docViewIni = path.join(app.getPath('documents'), 'Assetto Corsa', 'cfg', 'cars', carName, 'view.ini');
-			console.log("🔍 [LIVE SYNC] view.ini のバックアップ対象パス:", docViewIni);
-			
-			if (fs.existsSync(docViewIni)) {
-				fs.copyFileSync(docViewIni, path.join(path.dirname(docViewIni), 'view.ini_old'));
-				console.log("✅ [LIVE SYNC] view.ini_old を作成しました。");
-			} else {
-				console.log("❌ [LIVE SYNC] view.ini が見つかりません:", docViewIni);
-			}
-		}
-
 		const backupDir = path.join(folderPath, 'sync_backup');
-		activeSyncFolderPath = folderPath; 
+		activeSyncFolderPath = folderPath; // ★重要：パスを記憶
 		if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
 		
 		files.forEach(fileName => {
-			// ★【修正】view.ini がリストにあっても sync_backup にはコピーしない
-			if (fileName !== 'view.ini') {
-				const src = path.join(folderPath, fileName);
-				if (fs.existsSync(src)) fs.copyFileSync(src, path.join(backupDir, fileName));
-			}
+			const src = path.join(folderPath, fileName);
+			if (fs.existsSync(src)) fs.copyFileSync(src, path.join(backupDir, fileName));
 		});
 		return { success: true };
 	} catch (e) { return { success: false, error: e.message }; }

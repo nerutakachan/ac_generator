@@ -1367,8 +1367,7 @@ label {
 .tab-content{
 	transition: 0.3s;
 }
-#desc-tire,
-#desc-gear,
+	#desc-gear,
 .text-data_box,
 #desc-setup,
 #desc-engine,
