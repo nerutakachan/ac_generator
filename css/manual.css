@@ -47,6 +47,9 @@ img{
 	padding-right: 10px;
 	/* スクロールバーがコンテンツに被らないようにする余白 */
 }
+.manual-pages-container small{
+	font-size: 0.8em;
+}
 /* 下に固定するページネーション */
 .manual-pagination {
 	flex-shrink: 0;
