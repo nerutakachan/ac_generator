@@ -1218,7 +1218,7 @@
 				<div class="manual-pages-container">
 					<article class="manual-page active">
 						<h2 class="manual-title">!!! 注意事項・免責事項 !!!</h2>
-						<p>この「AC MOD GENERATOR」（以下「本アプリ」）は、ゼロから新しいMODを作成するアプリではありません。<br> あくまで、MOD制作やセッティングの過程で<strong>「直感的には分かりづらい .ini ファイルや .lut ファイルの数値調整」を視覚的にサポートする</strong>ためのツールです。</p>
+						<p>この「AC MOD GENERATOR」（以下「本アプリ」）は、ゼロから新しいMODを作成するアプリではありません。<small>※やれないこともない（現状）</small><br> あくまで、MOD制作やセッティングの過程で<strong>「直感的には分かりづらい .ini ファイルや .lut ファイルなどなどの数値調整」を視覚的にサポートする</strong>ためのツールです。</p>
 						<p>ご使用にあたり、以下の点に必ずご注意ください。</p>
 						<ul>
 							<li class="warning-important">
@@ -1227,12 +1227,13 @@
 								<ul class="warning-list">
 									<li><strong>無断配布の禁止：</strong> 本アプリ（実行ファイル等）を、メンバーシップ未加入の他者へ譲渡・共有したり、インターネット上へ無断でアップロード（二次配布）することは固く禁じます。 <br><small>※メンバーシップ未加入では使用不可。</small>
 									</li>
-									<li><strong>利用資格について：</strong> 本アプリは、「ねるたかちゃん」のメンバーシップに加入している方のみがご使用いただけます。</li>
+									<li><strong>利用資格について：</strong> 本アプリは、「ねるたかちゃん」のメンバーシップ（以下「メンシ」）に加入している方（Discordとメンシに加入しているYouTubeの連携をして下さい）のみがご使用いただけます。</li>
 								</ul>
 							</li>
 							<li>
 								<h3>バックアップの徹底</h3>
-								<p>本アプリは、作成したデータを各プロジェクト毎で保存が出来ます。</p>
+								<p>本アプリは、自動でバックアップがされるようになっていますが、念のためバックアップを取ってください。
+									<br>安全の為、このアプリではプロジェクトという形で保存が出来ます。</p>
 								<p>ですが、ゲーム内での数値の変更により、挙動がおかしくなったりゲームが起動しなくなる可能性があります。必ず本アプリを使用する前に、必ず元の車両データのバックアップを取ることを強くおすすめします。</p>
 							</li>
 							<li>
@@ -1285,52 +1286,99 @@
 					</article>
 					<article class="manual-page">
 						<div class="manual-page-title_box">
-							<h2>アプリへのモデル読み込み</h2>
+							<h2>アプリへの3Dモデル・dataファイルの読み込みと基本的操作</h2>
 						</div>
 						<ul>
 							<li>
-								<h3>アプリへ3Dモデルを読み込む</h3>
+								<h3>3Dモデル・dataファイルの読み込み</h3>
 								<div class="modal-image-placeholder">
-									<img src="./image/manual/manual-file-import_1.png" alt="">
+									<img src="./image/manual/manual-img1.jpg" alt="">
 								</div>
-								<p>生成したGLBファイルを、本アプリに直接ドラッグ＆ドロップ、またはファイル選択からアップロードしてください。</p>
+								<p>生成したGLBファイル・dataファイルを、本アプリに直接ドラッグ&ドロップ、またはメニューの「一括dataファイル選択」から読み込みできます。</p>
 							</li>
 							<li>
 								<h3>3Dプレビューの確認</h3>
 								<p>メインビューに車両が表示されれば成功です！</p>
 								<div class="modal-image-placeholder">
-									<img src="./image/manual/manual-preview.png" alt="">
+									<img src="./image/manual/manual-img4.jpg" alt="">
 								</div>
+								<p>赤枠のトグルを切り替える事で3Dプレビューのラインの表示非表示を切り替える事が出えきます。</p>
 							</li>
 							<li>
 								<h3>視点操作</h3>
 								<p>左クリックで回転、右クリックで平行移動、ホイールでズームして、サスペンション周辺が見やすい位置に調整してください。</p>
 								<p>赤枠内を操作することによりプレビューのラインの表示非表示を操作できます。</p>
 								<div class="modal-image-placeholder">
-									<img src="./image/manual/manual-preview-control.png" alt="">
+									<img src="./image/manual/manual-img3.jpg" alt="">
 								</div>
 							</li>
 						</ul>
 					</article>
 					<article class="manual-page">
 						<div class="manual-page-title_box">
-							<h2>設定ファイル (.ini・.lut) の同期</h2>
+							<h2>書き出し・ライブ</h2>
 						</div>
 						<ul>
 							<li>
-								<h3>データファイルの読み込み</h3>
+								<h3>書き出し</h3>
+								<p>指定のフォルダに書き出すことが出来ます。</p>
 								<div class="modal-image-placeholder">
-									<img src="./image/manual/manual-file-import_2.png" alt="">
+									<img src="./image/manual/manual-img5.jpg" alt="">
 								</div>
-								<p>次に、現在調整したい車両のデータフォルダ（content/cars/車両名/data）から、以下のファイルを読み込ませます。</p>
-								<p>MODによっては「data.acd」になっている場合があります。<br>その場合は右クリックで「展開」をして下さい。</p>
-								<p>展開して「data」フォルダ内のファイルを調整するわけですが、「data.acd」があるので基本的には「data」フォルダ内のファイルを調整しても反映されません。</p>
-								<p>調整を反映させるには「data.acd」を「data.acd_old」など、認識できないようにファイル名を変更するか削除してください。 <br><small>※削除する場合はバックアップを取ってください。</small>
+								<p>
+									左上の書き出しボタンをクリックしてください。
 								</p>
+								<div class="modal-image-placeholder">
+									<img src="./image/manual/manual-img6.jpg" alt="">
+								</div>
+								<p>
+									こちらでは書き出す時のフォルダ名を「保存フォルダ名」を決めて、自由な所に設定したデータを保存することが出来ます。
+								</p>
+								<p>
+									書き出したいファイルのトグルを切り替えてあげる事で個別に書き出し可能です。
+								</p>
+								<p>書き出したいファイルの選択したら「書き出し」ボタンを押してあげる事で、指定のフォルダに書き出しができます。</p>
 							</li>
 							<li>
-								<h3>主要なファイルの読み込み</h3>
-								<p>suspensions.ini（足回り）、tyres.ini（タイヤ）、car.ini（車両諸元）などをドラッグ＆ドロップで読み込ませます。 <br>また、新規でも作成することが出来ます。</p>
+								<h3>元のdataに上書き</h3>
+								<p>初めに読み込ませた「data」フォルダに上書きで保存することが出来ます。
+									<br>これは上書きですが、「元データ」は「backup_data」というフォルダに書き出したデータをバックアップとしてコピーします。
+								</p>
+								<div class="modal-image-placeholder">
+									<img src="./image/manual/manual-img7.jpg" alt="">
+								</div>
+								<p>
+									右上の「元のdataに上書き」をクリックしてください。
+									<br>書出しと同じようにファイルのトグルを切り替えてあげる事で上書きしたいファイル選択できます。
+								</p>
+								<p>ファイルの選択したら「書き出し」ボタンを押してあげる事で、元のdataフォルダに上書き保存が出来ます。
+								<br><small>※「view.ini」のファイルのみドキュメントフォルダに書き出されます。
+									<br>ただし、元のview.iniはバックアップを同フォルダに保存されています。
+								</small></p>
+							</li>
+							<li>
+								<h3>ライブ</h3>
+								<p>LIVE SYNCのトグルを切り替える事でリアルタイムでの変更テストが出来ます。
+									<br><small>※アセットコルサの仕様上、数値を編集したらゲームの再起動が必要になります。</small>
+								</p>
+								<div class="modal-image-placeholder">
+									<img src="./image/manual/manual-img8.jpg" alt="">
+								</div>
+								<p>この<strong>LIVE SYNC</strong>は元データは上書き保存と同じようにバックアップが出来ます。
+									<br>数値の変更がリアルタイムで適応されますが、<strong>LIVE SYNC</strong>をOFFにすると変更前の状態に戻ります。</p>
+								<p>ただし、バックアップは保持されます。</p>
+							</li>
+						</ul>
+					</article>
+					<article class="manual-page">
+						<div class="manual-page-title_box">
+							<h2>主要な読込みするファイル</h2>
+						</div>
+						<p>基本的にCAR MODのdataフォルダをドラック&ドロップで自動的に「suspensions.ini（足回り）」、「tyres.ini（タイヤ）」、「car.ini（車両諸元）」等です。
+							<br>また、個別で読み込ませる事もできます。</p>
+							<br><small>※「view.ini」は直接読み込ませなくても、自動で読み込まれます。</small>
+						<ul>
+							<li>
 								<div class="manual-list_box">
 									<strong>現在読み込ませることが出来るファイル</strong>
 									<ul>
@@ -1352,16 +1400,41 @@
 								</div>
 								<p>※すべての項目が可視化できているわけではありません。</p>
 							</li>
-							<li>
-								<h3>自動反映</h3>
-								<p>ファイルを読み込むと、エディター上のスライダーや数値ボックスが現在の設定値に自動で書き換わります。</p>
-								<div class="modal-image-placeholder">
-									<img src="./image/manual/manual-preview_2.png" alt="">
-								</div>
-							</li>
 						</ul>
 					</article>
 					<article class="manual-page">
+						<div class="manual-page-title_box">
+							<h2></h2>
+						</div>
+						<p>編集中のデータの保存と復元</p>
+						<ul>
+							<li>
+								<h3>データの保存</h3>
+								<p>初めに作成したプロジェクトは、いつでも再編集のためにプロジェクト毎に保存が出来ます。
+									<br>何度も気に入った車になるまで編集可能です。
+								</p>
+								<div class="modal-image-placeholder slider-img_box">
+									<div class="slider-img">
+										<img src="./image/manual/manual-img8.jpg" alt="">
+									</div>
+								</div>
+								<p>データを読み込んだ瞬間は何も保存されません。
+									<br>左上の「保存」をクリックすると現状今日までが保存できます。
+								</p>
+								<p></p>
+							</li>
+							<li>
+								<h3>復元</h3>
+								<div class="modal-image-placeholder">
+									<img src="./image/manual/manual-img8.jpg" alt="">
+								</div>
+								<p>プロジェクトを保存した状態に戻します。
+									<br>
+								</p>
+							</li>
+						</ul>
+					</article>
+					<!-- <article class="manual-page">
 						<div class="manual-page-title_box">
 							<h2>視覚的チューニングと書き出し</h2>
 						</div>
@@ -1377,18 +1450,6 @@
 									<div class="slider-img">
 										<img src="./image/manual/slider2.jpg" alt="">
 									</div>
-									<div class="slider-img">
-										<img src="./image/manual/slider3.jpg" alt="">
-									</div>
-									<div class="slider-img">
-										<img src="./image/manual/slider4.jpg" alt="">
-									</div>
-									<div class="slider-img">
-										<img src="./image/manual/slider5.jpg" alt="">
-									</div>
-									<div class="slider-img">
-										<img src="./image/manual/slider6.jpg" alt="">
-									</div>
 								</div>
 								<p>数値を変えると、3D上のガイドもリアルタイムに動きます。理想のジオメトリを探ってください。</p>
 							</li>
@@ -1399,44 +1460,8 @@
 								</div>
 								<p>編集中のデータの保存をする場合は左上の｢保存｣を押してください。 <br>｢復元｣は｢保存｣または｢読み込み｣した所までリセットします。 </p>
 							</li>
-							<li>
-								<h3>｢書き出し｣</h3>
-								<div class="modal-image-placeholder">
-									<img src="./image/manual/export.jpg" alt="">
-								</div>
-								<p>右上の｢書き出し｣より編集したデータを書き出せます。</p>
-								<div class="modal-image-placeholder">
-									<img src="./image/manual/export-select.jpg" alt="">
-								</div>
-								<p>こちらでは、読込・編集した｢iniデータ｣が分かる様に色が変わります。 <br>書き出したい｢iniデータ｣を選択して｢保存｣を押すとプロジェクトの3Dモデルデータ名のフォルダで書き出しをします。 </p>
-								<p>フォルダの中に選択した｢iniデータ｣が格納されています。</p>
-							</li>
 						</ul>
-					</article>
-					<article class="manual-page">
-						<div class="manual-page-title_box">
-							<h2></h2>
-						</div>
-						<p>テキスト</p>
-						<ul>
-							<li>
-								<h3>サブタイトル</h3>
-								<div class="modal-image-placeholder slider-img_box">
-									<div class="slider-img">
-										<img src="./image/manual/slider1.jpg" alt="">
-									</div>
-								</div>
-								<p>テキスト</p>
-							</li>
-							<li>
-								<h3>サブタイトル</h3>
-								<div class="modal-image-placeholder">
-									<img src="./image/manual/save.jpg" alt="">
-								</div>
-								<p>テキスト</p>
-							</li>
-						</ul>
-					</article>
+					</article> -->
 				</div>
 				<div class="manual-pagination">
 					<button id="manual-prev" class="pagination-btn" disabled>← 前へ</button>
@@ -1448,16 +1473,13 @@
 				<h3>関連ツール・ダウンロード</h3>
 				<ul class="modal-link-list">
 					<li>
-						<a href="https://www.blender.org/download/" target="_blank" rel="noopener"> Blender 公式ダウンロード <span>(外部サイト)</span>
-						</a>
+						<a href="https://www.blender.org/download/" target="_blank" rel="noopener"> Blender 公式ダウンロード <span>(外部サイト)</span></a>
 					</li>
 					<li>
-						<a href="https://assettocorsa.club/content-manager.html" target="_blank" rel="noopener"> Content Manager <span>(外部サイト)</span>
-						</a>
+						<a href="https://assettocorsa.club/content-manager.html" target="_blank" rel="noopener"> Content Manager <span>(外部サイト)</span></a>
 					</li>
 					<li>
-						<a href="https://labs.assettocorsa.jp/downloads/tools/kunossdk" target="_blank" rel="noopener"> ACJP LABS <span>(外部サイト)</span>
-						</a>
+						<a href="https://labs.assettocorsa.jp/downloads/tools/kunossdk" target="_blank" rel="noopener"> ACJP LABS <span>(外部サイト)</span></a>
 					</li>
 				</ul>
 			</div>
@@ -1469,7 +1491,33 @@
 						</div>
 						<ul>
 							<li>
-								<h3>V0.0.4<small>2026/06/13</small></h3>
+								<h3>V0.0.6<small>2026/06/14</small></h3>
+								<p>
+									view.iniの動き修正。
+								</p>
+								<h4>更新項目</h4>
+								<ul>
+									<li>view.iniのバックアップ時のファイル名「view.ini_old」に変更</li>
+									<li>LIVE SYNCの対応とON・OFF切り替え時、「view.ini」の対応を修正</li>
+								</ul>
+							</li>
+						</ul>
+						<ul>
+							<li>
+								<h3>V0.0.5<small>2026/06/13</small></h3>
+								<p>
+									インストールファイル名およびダウンロード先の変更
+								</p>
+								<h4>更新項目</h4>
+								<ul>
+									<li>過去ソフトを保存</li>
+									<li>新規ダウンロード先変更</li>
+								</ul>
+							</li>
+						</ul>
+						<ul>
+							<li>
+								<h3>V0.0.4<small>2026/06/10</small></h3>
 								<p>
 									更新内容の表示の調整しました。
 								</p>
