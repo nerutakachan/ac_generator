@@ -37,7 +37,7 @@ const SERVER_CONFIG = {
 	},
 	auth: {
 		trialDays: 7, // 毎月の試用可能日数（合計7日間）
-		trialFreeDays: 3, // 完全無料枠（Discord参加のみ）の試用日数
+		trialFreeDays: 7, // 完全無料枠（Discord参加のみ）の試用日数
 		guildId: 
 			'838421006011990047', // DiscordサーバーのID
 		roles: {
