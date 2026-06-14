@@ -329,19 +329,27 @@ window.triggerLiveSync = function() {
 			if (!window.modifiedStatus || !window.modifiedStatus[statusKey]) continue;
 			const getFunc = window[file.func];
 			if (typeof getFunc === 'function') {
-				const content = getFunc(true); // 一括書き出しモードで呼び出し
+				const content = getFunc(true);
 				if (content) {
-					filesToExport.push({
-						name: file.name,
-						content: content
-					});
+					// ★ここを追加：view.ini の場合は data 用リストに入れず、専用変数に保管
+					if (file.id === 'view') {
+						viewIniContent = content;
+					} else {
+						filesToExport.push({ name: file.name, content: content });
+					}
 				}
+				console.log("🔍 [LIVE SYNC] 送信対象のファイル数:", filesToExport.length);
 			}
 		}
 		// 3. 変更があったファイルがある場合のみ、Electron経由で実ファイルを上書き
 		if (filesToExport.length > 0) {
 			console.log(`📤 [LIVE SYNC] ${filesToExport.length}個の変更を反映中...`);
 			await window.electronAPI.exportFilesToFolder(null, "", filesToExport, true, window.currentDataFolderPath);
+			// ★ここを追加：保管された view.ini のデータがあれば、マイドキュメントへ保存
+			if (viewIniContent) {
+				const carName = window.currentCarDirectoryName || "Unknown-Car";
+				await window.electronAPI.saveViewIni(carName, viewIniContent);
+			}
 		}
 	}, 300); // 0.3秒間操作が止まったら書き出し
 };
