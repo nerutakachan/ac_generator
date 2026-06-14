@@ -341,7 +341,7 @@ app.whenReady().then(async () => {
 		const result = dialog.showMessageBoxSync({
 			type: 'info',
 			title: 'アップデートのお知らせ',
-			message: `新しいバージョン（${info.version}）が見つかりました。\nダウンロードしてアップデートを開始しますか？`,
+			message: `新しいバージョン（v${info.version}）が見つかりました。\nダウンロードしてアップデートを開始しますか？`,
 			noLink: true,
 			buttons: ['はい', 'いいえ'],
 			defaultId: 0,
