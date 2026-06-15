@@ -1,7 +1,8 @@
 const { app, BrowserWindow, Menu, dialog, shell, ipcMain, protocol } = require('electron');
 const { autoUpdater } = require('electron-updater');
 autoUpdater.autoDownload = false;
-// autoUpdater.allowPrerelease = true; // ★追加：プレリリース版の検知を許可
+//：プレリリース版の検知を許可
+autoUpdater.allowPrerelease = true;
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
