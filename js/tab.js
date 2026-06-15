@@ -27,6 +27,14 @@ document.addEventListener('DOMContentLoaded', () => {
 	const editorTitle = document.getElementById('editor-title');
 	const titleMap = window.EDITOR_TITLES || {};
 	const descMap = window.EDITOR_DESCRIPTIONS || {};
+	const turboSelect = document.getElementById('turbo-count-select');
+	if (turboSelect) {
+		turboSelect.addEventListener('change', (e) => {
+			window.activeTurboIndex = parseInt(e.target.value) - 1;
+			window.renderTurboUI(document.getElementById('turbo-container'), window.currentEngineData);
+			window.updateEngineGraph();
+		});
+	}
 	tabs.forEach(tab => {
 		tab.addEventListener('click', () => {
 			// ★追加：メインタブを切り替えた際に、視点と透過状態を必ずリセットする
