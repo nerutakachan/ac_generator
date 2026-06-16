@@ -6,6 +6,7 @@ window.ctrlTurboData = {};
 window.engineChartInstance = null;
 window.activeTurboIndex = 0;
 window.activeEngineTab = 'ENGINE';
+window.activeTurboCount = null;
 // LUTパース
 window.parsePowerLut = function(text) {
 	window.currentPowerLutRaw = text;
@@ -40,7 +41,12 @@ window.renderTurboUI = function(container, data) {
 	while (data[`TURBO_${turboCount}`]) {
 		turboCount++;
 	}
-	let currentSelectValue = Math.max(1, turboCount);
+	
+	// ★修正：グローバルに保存された選択状態があれば優先し、なければデータから取得
+	if (window.activeTurboCount === null) {
+		window.activeTurboCount = turboCount;
+	}
+	let currentSelectValue = window.activeTurboCount;
 
 	const turboHeader = document.createElement('div');
 	turboHeader.className = 'suspension-item-title_box';
@@ -127,6 +133,7 @@ window.renderTurboUI = function(container, data) {
 	const selectEl = turboHeader.querySelector('#turbo-count-select');
 	selectEl.addEventListener('change', (e) => {
 		currentSelectValue = parseInt(e.target.value, 10);
+		window.activeTurboCount = currentSelectValue; // ★追加: 選択値をグローバルに記憶する
 		allTurbos.forEach((tBox, idx) => {
 			idx >= currentSelectValue ? tBox.classList.add('disabled-turbo') : tBox.classList.remove('disabled-turbo');
 		});
@@ -151,7 +158,7 @@ window.initEngineEditor = function(data) {
 
 	// 1. タブメニューの生成
 	iniContainer.innerHTML = `
-		<div class="suspension-tab-menu" style="margin-bottom:10px;">
+		<div class="suspension-tab-menu">
 			<button class="suspension-tab-btn ${window.activeEngineTab === 'ENGINE' ? 'active' : ''}" id="engine-tab-btn-main">ENGINE</button>
 			<button class="suspension-tab-btn ${window.activeEngineTab === 'TURBO' ? 'active' : ''}" id="engine-tab-btn-turbo">TURBO</button>
 		</div>
@@ -175,7 +182,7 @@ window.initEngineEditor = function(data) {
 		const engineGroup = document.createElement('div');
 		engineGroup.className = 'engine-ini_box';
 
-		['ENGINE_DATA', 'COAST_REF', 'COAST_DATA', 'COAST_CURVE', 'DAMAGE'].forEach(section => {
+		['ENGINE_DATA', 'DAMAGE', 'COAST_REF', 'COAST_DATA', 'COAST_CURVE'].forEach(section => {
 			if (!data[section]) return;
 			const wrapper = document.createElement('article');
 			wrapper.innerHTML = `<div class="suspension-item-title_box"><p>${section}</p></div>`;
@@ -207,7 +214,10 @@ window.initEngineEditor = function(data) {
 
 		// CONTROLLERS（将来用）の空枠もここに追加
 		const ctrlWrapper = document.createElement('article');
-		ctrlWrapper.innerHTML = `<div class="suspension-item-title_box"><p>CONTROLLERS (ctrl_turbo_*.ini)</p></div>`;
+		ctrlWrapper.innerHTML = `
+			<div class="suspension-item-title_box">
+				<p>CONTROLLERS (ctrl_turbo_*.ini)</p>
+			</div>`;
 		const ctrlBox = document.createElement('div');
 		ctrlBox.id = 'ctrl-turbo-container';
 		ctrlBox.className = 'suspension-item_box';
