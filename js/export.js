@@ -583,29 +583,57 @@ window.downloadEngineIni = function(isExport = false) {
 	const data = window.currentEngineData;
 	if (!data) { alert("エンジンデータが存在しません。"); return; }
 	
-	// ★追加：UI（セレクトボックス）で選ばれているターボの総数を取得する
+	// ★追加済み：UI（セレクトボックス）で選ばれているターボの総数を取得する
 	const turboCountSelect = document.getElementById('turbo-count-select');
 	const turboCount = turboCountSelect ? parseInt(turboCountSelect.value) : 1;
 
 	let iniContent = "";
-	for (const section in data) {
-		// ★追加：設定された数以上のターボセクション（例：2基設定ならTURBO_2以降）は書き出さない
-		if (section.startsWith('TURBO_')) {
-			const idx = parseInt(section.replace('TURBO_', ''));
-			if (idx >= turboCount) continue;
-		}
 
-		iniContent += `[${section}]\n`;
-		for (const key in data[section]) {
-			// ★追加：アプリ内部のグラフ計算用設定（USER_SETTING）は INI に含めない
-			if (key === 'USER_SETTING') continue;
-
-			iniContent += `${key}=${data[section][key]}\n`;
-		}
-		iniContent += "\n";
+	// 1. 書き出しの理想的な順番を定義する（これで [TURBO_0] の下に [TURBO_1] が並びます）
+	const sectionOrder = ['HEADER', 'ENGINE_DATA', 'COAST_REF', 'COAST_DATA', 'COAST_CURVE'];
+	// ターボを 0 から順番にリストへ追加する
+	for (let i = 0; i < turboCount; i++) {
+		sectionOrder.push(`TURBO_${i}`);
 	}
+	// 最後にダメージ設定などを置く
+	sectionOrder.push('DAMAGE');
+
+	const writtenSections = new Set();
+
+	// 2. リストに定義した順番通りに書き出す
+	sectionOrder.forEach(secName => {
+		if (data[secName]) {
+			iniContent += `[${secName}]\n`;
+			for (const key in data[secName]) {
+				// ★追加：アプリ内部のグラフ計算用設定（USER_SETTING）は INI に含めない
+				if (key === 'USER_SETTING') continue;
+				iniContent += `${key}=${data[secName][key]}\n`;
+			}
+			iniContent += "\n";
+			writtenSections.add(secName);
+		}
+	});
+
+	// 3. もしデータ内に上記リストにない未知のセクションがあれば最後に追加（安全策）
+	for (const secName in data) {
+		if (!writtenSections.has(secName)) {
+			// ターボ基数チェック（選ばれた数以上のターボは書かない）
+			if (secName.startsWith('TURBO_')) {
+				const idx = parseInt(secName.replace('TURBO_', ''));
+				if (idx >= turboCount) continue;
+			}
+			iniContent += `[${secName}]\n`;
+			for (const key in data[secName]) {
+				if (key === 'USER_SETTING') continue;
+				iniContent += `${key}=${data[secName][key]}\n`;
+			}
+			iniContent += "\n";
+		}
+	}
+
 	// ★ 修正：個別ダウンロードの処理が走る「前」に、テキストだけを返して終わらせる
 	if (isExport === true) return iniContent;
+
 	// === 以下は個別保存ボタン用 ===
 	const blob = new Blob([iniContent], {
 		type: 'text/plain'
