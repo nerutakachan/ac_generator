@@ -17,7 +17,7 @@ const updateData = [
 	{
 		version: "V0.0.7",
 		date: "2026/06/17",
-		desc: "engine.iniの調整およびLIVEでの調整",
+		desc: "engine.iniの調整およびLIVE SYNCの調整",
 		items: [
 			{ title: "engine.ini", list: ["engine.iniのツインターボ以上に対応", "engine.iniの複数のターボの書き出し変更","上記変更に伴いengineのグラフの調整"] },
 			{ title: "LIVE", list: ["タイヤの複製でリアルタイムでの反映を修正"] }
