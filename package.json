@@ -15,6 +15,7 @@
 		"nodemon": "^3.1.14"
 	},
 	"build": {
+		"files": ["**/*", "!dist${/*}", "!テスト${/*}"],
 		"appId": "com.example.ac-file-generator",
 		"productName": "AC FILE GENERATOR",
 		"publish": [
