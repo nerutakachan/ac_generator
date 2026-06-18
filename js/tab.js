@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	const drivetrainContent = document.getElementById('drivetrain-content');
 	const setupContent = document.getElementById('setup-content');
 	const tireContent = document.getElementById('tire-content');
+	const logoNameContent = document.getElementById('logo-name-content');
 	const subContents = document.querySelectorAll('.sub-content');
 	const editorTitle = document.getElementById('editor-title');
 	const titleMap = window.EDITOR_TITLES || {};
@@ -54,11 +55,17 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (drivetrainContent) drivetrainContent.classList.add('tab-hidden');
 			if (setupContent) setupContent.classList.add('tab-hidden');
 			if (gearContent) gearContent.classList.add('tab-hidden');
+			if (logoNameContent) logoNameContent.classList.add('tab-hidden');
 			// --- ターゲットだけを表示する ---
 			if (target === 'editor') {
 				if (cameraContent) cameraContent.classList.remove('tab-hidden');
 			} else if (target === 'suspension') {
-				if (suspensionContent) suspensionContent.classList.remove('tab-hidden');
+				// ★修正：subTargetの判定を追加
+				if (subTarget === 'logo-name-editor') {
+					if (logoNameContent) logoNameContent.classList.remove('tab-hidden');
+				} else {
+					if (suspensionContent) suspensionContent.classList.remove('tab-hidden');
+				}
 			} else if (target === 'tire') {
 				if (tireContent) tireContent.classList.remove('tab-hidden');
 				setTimeout(() => {
