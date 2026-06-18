@@ -190,7 +190,69 @@
 			</div>
 		</div>
 		<!-- ロゴとネーム設定 -->
-		<section id="logo-name-content" class="tab-content tab-hidden">
+		<section id="logo-name-content" class="tab-content">
+			<div class="logo-name-outer_box">
+				<div class="logo-name-inner_box">
+					<article>
+						<h3>車輛データ</h3>
+						<div class="logo-name_box">
+							<div class="logo-editor_box">
+								<h4>ロゴ画像</h4>
+								<div class="logo-editor-img_box">
+									<img id="ui-badge" src="badge.png" alt="Car Badge">
+								</div>
+								<div class="btn_box">
+									<button>置換</button>
+								</div>
+							</div>
+							<div class="car-data_box">
+								<div>
+									<p>車両名</p>
+									<input type="text" id="ui-name">
+								</div>
+								<div>
+									<p>ブランド</p>
+									<input type="text" id="ui-brand">
+								</div>
+								<div>
+									<p>タグ</p>
+									<input type="text" id="ui-tags">
+								</div>
+								<div>
+									<p>クラス</p>
+									<input type="text" id="ui-class">
+								</div>
+								<div>
+									<p>仕様</p>
+									<div>
+										<div id="ui-specs-bhp"></div>
+										<div id="ui-specs-torque"></div>
+										<div id="ui-specs-weight"></div>
+										<div id="ui-specs-topspeed"></div>
+										<div id="ui-specs-acceleration"></div>
+										<div id="ui-specs-pwratio"></div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</article>
+					<article>
+						<h3>スペック</h3>
+						<div class="logo-name_box">
+							<div>
+								<canvas id="ui-torqueCurve"></canvas>
+							</div>
+							<div>
+								<p>詳細説明</p>
+								<textarea id="ui-description"></textarea>
+							</div>
+						</div>
+					</article>
+				</div>
+				<div>
+					右側はとりあえず空白です。
+				</div>
+			</div>
 		</section>
 		<div id="camera-content" class="tab-content tab-hidden ">
 			<div class="model-outer_box">
@@ -1588,6 +1650,7 @@
 	<script src="js/storage.js"></script>
 	<script src="js/parser.js"></script>
 	<script src="js/editorTexts.js"></script>
+	<script type="module" src="js/import.js"></script>
 	<script src="main.js"></script>
 	<script src="updates.js"></script>
 	<!-- <script src="main_test.js"></script> -->

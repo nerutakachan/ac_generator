@@ -1708,3 +1708,59 @@ label {
 	margin-right: 0.5em;
 	font-size: 0.3em;
 }
+/* ロゴとネーム */
+.logo-name-outer_box{
+	display: flex;
+}
+.logo-name-outer_box > div{
+	width: 50%;
+}
+.logo-name_box{
+	display: flex;
+}
+.logo-editor_box{
+	width: 30%;
+}
+.logo-editor-img_box,
+.logo-editor-img_box img{
+	aspect-ratio: 1;
+}
+.logo-editor-img_box{
+	max-width: 128px;
+	width:100%;
+	background: aqua;
+	margin: 1rem auto;
+}
+.logo-editor-img_box img{
+	width: 100%;
+	height: auto;/*autoと状況に応じて変える*/
+	object-fit: cover;
+	display: block;
+}
+.car-data_box{
+	width: 70%;
+}
+.car-data_box > div{
+	display: flex;
+	gap: 0.5em;
+	align-items: center;
+}
+.car-data_box > div:not(:last-of-type){
+	margin-bottom: 1.5em;
+}
+.car-data_box > div,
+.car-data_box > div input{
+	font-size: 1rem;
+}
+.car-data_box > div input{
+	width: 100%;
+	padding: 0.5em;
+}
+.car-data_box > div p{
+	width: 7em;
+}
+.btn_box{
+	text-align: center;
+}
+
+								

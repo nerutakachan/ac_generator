@@ -142,14 +142,15 @@ document.addEventListener('DOMContentLoaded', () => {
 	});
 	const initialActiveBtn = document.querySelector('.tab-btn.active');
 	if (initialActiveBtn) {
-		const target = initialActiveBtn.dataset.tab;
-		const subTarget = initialActiveBtn.dataset.sub;
-		const activeDescBox = document.getElementById(`desc-${target}`);
-		const descText = descMap[subTarget] || descMap[`${target}-editor`];
-		if (activeDescBox && descText) {
-			activeDescBox.innerHTML = descText;
-			activeDescBox.style.opacity = 1;
-		}
+		// 1. 全てのタブコンテンツを一度隠す（初期化）
+		document.querySelectorAll('.tab-content').forEach(content => {
+			content.classList.add('tab-hidden');
+			content.classList.remove('active');
+		});
+
+		// 2. アクティブなボタンのクリックをプログラムから実行
+		// これにより、表示切り替えロジックが全て正しく実行されます
+		initialActiveBtn.click();
 	}
 	// ==========================================
 	// 2. サブタブ（アーム/ダンパー切替）
