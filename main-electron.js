@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, dialog, shell, ipcMain, protocol } = require('electron');
+const { app, BrowserWindow, Menu, dialog, shell, ipcMain, protocol, net } = require('electron');
 const { autoUpdater } = require('electron-updater');
 autoUpdater.autoDownload = false;
 //：プレリリース版の検知を許可
@@ -340,6 +340,20 @@ app.whenReady().then(async () => {
 			console.error(error);
 		}
 	});
+	protocol.handle('local-file', (request) => {
+    // 1. URLからパス部分を抽出
+    const url = new URL(request.url);
+    
+    // 2. pathname は先頭に "/" がつくため、それを除去して取得
+    // 例: "/D:/フォント・ソフト/..." -> "D:/フォント・ソフト/..."
+    const filePath = decodeURIComponent(url.pathname.slice(1));
+    
+    // 3. ログで最終的なパスを確認（デバッグ用）
+    console.log("🔍 [Protocol] 確定パス:", filePath);
+    
+    // 4. file:// プロトコルとして返却
+    return net.fetch('file://' + filePath);
+});
 
 	// ★ ルートB：自動アップデート機能（electron-updater）
 	// アップデートが見つかった時の動作

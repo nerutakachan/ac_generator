@@ -979,6 +979,19 @@ document.addEventListener('drop', async (e) => {
 			} else if (item.isDirectory) {
 				const dirReader = item.createReader();
 				dirReader.readEntries(async (entries) => {
+					if (item.name === 'ui') {
+						entries.forEach(entry => {
+							if (entry.name.toLowerCase() === 'badge.png') {
+									entry.file(file => {
+											const badgeImg = document.getElementById('ui-badge');
+											if (badgeImg) {
+													const formattedPath = file.path.replace(/\\/g, '/');
+													badgeImg.src = 'file:///' + formattedPath;
+											}
+									});
+							}
+						});
+					}
 					let entryFiles = [];
 					for (let entry of entries) {
 						const files = await traverseFileTree(entry);

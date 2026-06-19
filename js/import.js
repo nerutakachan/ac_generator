@@ -23,6 +23,7 @@ import {
 	default_view_ini,
 	default_dash_cam_ini
 } from './ini-data.js';
+import { updateBadgeImage } from './logo-name.js';
 // --- 1. データ保持・状態管理 ---
 window.THREE = THREE;
 // 各ファイルの編集状態（false:未編集, true:編集済み）を管理するオブジェクト
@@ -769,6 +770,9 @@ export async function handleMultiFileUpload(files) {
 					window.currentProject.environment.model_path = file.path;
 					console.log("[IMPORT] モデルパスをプロジェクトに登録しました:", file.path);
 				}
+				if (window.currentProject.environment.data_folder) {
+						updateBadgeImage(window.currentProject.environment.data_folder);
+					}
 				// =======================================================
 				// ★修正：メニューの一括読み込みから届いた「パス情報だけのオブジェクト」の場合
 				// プロジェクトロード時にも使われている、実績のある安全な自動復元ルートへ流します
