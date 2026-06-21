@@ -473,10 +473,11 @@ window.calculateEngineParams = function(rpm, engine, turboCount, baseTorque) {
 	const BHP_CONSTANT = 7120.8;
 	let totalBoost = 0;
 	for (let i = 0; i < turboCount; i++) {
-		const turboObj = engine[`TURBO_${i}`];
-		if (!turboObj || !turboObj.MAX_BOOST || parseFloat(turboObj.MAX_BOOST) <= 0) continue;
+    const turboObj = engine[`TURBO_${i}`];
+    // 存在チェックとブースト値の確認
+    if (!turboObj || !turboObj.MAX_BOOST || parseFloat(turboObj.MAX_BOOST) <= 0) continue;
 
-		let mB = parseFloat(turboObj.MAX_BOOST) || 0;
+    let mB = parseFloat(turboObj.MAX_BOOST) || 0;
 		if (mB > 0) {
 			let refRpm = parseFloat(turboObj.REFERENCE_RPM) || 1;
 			let gamma = parseFloat(turboObj.GAMMA) || 1;
@@ -490,7 +491,41 @@ window.calculateEngineParams = function(rpm, engine, turboCount, baseTorque) {
 		}
 	}
 
-	let torque = (totalBoost > 0) ? baseTorque * (1.0 + totalBoost) : 0;
-	let power = (totalBoost > 0) ? (torque * rpm) / BHP_CONSTANT : 0;
+	let torque = baseTorque * (1.0 + totalBoost);
+	let power = (torque * rpm) / BHP_CONSTANT;
 	return { torque, power };
+};
+// 物理設定から馬力を算出してUIを更新する関数
+window.updateSpecsFromPhysics = function() {
+	// データが揃っていない場合は計算せず、UI更新も行わない（前回の値を保持するため）
+	if (!window.currentEngineData || !window.currentPowerLut || window.currentPowerLut.length === 0) {
+		return;
+	}
+	
+	const engine = window.currentEngineData;
+	const limiter = parseFloat(engine.ENGINE_DATA?.LIMITER) || 8000;
+	// 読み込み直後でturboCountが不明な場合、エンジンデータから自動判定する
+	let turboCount = window.activeTurboCount;
+	if (turboCount === null || turboCount === undefined) {
+		turboCount = Object.keys(engine).filter(key => key.startsWith('TURBO_')).length;
+		console.log("🛠 [DEBUG] ターボ数を自動判定しました:", turboCount);
+	}
+	let maxPowerBhp = 0, maxTorque = 0;
+	
+
+	for (let rpm = 0; rpm <= limiter; rpm += 100) {
+		let baseTorque = window.getInterpolatedTorque(rpm, window.currentPowerLut);
+		let params = window.calculateEngineParams(rpm, engine, turboCount, baseTorque);
+		if (params.power > maxPowerBhp) maxPowerBhp = params.power;
+		if (params.torque > maxTorque) maxTorque = params.torque;
+	}
+
+	const maxPowerPs = Math.round(maxPowerBhp * 1.01387);
+	
+	// ★計算結果をログ出力
+	console.log("🛠 [DEBUG] 計算された馬力:", maxPowerPs, "BHP:", maxPowerBhp);
+
+	if (typeof window.updateSpecsDisplay === 'function') {
+		window.updateSpecsDisplay({ whp: maxPowerPs, torque: Math.round(maxTorque) });
+	}
 };

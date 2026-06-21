@@ -273,6 +273,11 @@ window.updateCarEditorUI = function(data) {
 			panel.appendChild(sectionWrapper);
 		});
 	});
+	if (data && data.BASIC && data.BASIC.TOTALMASS !== undefined) {
+		if (typeof window.updateSpecsDisplay === 'function') {
+			window.updateSpecsDisplay({ weight: data.BASIC.TOTALMASS });
+		}
+	}
 };
 // ==========================================
 // ★追加：car.iniの視点座標へカメラを移動させる関数

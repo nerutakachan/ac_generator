@@ -110,6 +110,10 @@ export const collectUiCarData = () => {
 window.collectUiCarData = collectUiCarData;
 export const restoreUiCarData = (data) => {
 	if (!data) return;
+	
+    // ログを追加：復元時のデータ構造を確認
+    console.log("🛠 [DEBUG] restoreUiCarData 実行。currentCarData:", window.currentCarData);
+
 	const setVal = (id, val) => {
 		const el = document.getElementById(id);
 		if (el) {
@@ -130,28 +134,58 @@ export const restoreUiCarData = (data) => {
 	setVal('ui-version', data.version);
 	setVal('ui-url', data.url);
 	setVal('ui-year', data.year);
+
+    // 重量の判定ロジックを詳細化
 	if (window.currentCarData && window.currentCarData.BASIC) {
-		window.updateSpecsDisplay({ weight: window.currentCarData.BASIC.TOTALMASS });
+        const mass = window.currentCarData.BASIC.TOTALMASS;
+        console.log("🛠 [DEBUG] TOTALMASS:", mass);
+		window.updateSpecsDisplay({ weight: mass });
+	} else {
+        console.warn("⚠️ [DEBUG] currentCarData または BASIC が定義されていません。");
+    }
+
+	if (typeof window.updateSpecsFromPhysics === 'function') {
+		window.updateSpecsFromPhysics();
 	}
 	console.log("✅ [RESTORE] UIデータを復元しました:", data);
 };
 
 window.restoreUiCarData = restoreUiCarData;
 //スペック
-window.updateSpecsDisplay = function(specs) {
-	if (!specs) return;
-	
-	const setSpec = (id, val) => {
-		const el = document.getElementById(id);
-		if (el) {
-			el.textContent = (val !== undefined && val !== null) ? val : '--';
-		}
-	};
+// スペック状態を記憶する変数
+window.currentSpecs = { whp: null, torque: null, weight: null, topspeed: null, acceleration: null, pwratio: null };
 
-	setSpec('ui-specs-whp', specs.whp);
-	setSpec('ui-specs-torque', specs.torque);
-	setSpec('ui-specs-weight', specs.weight);
-	setSpec('ui-specs-topspeed', specs.topspeed);
-	setSpec('ui-specs-acceleration', specs.acceleration);
-	setSpec('ui-specs-pwratio', specs.pwratio);
+window.updateSpecsDisplay = function(specs) {
+    if (!specs) return;
+		console.log("🛠 [DEBUG] updateSpecsDisplay 呼び出し:", specs);
+    console.log("🛠 [DEBUG] 更新前の specs:", window.currentSpecs);
+    // 新しいデータを記憶変数にマージ（更新された項目だけを記憶）
+    Object.assign(window.currentSpecs, specs);
+
+    const setSpec = (id, val, unit) => {
+        const el = document.getElementById(id);
+        if (el) {
+            // 現在記憶している値を使用する
+            const displayVal = window.currentSpecs[valKeyByElementId(id)];
+            el.textContent = (displayVal !== undefined && displayVal !== null && displayVal !== '') ? `${displayVal} ${unit}` : '--';
+        }
+    };
+
+    // ヘルパー：IDからキーを特定
+    function valKeyByElementId(id) {
+        if (id === 'ui-specs-ps') return 'whp';
+        if (id === 'ui-specs-torque') return 'torque';
+        if (id === 'ui-specs-weight') return 'weight';
+        if (id === 'ui-specs-topspeed') return 'topspeed';
+        if (id === 'ui-specs-acceleration') return 'acceleration';
+        if (id === 'ui-specs-pwratio') return 'pwratio';
+        return '';
+    }
+
+    setSpec('ui-specs-ps', 'whp', 'ps');
+    setSpec('ui-specs-torque', 'torque', 'Nm');
+    setSpec('ui-specs-weight', 'weight', 'kg');
+    setSpec('ui-specs-topspeed', 'topspeed', 'km/h');
+    setSpec('ui-specs-acceleration', 'acceleration', '0-100km/h');
+    setSpec('ui-specs-pwratio', 'pwratio', 'kg/ps');
 };
