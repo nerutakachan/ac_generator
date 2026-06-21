@@ -1771,9 +1771,13 @@ label {
 .car-data_box > div:not(:last-of-type){
 	margin-bottom: 0.5em;
 }
+.logo-editor_box h4,
+.torque-graph-outer_box > div:nth-child(2) p,
+.car-spec-data_box > p,
+.car-data_box > div p,
 .car-data_box > div,
 .car-data_box > div input{
-	font-size: 0.9rem;
+	font-size: 0.79rem;
 }
 .description_box #ui-description,
 .car-spec-inner-data_box,
@@ -1825,6 +1829,7 @@ label {
 	height: 100% !important;
 	box-sizing: border-box;
 	display: block;
+	width: 100% !important;
 }
 .torque-graph-outer_box {
 	display: flex;
