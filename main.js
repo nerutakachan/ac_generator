@@ -44,6 +44,7 @@ window.APP_CONFIG = {
 // ★ここに追加：入力操作を監視し、スペックをリアルタイムで再計算する
 // ==========================================\n
 document.addEventListener('input', (e) => {
+	const isInsideEditor = e.target.closest('#wrapper');
 	if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) {
 		if (typeof window.updateSpecsFromPhysics === 'function') {
 			window.updateSpecsFromPhysics();
