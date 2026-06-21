@@ -384,13 +384,21 @@ window.loadProjectToUI = async function(projectState) {
 	// =======================================================
 	if (files['suspensions']) window.currentSuspensionData = files['suspensions'].currentData;
 	if (files['tyres']) window.currentTyreData = files['tyres'].currentData;
-	if (files['car']) window.currentCarData = files['car'].currentData;
+	if (files['car']) 
+		window.currentCarData = files['car'].currentData;
+		if (window.currentCarData?.BASIC?.TOTALMASS) {
+			window.updateSpecsDisplay({ weight: window.currentCarData.BASIC.TOTALMASS });
+		}
 	if (files['aero']) window.currentAeroData = files['aero'].currentData;
 	if (files['engine']) window.currentEngineData = files['engine'].currentData;
 	if (files['setup']) window.currentSetupData = files['setup'].currentData;
 	if (files['drivetrain']) window.currentDrivetrainData = files['drivetrain'].currentData;
 	// 追加機能分のデータ
-	if (files['power_lut_raw']) window.currentPowerLutRaw = files['power_lut_raw'].currentData;
+	if (files['power_lut_raw']) 
+		window.currentPowerLutRaw = files['power_lut_raw'].currentData;
+		if (typeof window.parsePowerLut === 'function') {
+			window.parsePowerLut(window.currentPowerLutRaw);
+		}
 	if (files['final_rto_list']) window.finalRtoList = files['final_rto_list'].currentData;
 	if (files['modified_status']) window.modifiedStatus = files['modified_status'].currentData;
 	// ★修正：拡張物理スイッチのON/OFF状態を完全に復元する
@@ -506,7 +514,7 @@ window.loadProjectToUI = async function(projectState) {
 	// ... (既存のコード) ...
 	if (typeof window.initColliderEditor === 'function') window.initColliderEditor(window.currentCarData);
 
-	// ★追加：物理データに基づくスペック更新
+	// 物理データに基づくスペック更新
 	if (typeof window.updateSpecsFromPhysics === 'function') {
 		window.updateSpecsFromPhysics();
 	}
