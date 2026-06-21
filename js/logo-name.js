@@ -156,6 +156,7 @@ window.restoreUiCarData = restoreUiCarData;
 window.currentSpecs = { whp: null, torque: null, weight: null, topspeed: null, acceleration: null, pwratio: null };
 
 window.updateSpecsDisplay = function(specs) {
+	if (window.isMultiUploading || window.isRestoring) return;
     if (!specs) return;
 		console.log("🛠 [DEBUG] updateSpecsDisplay 呼び出し:", specs);
     console.log("🛠 [DEBUG] 更新前の specs:", window.currentSpecs);

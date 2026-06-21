@@ -497,6 +497,7 @@ window.calculateEngineParams = function(rpm, engine, turboCount, baseTorque) {
 };
 // 物理設定から馬力を算出してUIを更新する関数
 window.updateSpecsFromPhysics = function() {
+	if (window.isMultiUploading || window.isRestoring) return;
 	// データが揃っていない場合は計算せず、UI更新も行わない（前回の値を保持するため）
 	if (!window.currentEngineData || !window.currentPowerLut || window.currentPowerLut.length === 0) {
 		return;

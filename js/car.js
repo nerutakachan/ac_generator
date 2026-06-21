@@ -26,6 +26,7 @@ window.showCustomPopup = function(messageHtml, parentElement = document.body) {
  * 車両設定（car.ini）の詳細版UI生成
  */
 window.updateCarEditorUI = function(data) {
+	if (window.isMultiUploading) return;
 	const container = document.getElementById('car-data-container');
 	if (!container || !data) return;
 	const carTabDefinitions = [{

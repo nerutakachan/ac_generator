@@ -44,12 +44,14 @@ window.APP_CONFIG = {
 // ★ここに追加：入力操作を監視し、スペックをリアルタイムで再計算する
 // ==========================================\n
 document.addEventListener('input', (e) => {
-	const isInsideEditor = e.target.closest('#wrapper');
-	if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) {
-		if (typeof window.updateSpecsFromPhysics === 'function') {
-			window.updateSpecsFromPhysics();
-		}
-	}
+    const isInsideEditor = e.target.closest('#wrapper');
+
+    // ★修正：条件の先頭に「isInsideEditor &&」を追加する
+    if (isInsideEditor && ['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) {
+        if (typeof window.updateSpecsFromPhysics === 'function') {
+            window.updateSpecsFromPhysics();
+        }
+    }
 });
 
 // 以下、既存のコードが続く...
@@ -361,6 +363,7 @@ if (btnOpenProject) {
 window.loadProjectToUI = async function(projectState) {
 	console.log("🏁 [復元開始] データの復元を実行します...", projectState);
 	if (!projectState) return;
+	window.isRestoring = true;
 	if (projectState.projectName && window.electronAPI && window.electronAPI.setWindowTitle) {
 		window.electronAPI.setWindowTitle(projectState.projectName);
 	}
@@ -505,6 +508,7 @@ window.loadProjectToUI = async function(projectState) {
 				window.restoreUiCarData(window.currentProject.files.ui_car.currentData);
 			}
 	console.log("✅ [同期完了] すべてのデータが復元されました。");
+	window.isRestoring = false;
 	if (window.currentProject && window.currentProject.environment) {
 		window.updateBadgeImage(window.currentProject.environment.data_folder);
 	}
