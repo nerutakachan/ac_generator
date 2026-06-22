@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+		<style>
+				body {
+						margin: 0;
+						height: 100vh;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						background-color: transparent; /* 背景透明 */
+						overflow: hidden;
+						font-family: sans-serif;
+				}
+				.logo-container {
+						text-align: center;
+						animation: fadein 2s ease-in-out forwards; /* 2秒かけてフェードイン */
+						opacity: 0;
+				}
+				.logo-text {
+						color: #4dabf7;
+						font-size: 32px;
+						font-weight: bold;
+						letter-spacing: 5px;
+						text-shadow: 0 0 20px rgba(77, 171, 247, 0.5);
+				}
+				@keyframes fadein {
+						0% { opacity: 0; transform: scale(0.9); }
+						100% { opacity: 1; transform: scale(1); }
+				}
+		</style>
+</head>
+<body>
+		<div class="logo-container">
+				<div class="logo-text">AC MOD GENERATOR</div>
+				<p style="color: #888; font-size: 12px; margin-top: 10px;">Loading System...</p>
+		</div>
+</body>
+</html>

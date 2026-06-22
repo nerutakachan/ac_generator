@@ -1,0 +1,12 @@
+{
+	"name": "ac-mod-generator",
+	"version": "1.0.0",
+	"description": "Assetto Corsa Mod Generator",
+	"main": "main-electron.js",
+	"scripts": {
+		"start": "electron ."
+	},
+	"devDependencies": {
+		"electron": "^28.0.0"
+	}
+}

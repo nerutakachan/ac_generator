@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<title>INI & LUT Analysis Debugger</title>
+	<style>
+		body { background: #1a1a1a; color: #eee; font-family: monospace; padding: 20px; }
+		h1 { color: #4dabf7; border-bottom: 2px solid #4dabf7; }
+		.upload-box { background: #2c2e33; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+		.result-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+		.result-table th, .result-table td { border: 1px solid #444; padding: 10px; text-align: left; }
+		.result-table th { background: #343a40; }
+		/* 特殊文字の可視化スタイル */
+		.tab-mark { color: #ff6b6b; font-weight: bold; background: #3d1b1b; padding: 0 2px; border-radius: 2px; }
+		.space-mark { color: #51cf66; opacity: 0.5; }
+		.comment-mark { color: #868e96; font-style: italic; }
+		.error-highlight { background: #c92a2a; color: white; padding: 2px 4px; border-radius: 3px; }
+		pre { background: #000; padding: 10px; overflow-x: auto; font-size: 12px; }
+	</style>
+</head>
+<body>
+
+	<h1>INI & LUT Analysis Debugger</h1>
+	
+	<div class="upload-box">
+		<p>解析したい .ini または .lut ファイルをアップロードしてください</p>
+		<input type="file" id="ini-file-input" accept=".ini, .lut">
+	</div>
+
+	<div id="output-area">
+		<p>ファイルを読み込むと、ここに解析結果が表示されます。</p>
+	</div>
+
+	<script>
+		document.getElementById('ini-file-input').addEventListener('change', function(e) {
+			const file = e.target.files[0];
+			if (!file) return;
+
+			const fileName = file.name.toLowerCase();
+			const reader = new FileReader();
+			
+			reader.onload = function(event) {
+				const text = event.target.result;
+				// ★ ファイルの拡張子によって解析関数を振り分ける
+				if (fileName.endsWith('.lut')) {
+					analyzeLUT(text);
+				} else {
+					analyzeINI(text);
+				}
+			};
+			reader.readAsText(file);
+		});
+
+		// ==========================================
+		// LUT 解析用の新設関数
+		// ==========================================
+		function analyzeLUT(text) {
+			const outputArea = document.getElementById('output-area');
+			outputArea.innerHTML = '<h2>1. 解析結果 (LUT 洗浄済み)</h2>';
+
+			const lines = text.split(/\r?\n/);
+			const points = [];
+
+			// 1. 解析フェーズ (読み込み & 洗浄)
+			lines.forEach((line) => {
+				// コメント(; または //)を除去してトリム
+				const clean = line.split(';')[0].split('//')[0].trim();
+				if (!clean) return;
+
+				// '|' で分割して数値化
+				const parts = clean.split('|');
+				if (parts.length === 2) {
+					const rpm = parseFloat(parts[0]);
+					const torque = parseFloat(parts[1]);
+					// 両方とも正しい数値なら配列に追加
+					if (!isNaN(rpm) && !isNaN(torque)) {
+						points.push({ rpm: rpm, torque: torque });
+					}
+				}
+			});
+
+			// 回転数順にソート
+			points.sort((a, b) => a.rpm - b.rpm);
+
+			// 2. 表示フェーズ (テーブル表示)
+			let tableHtml = '<table class="result-table"><thead><tr><th>RPM (回転数)</th><th>Torque (トルク)</th></tr></thead><tbody>';
+			points.forEach(p => {
+				tableHtml += `<tr><td>${p.rpm}</td><td>${p.torque}</td></tr>`;
+			});
+			tableHtml += '</tbody></table>';
+			outputArea.innerHTML += tableHtml;
+
+			// 3. 書き出しフェーズ (再構築)
+			outputArea.innerHTML += '<h2>2. 書き出しテスト (Export Simulation)</h2>';
+			// 「RPM|Torque」の形に戻して改行で繋ぐ
+			const exportedText = points.map(p => `${p.rpm}|${p.torque}`).join('\n');
+			
+			const exportBox = document.createElement('div');
+			exportBox.innerHTML = `
+				<p>以下のテキストが、新しく生成される <strong>power.lut</strong> の内容になります：</p>
+				<textarea id="export-result" style="width:100%; height:300px; background:#000; color:#51cf66; border:1px solid #444; padding:10px; font-family:monospace;">${exportedText}</textarea>
+				<button id="download-btn" style="margin-top:10px; padding:10px 20px; cursor:pointer;">.lut ファイルとして保存テスト</button>
+			`;
+			outputArea.appendChild(exportBox);
+
+			// 保存ボタンの動作設定
+			document.getElementById('download-btn').onclick = function() {
+				const blob = new Blob([exportedText], {type: 'text/plain'});
+				const a = document.createElement('a');
+				a.href = URL.createObjectURL(blob);
+				a.download = 'power_new.lut';
+				a.click();
+				alert('「power_new.lut」をダウンロードしました（シミュレーション）');
+			};
+		}
+
+		// ==========================================
+		// INI 解析関数 (既存のまま)
+		// ==========================================
+		function analyzeINI(text) {
+			const outputArea = document.getElementById('output-area');
+			outputArea.innerHTML = '<h2>1. 解析結果 (INI 洗浄済み)</h2>';
+
+			const lines = text.split(/\r?\n/);
+			let currentSection = null;
+			const exportData = {};
+
+			lines.forEach((line) => {
+				let processingLine = line.trim();
+				if (!processingLine || processingLine.startsWith(';')) return;
+
+				if (processingLine.startsWith('[') && processingLine.endsWith(']')) {
+					currentSection = processingLine.slice(1, -1);
+					exportData[currentSection] = {};
+					return;
+				}
+
+				if (currentSection && processingLine.includes('=')) {
+					const parts = processingLine.split('=');
+					const key = parts[0].trim();
+					let cleanValue = parts.slice(1).join('=').split(';')[0].replace(/\t/g, ' ').trim();
+					exportData[currentSection][key] = cleanValue;
+				}
+			});
+
+			let tableHtml = '<table class="result-table"><thead><tr><th>セクション</th><th>キー</th><th>クリーンな値</th></tr></thead><tbody>';
+			for (let sec in exportData) {
+				for (let key in exportData[sec]) {
+					tableHtml += `<tr><td>${sec}</td><td>${key}</td><td>${exportData[sec][key]}</td></tr>`;
+				}
+			}
+			tableHtml += '</tbody></table>';
+			outputArea.innerHTML += tableHtml;
+
+			outputArea.innerHTML += '<h2>2. 書き出しテスト (Export Simulation)</h2>';
+			const exportedText = generateINIText(exportData);
+			
+			const exportBox = document.createElement('div');
+			exportBox.innerHTML = `
+				<p>以下のテキストが、新しく生成される <strong>ファイル</strong> の内容になります：</p>
+				<textarea id="export-result" style="width:100%; height:300px; background:#000; color:#51cf66; border:1px solid #444; padding:10px; font-family:monospace;">${exportedText}</textarea>
+				<button id="download-btn" style="margin-top:10px; padding:10px 20px; cursor:pointer;">.ini ファイルとして保存テスト</button>
+			`;
+			outputArea.appendChild(exportBox);
+
+			document.getElementById('download-btn').onclick = function() {
+				const blob = new Blob([exportedText], {type: 'text/plain'});
+				const a = document.createElement('a');
+				a.href = URL.createObjectURL(blob);
+				a.download = 'test_new.ini';
+				a.click();
+				alert('「test_new.ini」をダウンロードしました（シミュレーション）');
+			};
+		}
+
+		function generateINIText(data) {
+			let output = "";
+			for (const section in data) {
+				output += `[${section}]\n`;
+				for (const key in data[section]) {
+					output += `${key}=${data[section][key]}\n`;
+				}
+				output += `\n`; 
+			}
+			return output;
+		}
+	</script>
+</body>
+</html>
