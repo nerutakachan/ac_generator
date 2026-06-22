@@ -167,7 +167,11 @@
 		// ガラスパーツかどうかを判定する関数
 		function isGlass(name) {
 			const n = name.toLowerCase();
-			return n.includes('glass') || n.includes('window') || n.includes('vetro') || n.includes('windshield');
+			return n.includes('glass') ||
+			n.includes('window') ||
+			n.includes('vetro') ||
+			n.includes('windshield') ||
+			n.includes('steklo');
 		}
 
 		document.getElementById('fileInput').addEventListener('change', (e) => {
