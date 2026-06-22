@@ -192,8 +192,81 @@
 		<!-- ロゴとネーム設定 -->
 		<section id="logo-name-content" class="tab-content">
 			<div class="logo-name-outer_box">
-				<div>
-					左側はとりあえず空白です。
+				<div class="logo-name-inner_box">
+					<article>
+						<h4>編集・車両作成</h4>
+						<div class="car-select-outer_box">
+							<div class="color-preview_box">
+								<div class="color-preview-inner_box">
+									<div class="color-preview">カラービュー</div>
+									<div class="color-preview-list_box"><span>◀</span>・・・<span>▶</span></div>
+								</div>
+								<div class="color-list_box">
+									<p>カラーリスト</p>
+									<ul>
+										<li>カラー1</li>
+										<li>カラー2</li>
+										<li>カラー3</li>
+										<li>カラー4</li>
+										<li>カラー5</li>
+									</ul>
+								</div>
+							</div>
+							<div class="car-select-inner_box">
+								<div class="setting-item">
+										<label>Assetto Corsa ルートフォルダ</label>
+										<div class="input-group">
+												<input type="text" id="ac-root-path" readonly placeholder="フォルダを選択してください...">
+												<button id="btn-select-ac-path" class="select-set-btn">選択</button>
+										</div>
+								</div>
+								<!-- 2. 車両選択 -->
+								<div class="setting-item">
+										<label>ベース車両を選択</label>
+										<select id="ac-car-select">
+												<option value="">-- ACフォルダを選択してください --</option>
+										</select>
+								</div>
+								<!-- 3. 新規作成・名前決定 -->
+								<div class="setting-item">
+										<label>新規作成する車両の名前 (フォルダ名)</label>
+										<input type="text" id="new-car-project-name" placeholder="例: my_new_car_mod">
+								</div>
+								<!-- 4. 実行ボタン -->
+								<div class="action-group">
+										<button id="btn-execute-car-creation" class="primary-btn select-set-btn">この車両をベースに新規作成</button>
+								</div>
+							</div>
+						</div>
+					</article>
+					<article class="engine-sound-outer_box">
+						<div class="car-select-outer_box">
+							<div>
+								<p>エンジンスワップ</p>
+								<div>
+									<p>エンジンスワップの説明が入ります。エンジンスワップの説明が入ります。エンジンスワップの説明が入ります。エンジンスワップの説明が入ります。</p>
+								</div>
+							</div>
+							<div>
+								<select id="engine-select">
+										<option value="">-- エンジンを選んでください --</option>
+								</select>
+							</div>
+						</div>
+						<div class="car-select-outer_box">
+							<div>
+								<p>サウンドスワップ</p>
+								<div>
+									<p>サウンドスワップの説明が入ります。サウンドスワップの説明が入ります。サウンドスワップの説明が入ります。サウンドスワップの説明が入ります。</p>
+								</div>
+							</div>
+							<div>
+								<select id="sound-select">
+										<option value="">-- サウンドを選んでください --</option>
+								</select>
+							</div>
+						</div>
+					</article>
 				</div>
 				<div class="logo-name-inner_box">
 					<article>

@@ -1740,11 +1740,15 @@ label {
 }
 .torque-graph_box,
 .logo-editor-img-outer_box{
+	margin-bottom: 0.5em;
+}
+.color-preview_box,
+.torque-graph_box,
+.logo-editor-img-outer_box{
 	background-color: #b3b3b3;
 	padding: 1rem;
-	margin-bottom: 0.5em;
 	box-shadow: -1px -1px 1px 1px rgba(0, 0, 0, 0.64), 1px 1px 1px 1px rgba(255, 255, 255, 1);
-    border-radius: 0.5em;
+	border-radius: 0.5em;
 }
 .torque-graph_box{
 	background-color: #fff;
@@ -1786,6 +1790,8 @@ label {
 	padding: 0.2em;
 	border-radius: 0.5em;
 }
+.setting-item input,
+.setting-item select,
 .input-with-range .text-input,
 .description_box #ui-description,
 .car-spec-inner-data_box,
@@ -1862,4 +1868,60 @@ label {
 	font-size: 0.8em;
 	height: 100%;
 	resize: none;
+}
+/* 車輛の複製とエンジン・サウンドスワップ */
+.car-select-outer_box{
+	display: flex;
+	gap: 0.5em;
+}
+.car-select-outer_box > div:nth-child(1) {
+	flex: 5;
+	margin-bottom: 0;
+}
+.car-select-outer_box > div:nth-child(2) {
+	flex: 5;
+}
+.setting-item{
+	display: flex;
+	flex-direction: column;
+	gap: 0.5em;
+}
+.car-select-inner_box > div:not(:last-of-type){
+	margin-bottom: 0.5em;
+}
+.setting-item input,
+.setting-item select{
+	font-size: 0.79em;
+	padding: 0.2em;
+	border-radius: 0.5em;
+}
+.action-group .primary-btn{
+	width: auto;
+}
+.color-preview,
+.color-preview-inner_box{
+	aspect-ratio: 16 / 11;
+}
+.color-preview-list_box{
+	text-align: center;
+}
+.color-list_box{
+	border-top: 1px solid #e3e3e3;
+	padding: 0.5em;
+	justify-content: space-between;	
+}
+.color-list_box ul{
+	display: flex;
+	gap: 0.5em;
+}
+.color-list_box ul li{
+	background-color: #f39c12;
+	aspect-ratio: 16 / 9;
+	width: 100%;
+	height: 100%;
+	border-radius: 0.2em;
+	box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.5), inset -4px -2px 2px -2px rgba(0, 0, 0, 0.3);
+}
+.engine-sound-outer_box .car-select-outer_box > div{
+	width: 50%;
 }
