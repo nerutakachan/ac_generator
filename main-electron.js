@@ -410,6 +410,7 @@ app.whenReady().then(async () => {
 		});
 	}
 	startAuthServer();
+
 });
 // スプラッシュ表示フロー
 function startSplashFlow() {
@@ -1080,4 +1081,20 @@ ipcMain.handle('sync-backup-start', async (event, folderPath, files) => {
 
 ipcMain.handle('sync-restore-end', async (event, folderPath) => {
 	return { success: cleanupSyncBackup(folderPath, true) };
+});
+// モデル保存用のハンドラ（バイナリデータをファイルとして保存）
+ipcMain.handle('save-model-file', async (event, folderPath, fileName, arrayBuffer) => {
+    try {
+        const fullPath = path.join(folderPath, fileName);
+        console.log(`[裏側] 💾 モデル保存リクエストを受信: ${fullPath}`); // ← 確認用ログ
+        
+        const buffer = Buffer.from(arrayBuffer);
+        fs.writeFileSync(fullPath, buffer);
+        
+        console.log(`[裏側] ✅ 保存完了: ${fileName}`); // ← 確認用ログ
+        return { success: true, path: fullPath };
+    } catch (error) {
+        console.error('[裏側] ❌ 保存失敗:', error);
+        return { success: false, error: error.message };
+    }
 });

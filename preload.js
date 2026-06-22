@@ -42,4 +42,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
 	syncBackupStart: (folderPath, files) => ipcRenderer.invoke('sync-backup-start', folderPath, files),
 	syncRestoreEnd: (folderPath) => ipcRenderer.invoke('sync-restore-end', folderPath),
 	setProjectLoaded: (status) => ipcRenderer.send('set-project-loaded', status),
+	saveModelFile: (folderPath, fileName, arrayBuffer) => 
+    ipcRenderer.invoke('save-model-file', folderPath, fileName, arrayBuffer),
 });
