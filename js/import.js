@@ -6,9 +6,6 @@ import {
 	GLTFLoader
 } from 'three/addons/loaders/GLTFLoader.js';
 import {
-	GLTFExporter
-} from 'three/addons/exporters/GLTFExporter.js';
-import {
 	DDSLoader
 } from 'three/addons/loaders/DDSLoader.js';
 import {
@@ -27,55 +24,6 @@ import {
 	default_dash_cam_ini
 } from './ini-data.js';
 import { updateBadgeImage, initBadgeHandler, updateUiCarData, collectUiCarData } from './logo-name.js';
-async function convertAndSaveAsGLB(sceneObject, originalFilePath) {
-    const switchEl = document.getElementById('autoConvertSaveSwitch');
-    if (!switchEl || !switchEl.checked) return;
-
-    const exporter = new GLTFExporter();
-
-    // 🛠️ 修正：座標やスケールは一切いじらず、そのままの状態でエクスポートする
-    // sceneObject.clone() を使用して、書き出し用のクリーンなコピーを作成
-    const exportTarget = sceneObject.clone();
-    
-    exportTarget.traverse((child) => {
-        // マテリアルの画像データだけを消去（読み込みエラー回避のため）
-        if (child.isMesh && child.material) {
-            const mats = Array.isArray(child.material) ? child.material : [child.material];
-            mats.forEach(mat => {
-                mat.map = null;
-                mat.normalMap = null;
-                mat.specularMap = null;
-                mat.needsUpdate = true;
-            });
-        }
-    });
-
-    const options = { 
-        binary: true,
-        includeCustomExtensions: true // 名前（WHEEL_LF等）を保持する設定
-    };
-
-    exporter.parse(exportTarget, async (result) => {
-        const folderPath = originalFilePath.substring(0, originalFilePath.lastIndexOf('\\') || originalFilePath.lastIndexOf('/'));
-        const baseName = originalFilePath.split(/[\\/]/).pop().replace('.fbx', '');
-        const newFileName = `${baseName}.glb`;
-
-        console.log(`[CONVERT] 🔄 GLB変換開始: ${newFileName}`);
-        
-        const saveRes = await window.electronAPI.saveModelFile(folderPath, newFileName, result);
-
-        if (saveRes.success) {
-            console.log(`[CONVERT] ✅ 自動保存成功: ${saveRes.path}`);
-            const overlay = document.getElementById('format-overlay');
-            if (overlay) {
-                overlay.textContent = "MODEL: GLB (AUTO-SAVED)";
-                overlay.style.borderColor = "#4ade80";
-            }
-        }
-    }, (error) => {
-        console.error('[CONVERT] ❌ GLB変換失敗:', error);
-    }, options);
-}
 // --- 1. データ保持・状態管理 ---
 window.THREE = THREE;
 // 各ファイルの編集状態（false:未編集, true:編集済み）を管理するオブジェクト
@@ -435,11 +383,11 @@ export function load3DModel(file) {
 	return new Promise((resolve, reject) => {
 		const url = URL.createObjectURL(file);
 		const extension = file.name.split('.').pop().toLowerCase();
-		const onObjectLoad = async (object) => {
+		const onObjectLoad = (object) => {
 			URL.revokeObjectURL(url);
-			// const box = new THREE.Box3().setFromObject(object);
-			// const center = box.getCenter(new THREE.Vector3());
-			// object.position.sub(center);
+			const box = new THREE.Box3().setFromObject(object);
+			const center = box.getCenter(new THREE.Vector3());
+			object.position.sub(center);
 			// リセット
 			model_3D.BODY = [];
 			model_3D.STEER = null;
@@ -525,10 +473,6 @@ export function load3DModel(file) {
 			// 3Dモデルの解析（WHEEL_LF等の捕捉）が完了した直後に、アームの描画を要求する
 			if (typeof window.updateSuspensionVisuals === 'function' && window.currentSuspensionData) {
 				window.updateSuspensionVisuals(window.currentSuspensionData);
-			}
-			if (extension === 'fbx') {
-        // FBXの時だけ自動変換を試みる
-        await convertAndSaveAsGLB(object, file.path);
 			}
 			resolve(object);
 		};
