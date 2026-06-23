@@ -1121,3 +1121,17 @@ ipcMain.handle('sync-backup-start', async (event, folderPath, files) => {
 ipcMain.handle('sync-restore-end', async (event, folderPath) => {
 	return { success: cleanupSyncBackup(folderPath, true) };
 });
+// フォルダを丸ごとコピーする処理
+ipcMain.handle('clone-car-folder', async (event, sourcePath, targetPath) => {
+    const fs = require('fs');
+    try {
+        if (!fs.existsSync(sourcePath)) return { success: false, error: '元の車両が見つかりません' };
+        if (fs.existsSync(targetPath)) return { success: false, error: '指定した名前の車両は既に存在します' };
+
+        // フォルダを再帰的に丸ごとコピー（Node.js 16.7.0以降が必要）
+        fs.cpSync(sourcePath, targetPath, { recursive: true });
+        return { success: true };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
+});
