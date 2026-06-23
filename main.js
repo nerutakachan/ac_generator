@@ -1166,12 +1166,32 @@ if (btnExecuteCreation) {
         const cloneRes = await window.electronAPI.cloneCarFolder(sourcePath, targetPath);
         
         if (cloneRes.success) {
-            // 2. コピー先のフォルダからデータを読み込んでエディターを起動
-            await loadCarToEditor(targetPath, newCarName);
-            console.log("車両の複製に成功しました:", newCarName);
-        } else {
-            alert("複製エラー: " + cloneRes.error);
-        }
+			// 2. コピー先のフォルダからデータを読み込んでエディターを起動
+			window.currentCarDirectoryName = newCarName;
+			
+			// 書き出し画面のプロジェクト名入力欄に自動反映
+			const exportNameInput = document.getElementById('exportProjectName');
+			if (exportNameInput) exportNameInput.value = newCarName;
+
+			// コピー先フォルダ内のデータを電子API経由で取得してインポート処理へ流し込む
+			const res = await window.electronAPI.readCarFolderData(targetPath);
+			if (res.success) {
+				const { handleMultiFileUpload } = await import('./js/import.js');
+				await handleMultiFileUpload(res.files);
+
+				// 画面を切り替える（ハブを隠し、エディターを表示）
+				const startupHub = document.getElementById('startup-hub');
+				const wrapper = document.getElementById('wrapper');
+				if (startupHub) startupHub.style.display = 'none';
+				if (wrapper) wrapper.style.display = 'block';
+
+				console.log("車両の複製とインポートに成功しました:", newCarName);
+			} else {
+				alert("複製データの読み込みエラー: " + res.error);
+			}
+		} else {
+			alert("複製エラー: " + cloneRes.error);
+		}
     });
 }
 
