@@ -1173,8 +1173,11 @@ if (btnExecuteCreation) {
 			const exportNameInput = document.getElementById('exportProjectName');
 			if (exportNameInput) exportNameInput.value = newCarName;
 
-			// コピー先フォルダ内のデータを電子API経由で取得してインポート処理へ流し込む
-			const res = await window.electronAPI.readCarFolderData(targetPath);
+			// コピー先フォルダ内の data フォルダのパスを作成
+			const targetDataPath = targetPath + (targetPath.includes('/') ? '/data' : '\\data');
+
+			// 既存の getFolderList を使って data フォルダ内のファイル群を取得
+			const res = await window.electronAPI.getFolderList(targetDataPath);
 			if (res.success) {
 				const { handleMultiFileUpload } = await import('./js/import.js');
 				await handleMultiFileUpload(res.files);
