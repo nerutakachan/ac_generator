@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<title>FBX Loader - Color & Glass Control</title>
+	<style>
+		body {
+			margin: 0;
+			overflow: hidden;
+			background-color: #1a1a1a;
+			font-family: sans-serif;
+		}
+
+		#container {
+			width: 100vw;
+			height: 100vh;
+		}
+
+		#format-overlay {
+			position: absolute;
+			top: 20px;
+			right: 20px;
+			background: rgba(0, 0, 0, 0.7);
+			color: #fff;
+			padding: 10px 15px;
+			border-radius: 5px;
+			font-size: 14px;
+			pointer-events: none;
+			z-index: 100;
+		}
+
+		#ui-layer {
+			position: absolute;
+			top: 20px;
+			left: 20px;
+			padding: 15px;
+			background: rgba(255, 255, 255, 0.95);
+			border-radius: 8px;
+			z-index: 10;
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+			box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+			border: 1px solid #ccc;
+			width: 220px;
+		}
+
+		.control-group {
+			display: flex;
+			flex-direction: column;
+			gap: 4px;
+		}
+
+		label {
+			font-size: 11px;
+			font-weight: bold;
+			color: #444;
+			display: flex;
+			justify-content: space-between;
+		}
+
+		input[type="range"] {
+			width: 100%;
+		}
+
+		#status {
+			font-size: 11px;
+			margin: 0;
+			color: #666;
+			border-top: 1px solid #eee;
+			padding-top: 8px;
+		}
+
+		#fileInfo {
+			font-size: 11px;
+			margin: 0;
+			color: #333;
+			font-weight: bold;
+			padding-top: 4px;
+		}
+
+		#convertBtn, #toggleBtn {
+			margin-top: 5px;
+			padding: 5px;
+			cursor: pointer;
+		}
+	</style>
+</head>
+<body>
+
+	<div id="format-overlay">形式: 未読込</div>
+
+	<div id="ui-layer">
+		<div class="control-group">
+			<label for="fileInput">モデルファイル選択 (フォルダ可)</label>
+			<input type="file" id="fileInput" accept=".fbx,.glb" webkitdirectory directory multiple>
+		</div>
+
+		<div class="control-group">
+			<label for="bgColor">背景色</label>
+			<input type="color" id="bgColor" value="#ffffff">
+		</div>
+
+		<div class="control-group">
+			<label for="modelColor">モデルの色 (一般パーツ)</label>
+			<input type="color" id="modelColor" value="#888888">
+		</div>
+
+		<div class="control-group">
+			<label for="glassOpacity">
+				ガラスの透明度
+				<span id="opacityValue">0.3</span>
+			</label>
+			<input type="range" id="glassOpacity" min="0" max="1" step="0.01" value="0.3">
+		</div>
+
+		<p id="status">準備完了</p>
+		<div id="fileInfo">未読込</div>
+		<button id="convertBtn">GLBへ変換</button>
+		<button id="toggleBtn" disabled>表示切替 (FBX ↔ GLB)</button>
+	</div>
+
+	<div id="container"></div>
+
+	<script type="importmap">
+		{
+			"imports": {
+				"three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+				"three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+			}
+		}
+	</script>
+
+	<script type="module">
+		import * as THREE from 'three';
+		import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+		import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    const { ipcRenderer } = window.require('electron');
+		import { DDSLoader } from 'three/addons/loaders/DDSLoader.js';
+		import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+		const scene = new THREE.Scene();
+		scene.background = new THREE.Color(0xffffff);
+
+		const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 20000);
+		camera.position.set(10, 10, 10);
+
+		const renderer = new THREE.WebGLRenderer({ antialias: true });
+		renderer.setPixelRatio(window.devicePixelRatio);
+		renderer.setSize(window.innerWidth, window.innerHeight);
+		document.getElementById('container').appendChild(renderer.domElement);
+
+		const controls = new OrbitControls(camera, renderer.domElement);
+		controls.enableDamping = true;
+
+		const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+		scene.add(ambientLight);
+		const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+		dirLight.position.set(10, 20, 10);
+		scene.add(dirLight);
+
+		const manager = new THREE.LoadingManager();
+		manager.addHandler(/\.dds$/i, new DDSLoader());
+		const fbxLoader = new FBXLoader(manager);
+		const gltfLoader = new GLTFLoader(manager);
+
+		const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x888888, side: THREE.DoubleSide });
+		const glassMaterial = new THREE.MeshStandardMaterial({
+			color: 0x88ccff, transparent: true, opacity: 0.3, side: THREE.DoubleSide, roughness: 0.1, metalness: 0.9
+		});
+
+		let originalModel = null;
+    let convertedModel = null;
+    let originalFileName = "";
+    let currentFilePath = "";
+		const status = document.getElementById('status');
+		const formatOverlay = document.getElementById('format-overlay');
+		const fileInfo = document.getElementById('fileInfo');
+		const toggleBtn = document.getElementById('toggleBtn');
+
+		document.getElementById('bgColor').addEventListener('input', (e) => scene.background.set(e.target.value));
+		document.getElementById('modelColor').addEventListener('input', (e) => bodyMaterial.color.set(e.target.value));
+		document.getElementById('glassOpacity').addEventListener('input', (e) => {
+			const val = parseFloat(e.target.value);
+			glassMaterial.opacity = val;
+			document.getElementById('opacityValue').innerText = val;
+		});
+
+		function isGlass(name) {
+			const n = name.toLowerCase();
+			return n.includes('glass') || n.includes('window') || n.includes('vetro') || n.includes('windshield');
+		}
+
+		function handleFileLoad(file) {
+			if (!file.name.endsWith('.fbx') && !file.name.endsWith('.glb')) return;
+			status.innerText = "Loading...";
+			
+			if (originalModel) scene.remove(originalModel);
+			if (convertedModel) scene.remove(convertedModel);
+			originalModel = null;
+			convertedModel = null;
+			toggleBtn.disabled = true;
+
+			const ext = file.name.split('.').pop().toUpperCase();
+			originalFileName = file.name.replace(/\.[^/.]+$/, "");
+       currentFilePath = file.path;
+			formatOverlay.innerText = "形式: " + ext;
+			fileInfo.innerText = "形式: " + ext;
+
+			const url = URL.createObjectURL(file);
+			const loader = file.name.endsWith('.glb') ? gltfLoader : fbxLoader;
+
+			loader.load(url, (result) => {
+				const object = result.scene || result;
+				originalModel = object;
+				object.traverse((child) => {
+					if (child.isMesh) {
+						child.material = isGlass(child.name) ? glassMaterial : bodyMaterial;
+					}
+				});
+				const box = new THREE.Box3().setFromObject(object);
+				const size = box.getSize(new THREE.Vector3());
+				const center = box.getCenter(new THREE.Vector3());
+				object.position.sub(center);
+				const maxDim = Math.max(size.x, size.y, size.z);
+				camera.position.set(maxDim, maxDim, maxDim);
+				camera.lookAt(0, 0, 0);
+				controls.target.set(0, 0, 0);
+				controls.update();
+
+				scene.add(originalModel);
+				URL.revokeObjectURL(url);
+				status.innerText = "Load Complete";
+			});
+		}
+
+		document.getElementById('fileInput').addEventListener('change', (e) => {
+			const targetFile = Array.from(e.target.files).find(f => f.name.endsWith('.fbx') || f.name.endsWith('.glb'));
+			if (targetFile) handleFileLoad(targetFile);
+		});
+
+		document.addEventListener('drop', (e) => {
+			e.preventDefault();
+			const items = e.dataTransfer.items;
+			if (items.length > 0) {
+				const entry = items[0].webkitGetAsEntry();
+				if (entry.isFile) entry.file((file) => handleFileLoad(file));
+				else if (entry.isDirectory) {
+					const reader = entry.createReader();
+					reader.readEntries((entries) => {
+						const targetFile = entries.find(f => f.isFile && (f.name.endsWith('.fbx') || f.name.endsWith('.glb')));
+						if (targetFile) targetFile.file((file) => handleFileLoad(file));
+					});
+				}
+			}
+		});
+		document.getElementById('convertBtn').addEventListener('click', async () => {
+       if (!originalModel) return;
+       if (convertedModel) {
+         originalModel.visible = !originalModel.visible;
+         convertedModel.visible = !convertedModel.visible;
+         formatOverlay.innerText = originalModel.visible ? "形式: 元モデル" : "形式: GLB (変換済)";
+         return;
+       }
+
+       if (!currentFilePath.toLowerCase().endsWith('.fbx')) {
+         status.innerText = "FBXファイルを選択してください。";
+         return;
+       }
+
+       console.log("CLI Conversion started...");
+       status.innerText = "Converting via CLI...";
+
+       try {
+         const outputPath = await ipcRenderer.invoke('convert-fbx', currentFilePath);
+         console.log("CLI Conversion success:", outputPath);
+
+         const url = "file://" + outputPath.replace(/\\/g, '/');
+
+         gltfLoader.load(url, (gltf) => {
+           console.log("Loader success");
+           convertedModel = gltf.scene;
+           scene.add(convertedModel);
+           originalModel.visible = false;
+           formatOverlay.innerText = "形式: GLB (CLI変換済)";
+           fileInfo.innerText = "形式: GLB (CLI変換済)";
+           status.innerText = "CLI Converted & Loaded";
+           toggleBtn.disabled = false;
+         }, undefined, (err) => {
+           console.error("Loader Error:", err);
+           status.innerText = "Loader Error!";
+         });
+       } catch (err) {
+         console.error("CLI Exporter Error:", err);
+         status.innerText = "CLI Error: " + err;
+       }
+     });
+
+		toggleBtn.addEventListener('click', () => {
+			if (!originalModel || !convertedModel) return;
+			originalModel.visible = !originalModel.visible;
+			convertedModel.visible = !convertedModel.visible;
+			formatOverlay.innerText = originalModel.visible ? "形式: 元モデル" : "形式: GLB (変換済)";
+		});
+
+		function animate() {
+			requestAnimationFrame(animate);
+			controls.update();
+			renderer.render(scene, camera);
+		}
+		animate();
+
+		window.addEventListener('resize', () => {
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+			renderer.setSize(window.innerWidth, window.innerHeight);
+		});
+	</script>
+</body>
+</html>
