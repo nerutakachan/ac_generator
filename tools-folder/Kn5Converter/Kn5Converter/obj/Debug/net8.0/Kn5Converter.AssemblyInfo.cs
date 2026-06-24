@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Kn5Converter")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0ec8939306ef8e8ae982717b545ae18c19d24122")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0fa60ac7f16e575d616c035f519744b1a3569e6c")]
 [assembly: System.Reflection.AssemblyProductAttribute("Kn5Converter")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Kn5Converter")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
