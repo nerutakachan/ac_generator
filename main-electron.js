@@ -633,29 +633,32 @@ function startAuthServer() {
 	authServer.listen(34567);
 }
 ipcMain.handle('unpack-kn5', async (event, kn5Path) => {
-    // 100%の事実：アプリ同梱の kunossdk.exe の場所を特定します
+    // アプリ同梱ツールのパス
     const sdkExe = path.join(__dirname, 'tools-folder', 'lib', 'kunossdk.exe');
-    const outputFbxPath = kn5Path.replace(/\.kn5$/i, '.fbx');
+    
+    // 100%の事実に基づく修正：ツールは「fbx」というフォルダを作ってその中に保存します [cite: 759]
+    const kn5Dir = path.dirname(kn5Path); // .kn5 があるフォルダ（車両フォルダ）を取得
+    const kn5Name = path.basename(kn5Path, '.kn5'); // ファイル名（例：nissan_silvia_s13）を取得
+    const outputFbxPath = path.join(kn5Dir, 'fbx', `${kn5Name}.fbx`); // 「fbx」フォルダ内のパスを組み立て
 
     return new Promise((resolve) => {
-        // ツールの存在確認（プロジェクト内の tools-folder を見ます）
         if (!fs.existsSync(sdkExe)) {
             resolve({ success: false, error: "展開ツール(kunossdk.exe)が見つかりません。" });
             return;
         }
 
-        // kunossdk.exe を実行して .kn5 を直接 .fbx に展開します [cite: 1009]
-        // コマンドはシンプルに "kunossdk.exe ファイル名" です
+        // コマンド実行（.kn5 を渡すと、自動的にその場所に fbx フォルダを作って展開されます）
         const command = `"${sdkExe}" "${kn5Path}"`;
 
         exec(command, (error, stdout, stderr) => {
-            if (error) {
-                resolve({ success: false, error: stderr || error.message });
-            } else if (fs.existsSync(outputFbxPath)) {
-                // 成功したら生成された FBX のパスを返します
+            // 事実：ツール実行後に「fbx」フォルダの中にファイルが存在するか確認します [cite: 759]
+            if (fs.existsSync(outputFbxPath)) {
+                console.log("✅ [.kn5] 物理ファイルを確認:", outputFbxPath);
                 resolve({ success: true, fbxPath: outputFbxPath });
+            } else if (error) {
+                resolve({ success: false, error: stderr || error.message });
             } else {
-                resolve({ success: false, error: "展開に失敗したか、ファイルが生成されませんでした。" });
+                resolve({ success: false, error: "展開プロセスは終了しましたが、ファイルが見つかりません。" });
             }
         });
     });

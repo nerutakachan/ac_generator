@@ -380,78 +380,78 @@ export function isGlass(name) {
 	return n.includes('glass') || n.includes('window') || n.includes('vetro') || n.includes('windshield');
 }
 export function load3DModel(file) {
-    return new Promise((resolve, reject) => {
-        const url = URL.createObjectURL(file);
-        const extension = file.name.split('.').pop().toLowerCase();
+		return new Promise((resolve, reject) => {
+				const url = URL.createObjectURL(file);
+				const extension = file.name.split('.').pop().toLowerCase();
 
-        const onObjectLoad = (object) => {
-            URL.revokeObjectURL(url);
-            
-            // 🚨 重要：以前あった object.position.sub(center) などの
-            // 自動センタリング処理を「余計な設定」として完全に削除しました。
-            // これにより、FBX/GLBの持つ本来の原点（Origin）が維持されます。
+				const onObjectLoad = (object) => {
+						URL.revokeObjectURL(url);
+						
+						// 🚨 重要：以前あった object.position.sub(center) などの
+						// 自動センタリング処理を「余計な設定」として完全に削除しました。
+						// これにより、FBX/GLBの持つ本来の原点（Origin）が維持されます。
 
-            // 解析用メモリのリセット [cite: 331, 383]
-            model_3D.BODY = [];
-            model_3D.STEER = null;
-            model_3D.GLASS = [];
-            Object.keys(model_3D.WHEEL).forEach(k => model_3D.WHEEL[k] = null);
-            Object.keys(model_3D.SUSP).forEach(k => model_3D.SUSP[k] = null);
-            Object.keys(model_3D.DISC).forEach(k => model_3D.DISC[k] = null);
-            Object.keys(model_3D.CALIPER).forEach(k => model_3D.CALIPER[k] = null);
+						// 解析用メモリのリセット [cite: 331, 383]
+						model_3D.BODY = [];
+						model_3D.STEER = null;
+						model_3D.GLASS = [];
+						Object.keys(model_3D.WHEEL).forEach(k => model_3D.WHEEL[k] = null);
+						Object.keys(model_3D.SUSP).forEach(k => model_3D.SUSP[k] = null);
+						Object.keys(model_3D.DISC).forEach(k => model_3D.DISC[k] = null);
+						Object.keys(model_3D.CALIPER).forEach(k => model_3D.CALIPER[k] = null);
 
-            // ノードのトラバースとパーツ特定 [cite: 339, 391]
-            object.traverse((child) => {
-                if (!child.isMesh && !child.isGroup && child.type !== 'Object3D') return;
-                const name = child.name;
+						// ノードのトラバースとパーツ特定 [cite: 339, 391]
+						object.traverse((child) => {
+								if (!child.isMesh && !child.isGroup && child.type !== 'Object3D') return;
+								const name = child.name;
 
-                if (isGlass(name)) {
-                    model_3D.GLASS.push(child);
-                    return;
-                }
+								if (isGlass(name)) {
+										model_3D.GLASS.push(child);
+										return;
+								}
 
-                // パーツ名に基づいた分類（D&D状態の再現）
-                switch (name) {
-                    case 'BODY': model_3D.BODY.push(child); break;
-                    case 'WHEEL_LF': model_3D.WHEEL.LF = child; break;
-                    case 'WHEEL_RF': model_3D.WHEEL.RF = child; break;
-                    case 'WHEEL_LR': model_3D.WHEEL.LR = child; break;
-                    case 'WHEEL_RR': model_3D.WHEEL.RR = child; break;
-                    case 'SUSP_LF': model_3D.SUSP.LF = child; break;
-                    case 'SUSP_RF': model_3D.SUSP.RF = child; break;
-                    case 'SUSP_LR': model_3D.SUSP.LR = child; break;
-                    case 'SUSP_RR': model_3D.SUSP.RR = child; break;
-                    case 'STEER_HR':
-                    case 'STEER_LR': model_3D.STEER = child; break;
-                    case 'DISC_LF': model_3D.DISC.LF = child; break;
-                    case 'DISC_RF': model_3D.DISC.RF = child; break;
-                    case 'DISC_LR': model_3D.DISC.LR = child; break;
-                    case 'DISC_RR': model_3D.DISC.RR = child; break;
-                    case 'CALIPER_LF': model_3D.CALIPER.LF = child; break;
-                    case 'CALIPER_RF': model_3D.CALIPER.RF = child; break;
-                    case 'CALIPER_LR': model_3D.CALIPER.LR = child; break;
-                    case 'CALIPER_RR': model_3D.CALIPER.RR = child; break;
-                    default:
-                        if (child.isMesh) model_3D.BODY.push(child);
-                        break;
-                }
-            });
+								// パーツ名に基づいた分類（D&D状態の再現）
+								switch (name) {
+										case 'BODY': model_3D.BODY.push(child); break;
+										case 'WHEEL_LF': model_3D.WHEEL.LF = child; break;
+										case 'WHEEL_RF': model_3D.WHEEL.RF = child; break;
+										case 'WHEEL_LR': model_3D.WHEEL.LR = child; break;
+										case 'WHEEL_RR': model_3D.WHEEL.RR = child; break;
+										case 'SUSP_LF': model_3D.SUSP.LF = child; break;
+										case 'SUSP_RF': model_3D.SUSP.RF = child; break;
+										case 'SUSP_LR': model_3D.SUSP.LR = child; break;
+										case 'SUSP_RR': model_3D.SUSP.RR = child; break;
+										case 'STEER_HR':
+										case 'STEER_LR': model_3D.STEER = child; break;
+										case 'DISC_LF': model_3D.DISC.LF = child; break;
+										case 'DISC_RF': model_3D.DISC.RF = child; break;
+										case 'DISC_LR': model_3D.DISC.LR = child; break;
+										case 'DISC_RR': model_3D.DISC.RR = child; break;
+										case 'CALIPER_LF': model_3D.CALIPER.LF = child; break;
+										case 'CALIPER_RF': model_3D.CALIPER.RF = child; break;
+										case 'CALIPER_LR': model_3D.CALIPER.LR = child; break;
+										case 'CALIPER_RR': model_3D.CALIPER.RR = child; break;
+										default:
+												if (child.isMesh) model_3D.BODY.push(child);
+												break;
+								}
+						});
 
-            // 3Dモデルの解析完了後、視覚情報の更新を要求 [cite: 340, 392]
-            if (typeof window.updateSuspensionVisuals === 'function' && window.currentSuspensionData) {
-                window.updateSuspensionVisuals(window.currentSuspensionData);
-            }
-            resolve(object);
-        };
+						// 3Dモデルの解析完了後、視覚情報の更新を要求 [cite: 340, 392]
+						if (typeof window.updateSuspensionVisuals === 'function' && window.currentSuspensionData) {
+								window.updateSuspensionVisuals(window.currentSuspensionData);
+						}
+						resolve(object);
+				};
 
-        if (extension === 'fbx') {
-            fbxLoader.load(url, onObjectLoad, undefined, reject);
-        } else if (extension === 'glb' || extension === 'gltf') {
-            gltfLoader.load(url, (g) => onObjectLoad(g.scene), undefined, reject);
-        } else {
-            reject(new Error("非対応形式: " + extension));
-        }
-    });
+				if (extension === 'fbx') {
+						fbxLoader.load(url, onObjectLoad, undefined, reject);
+				} else if (extension === 'glb' || extension === 'gltf') {
+						gltfLoader.load(url, (g) => onObjectLoad(g.scene), undefined, reject);
+				} else {
+						reject(new Error("非対応形式: " + extension));
+				}
+		});
 }
 // --- 6. メインハンドラ（ファイルのルーティングとデータ同期） ---
 // 共通：解析されたデータをシステムに適用し、切り替えを通知する
@@ -698,20 +698,24 @@ export async function handleMultiFileUpload(files) {
 		try {
 			// ★追加：.kn5 を検知したら FBX への展開を依頼する
 			if (name.endsWith('.kn5')) {
-					console.log("📦 [.kn5] 展開を開始します:", file.path);
-					const res = await window.electronAPI.unpackKn5(file.path);
-					if (res.success) {
-							console.log("✅ [.kn5] 展開成功、FBXを読み込みます:", res.fbxPath);
-							// 展開されたFBXファイルを「あたかもドロップされたファイル」として偽装して読み込ませる
-							const fbxBuffer = await window.electronAPI.readModelFile(res.fbxPath);
-							const fbxFile = new File([fbxBuffer], name.replace('.kn5', '.fbx'), { type: 'application/octet-stream' });
-							await load3DModel(fbxFile);
-							continue; // 元の .kn5 自体の読み込みはスキップ
-					} else {
-							console.error("❌ [.kn5] 展開失敗:", res.error);
-							continue;
-					}
-			}
+				if (name === 'collider.kn5') {
+										console.log("⏩ [SKIP] collider.kn5 は展開不要のため無視します。");
+										continue;
+								}
+								console.log("📦 [.kn5] 展開を開始します:", file.path);
+								const res = await window.electronAPI.unpackKn5(file.path);
+								if (res.success) {
+										console.log("✅ [.kn5] 展開成功、安全ルートでFBXを読み込みます:", res.fbxPath);
+										// 事実：model.js にある loadModelByPath は、手動ドロップと同じ動作をパス指定だけで再現します
+										if (typeof window.loadModelByPath === 'function') {
+												await window.loadModelByPath(res.fbxPath);
+										}
+										continue; 
+								} else {
+										console.error("❌ [.kn5] 展開失敗:", res.error);
+										continue;
+								}
+						}
 			// ★追加：3Dモデル以外のファイルは、許可リストにあるかチェックする
 			if (!name.endsWith('.fbx') && !name.endsWith('.glb') && !name.endsWith('.gltf')) {
 				if (!ALLOWED_FILES.includes(name)) {
@@ -812,7 +816,7 @@ export async function handleMultiFileUpload(files) {
 				if (typeof window.requestRender === 'function') window.requestRender();
 			}
 		} catch (err) {
-			// console.error(`[import.js] ファイル処理失敗: ${file.name}`, err);
+			console.error(`[import.js] ファイル処理失敗: ${file.name}`, err);
 		}
 	} // ← ここでファイルの読み込みループ(for)が終了
 	// ==========================================
