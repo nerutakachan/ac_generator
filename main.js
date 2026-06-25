@@ -1148,6 +1148,36 @@ if (carSelect) {
         }
     });
 }
+// ★追加：フォルダのパスを受け取って、中身を解析し、エディター画面に切り替える命令
+async function loadCarToEditor(carFullPath, carDirName) {
+    // 1. 裏側(Electron)にフォルダ内のINIやKN5のリストアップを依頼
+    const res = await window.electronAPI.readCarFolderData(carFullPath);
+    
+    if (res.success) {
+        // 物理的なフォルダ名を記憶（保存・書き出し時の基準になります）
+        window.currentCarDirectoryName = carDirName;
+        
+        // 書き出し画面の「プロジェクト名」入力欄にも自動で反映
+        const exportNameInput = document.getElementById('exportProjectName');
+        if (exportNameInput) exportNameInput.value = carDirName;
+
+        // 2. 取得したファイルリストを import.js の一括処理（.kn5展開含む）へ流す
+        const { handleMultiFileUpload } = await import('./js/import.js');
+        await handleMultiFileUpload(res.files);
+
+        // 3. 画面を切り替えて編集開始（ハブを隠し、エディターを表示）
+        const startupHub = document.getElementById('startup-hub');
+        const wrapper = document.getElementById('wrapper');
+        if (startupHub) startupHub.style.opacity = "0";
+        setTimeout(() => {
+            if (startupHub) startupHub.style.display = 'none';
+            if (wrapper) wrapper.style.display = 'block';
+            console.log("✅ 車両データの読み込みと画面切り替えが完了しました。");
+        }, 300);
+    } else {
+        alert("読み込みエラー: " + res.error);
+    }
+}
 const btnExecuteCreation = document.getElementById('btn-execute-car-creation');
 const btnEditSelected = document.getElementById('btn-edit-selected-car'); // ★追加
 // 案：複製して新規作成
