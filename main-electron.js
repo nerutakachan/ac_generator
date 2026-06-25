@@ -6,8 +6,10 @@ autoUpdater.allowPrerelease = true;
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
+const {
+	exec
+} = require('child_process');
 const https = require('https');
-const { exec, spawn } = require('child_process');
 const IS_DEV_MODE = !app.isPackaged;
 if (IS_DEV_MODE) {
 	try {
@@ -630,53 +632,7 @@ function startAuthServer() {
 	});
 	authServer.listen(34567);
 }
-ipcMain.handle('unpack-kn5', async (event, kn5Path) => {
-    const fs = require('fs');
-    const path = require('path');
-    const { exec } = require('child_process');
 
-    // 💡 汎用化のポイント：OSから AppData\Local の場所を取得する
-    const localAppData = process.env.LOCALAPPDATA; 
-    
-    // 取得したパスをベースに、FbxConverter.exe へのフルパスを組み立てる
-    const converterExe = path.join(
-        localAppData, 
-        'AcTools Content Manager', 
-        'Plugins', 
-        'FbxConverter', 
-        'FbxConverter.exe'
-    );
-
-    // 出力先は元の .kn5 ファイルと同じ場所の .fbx に設定
-    const outputFbxPath = kn5Path.replace(/\.kn5$/i, '.fbx');
-
-    return new Promise((resolve) => {
-        // ツールの存在確認
-        if (!fs.existsSync(converterExe)) {
-            console.error("❌ ツールが見つかりません:", converterExe);
-            resolve({ success: false, error: "Content Manager の FbxConverter プラグインが見つかりません。" });
-            return;
-        }
-
-        // 🎯 以前の解析で判明した「source_file fbx_file」の構文で実行
-        // パスにスペースが含まれても大丈夫なように、二重引用符で囲みます
-        const command = `"${converterExe}" "${kn5Path}" "${outputFbxPath}"`;
-
-        console.log("🎯 [Unpack] 実行コマンド:", command);
-
-        exec(command, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`[DEBUG] 変換失敗。コード: ${error.code}`);
-                resolve({ success: false, error: stderr || error.message });
-            } else if (fs.existsSync(outputFbxPath)) {
-                console.log(`✅ [DEBUG] 変換成功: ${outputFbxPath}`);
-                resolve({ success: true, fbxPath: outputFbxPath });
-            } else {
-                resolve({ success: false, error: "変換プロセスは終了しましたが、ファイルが生成されませんでした。" });
-            }
-        });
-    });
-});
 app.on('window-all-closed', () => {
 	if (process.platform !== 'darwin') app.quit();
 });
@@ -1169,24 +1125,15 @@ ipcMain.handle('sync-restore-end', async (event, folderPath) => {
 });
 // フォルダを丸ごとコピーする処理
 ipcMain.handle('clone-car-folder', async (event, sourcePath, targetPath) => {
-	const fs = require('fs');
-	try {
-		if (!fs.existsSync(targetPath)) {
-			fs.mkdirSync(targetPath, { recursive: true });
-		}
-		const files = fs.readdirSync(sourcePath);
-		for (const file of files) {
-			const srcFile = path.join(sourcePath, file);
-			const destFile = path.join(targetPath, file);
-			if (fs.lstatSync(srcFile).isDirectory()) {
-				// 必要であれば再帰処理を追加
-			} else {
-				fs.copyFileSync(srcFile, destFile);
-			}
-		}
-		return { success: true };
-	} catch (err) {
-		console.error("Clone error:", err);
-		return { success: false, error: err.message };
-	}
+    const fs = require('fs');
+    try {
+        if (!fs.existsSync(sourcePath)) return { success: false, error: '元の車両が見つかりません' };
+        if (fs.existsSync(targetPath)) return { success: false, error: '指定した名前の車両は既に存在します' };
+
+        // フォルダを再帰的に丸ごとコピー（Node.js 16.7.0以降が必要）
+        fs.cpSync(sourcePath, targetPath, { recursive: true });
+        return { success: true };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
 });
