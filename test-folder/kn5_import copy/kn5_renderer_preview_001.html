@@ -137,7 +137,7 @@
 			var currentModel = null;
 
 			init();
-      render();
+			animate();
 
 			function init() {
 
@@ -234,7 +234,6 @@
 
 							pb.delay(500).fadeOut(500);
 							msg.append("\n【読み込み完了！】");
-              render();
 
 						} catch (err) {
 							console.error(err);
@@ -265,6 +264,10 @@
 				camera.aspect = window.innerWidth / window.innerHeight;
 				camera.updateProjectionMatrix();
 				renderer.setSize( window.innerWidth, window.innerHeight );
+			}
+
+			function animate() {
+				requestAnimationFrame( animate );
 				render();
 			}
 
