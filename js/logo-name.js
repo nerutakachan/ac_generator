@@ -200,7 +200,7 @@ window.setupGalleryArrows = function() {
     const arrows = arrowContainer.querySelectorAll('span');
     if (arrows.length >= 2) {
         // ★修正点： を付けることで左ボタンを特定します
-        arrows.onclick = () => window.selectSkin(window.currentSkinIdx - 1); // ◀ 左
+        arrows[0].onclick = () => window.selectSkin(window.currentSkinIdx - 1); // ◀ 左
         arrows[1].onclick = () => window.selectSkin(window.currentSkinIdx + 1); // ▶ 右
     }
 };

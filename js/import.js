@@ -339,6 +339,17 @@ const manager = new THREE.LoadingManager();
 manager.addHandler(/\.dds$/i, new DDSLoader());
 const fbxLoader = new FBXLoader(manager);
 const gltfLoader = new GLTFLoader(manager);
+export const glassMaterial = new THREE.MeshPhysicalMaterial({
+	color: 0x88ccff,
+	transparent: true,
+	opacity: 0.1,
+	transmission: 0.5,
+	roughness: 0.2,
+	metalness: 0.4,
+	ior: 1.5,
+	thickness: 0.5,
+	side: THREE.DoubleSide
+});
 export function readTextFile(file) {
 	return new Promise((resolve, reject) => {
 		const reader = new FileReader();
@@ -377,7 +388,7 @@ export function parseINI(text) {
 export function isGlass(name) {
 	if (!name) return false;
 	const n = name.toLowerCase();
-	return n.includes('glass') || n.includes('window') || n.includes('vetro') || n.includes('windshield');
+	return n.includes('glass') || n.includes('window') || n.includes('vetro') || n.includes('windshield') || n.includes('steklo');
 }
 export function load3DModel(file) {
 		return new Promise((resolve, reject) => {
@@ -406,6 +417,9 @@ export function load3DModel(file) {
 								const name = child.name;
 
 								if (isGlass(name)) {
+									if (child.isMesh) {
+											child.material = glassMaterial;
+										}
 										model_3D.GLASS.push(child);
 										return;
 								}

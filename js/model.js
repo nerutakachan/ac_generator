@@ -9,7 +9,8 @@ import {
 	DDSLoader
 } from 'three/addons/loaders/DDSLoader.js';
 import {
-	load3DModel
+	load3DModel,
+	glassMaterial
 } from './import.js';
 window.THREE = THREE;
 //画面の再描画が必要かどうかを判定するフラグ。
@@ -387,22 +388,20 @@ function applyModelPatches(model) {
 			mats.forEach(mat => {
 			const meshName = child.name.toLowerCase();
 			if (meshName.includes('glass') || meshName.includes('window') || meshName.includes('vetro') || meshName.includes('windshield') || meshName.includes('steklo')) {
-				mat.transparent = true;
-				mat.opacity = 0.2; 
-				mat.roughness = 0.05;
-				mat.metalness = 0.1;
-				mat.alphaTest = 0.5;
-				mat.side = THREE.DoubleSide; 
-				mat.depthWrite = false;
-				} else {
-					mat.side = THREE.DoubleSide;
-					mat.map = null;
-					mat.color.set(modelBaseColor);
-					mat.roughness = 0.3;
-					mat.metalness = 0.5;
-					mat.transparent = false;
-					mat.depthWrite = true;
+					if (Array.isArray(child.material)) {
+						child.material[mats.indexOf(mat)] = glassMaterial;
+					} else {
+						child.material = glassMaterial;
+					}
+					return;
 				}
+				mat.side = THREE.DoubleSide;
+				mat.map = null;
+			mat.color.set(modelBaseColor);
+			mat.roughness = 0.3;
+			mat.metalness = 0.5;
+			mat.transparent = false;
+			mat.depthWrite = true;
 				mat.alphaTest = 0.5;
 			});
 		}
