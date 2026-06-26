@@ -193,9 +193,14 @@ window.selectSkin = function(idx) {
 };
 
 window.setupGalleryArrows = function() {
-    const arrows = document.querySelectorAll('.color-preview-list_box span');
+    // 付与していただいたID「color-preview-arrow」を使ってボタンを探します
+    const arrowContainer = document.getElementById('color-preview-arrow');
+    if (!arrowContainer) return;
+
+    const arrows = arrowContainer.querySelectorAll('span');
     if (arrows.length >= 2) {
-        arrows.onclick = () => window.selectSkin(window.currentSkinIdx - 1); // ◀
-        arrows[1].onclick = () => window.selectSkin(window.currentSkinIdx + 1); // ▶
+        // ★修正点： を付けることで左ボタンを特定します
+        arrows.onclick = () => window.selectSkin(window.currentSkinIdx - 1); // ◀ 左
+        arrows[1].onclick = () => window.selectSkin(window.currentSkinIdx + 1); // ▶ 右
     }
 };

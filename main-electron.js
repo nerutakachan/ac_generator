@@ -898,29 +898,26 @@ ipcMain.handle('read-car-folder-data', async (event, carPath) => {
 						});
 						console.log("✅ [裏側] ui_car.json を発見しました。");
 				}
-				// 4. skins フォルダの探索 (★追加)
-				const skinsPath = path.join(carPath, 'skins');
-				const skinsFound = [];
-				if (fs.existsSync(skinsPath)) {
-						const skinDirs = fs.readdirSync(skinsPath);
-						// ※このログは「コマンドプロンプト」に出力されます
-						console.log(`🔍 [裏側] skinsフォルダ内に ${skinDirs.length} 個の項目を確認`);
-						for (const skinDir of skinDirs) {
-								const fullSkinPath = path.join(skinsPath, skinDir);
-								if (fs.statSync(fullSkinPath).isDirectory()) {
-										const previewPath = path.join(fullSkinPath, 'preview.jpg');
-										if (fs.existsSync(previewPath)) {
-												skinsFound.push({
-														name: skinDir,
-														path: previewPath.replace(/\\/g, '/') 
-												});
-										}
-								}
-						}
-						console.log(`✅ [裏側] 有効な preview.jpg を ${skinsFound.length} 枚発見しました。`);
-				}
-				// 戻り値に skins のリストを追加（これで表側の res.skins にデータが届きます）
-				return { success: true, files: filesRead, skins: skinsFound };
+				// 4. skins フォルダの探索
+        const skinsPath = path.join(carPath, 'skins');
+        const skinsFound = [];
+        if (fs.existsSync(skinsPath)) {
+            const skinDirs = fs.readdirSync(skinsPath);
+            for (const skinDir of skinDirs) {
+                const fullSkinPath = path.join(skinsPath, skinDir);
+                if (fs.statSync(fullSkinPath).isDirectory()) {
+                    const previewPath = path.join(fullSkinPath, 'preview.jpg');
+                    if (fs.existsSync(previewPath)) {
+                        skinsFound.push({
+                            name: skinDir,
+                            path: previewPath.replace(/\\/g, '/') 
+                        });
+                    }
+                }
+            }
+        }
+        // 戻り値に skins のリストを足して、表側の res.skins に届けます
+        return { success: true, files: filesRead, skins: skinsFound };
 				} catch (err) {
 						console.error("【裏側】車両データ読込エラー:", err);
 				return { success: false, error: err.message };

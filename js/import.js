@@ -663,6 +663,21 @@ export async function handleMultiFileUpload(files) {
 	console.log("[IMPORT DEBUG] 渡ってきた全ファイル:", fileArray.map(f => f.name));
 	console.log("[IMPORT DEBUG] 許可リスト:", ALLOWED_FILES);
 	// ★追加：ドロップされたファイルの中に設定ファイル（.ini）が1つでもあるかチェック
+	// --- ★追加：D&Dされたファイルからスキン画像を抽出する ---
+    const skinsFound = [];
+    fileArray.forEach(f => {
+        const pathStr = (f.path || f.webkitRelativePath || "").replace(/\\/g, '/');
+        // skins/フォルダ名/preview.jpg という構造をチェック
+        if (pathStr.toLowerCase().includes('/skins/') && pathStr.toLowerCase().endsWith('/preview.jpg')) {
+            const parts = pathStr.split('/');
+            const skinName = parts[parts.length - 2]; // フォルダ名をスキン名とする
+            skinsFound.push({ name: skinName, path: pathStr });
+        }
+    });
+    if (skinsFound.length > 0) {
+        window.initSkinGallery(skinsFound);
+        console.log(`🖼 [D&D] ${skinsFound.length} 個のスキンを検出しました。`);
+    }
 	const hasIniFiles = fileArray.some(f => f.name && f.name.toLowerCase().endsWith('.ini'));
 	// ==========================================
 	// ★修正：INIファイルが含まれている（dataフォルダ等のドロップ）場合のみ車名を特定・更新する
