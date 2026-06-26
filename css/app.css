@@ -1933,3 +1933,17 @@ label {
 .root-select_box input{
 	width: 100%;
 }
+.color-list_box li {
+	border: 2px solid transparent;
+	cursor: pointer;
+	overflow: hidden;
+}
+.color-list_box li.is-active {
+	border-color: #5fafb9; /* アクティブ時の色 */
+	box-shadow: 0 0 8px rgba(95, 175, 185, 0.5);
+}
+.color-list_box li img {
+	width: 100%;
+	height: auto;
+	display: block;
+}

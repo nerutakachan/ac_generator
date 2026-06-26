@@ -1165,6 +1165,10 @@ async function loadCarToEditor(carFullPath, carDirName) {
         // ここで await することで、SDKによるFBXの展開が終わるまで「しっかり待ちます」
         const importModule = await import('./js/import.js');
         await importModule.handleMultiFileUpload(res.files);
+				// ★追加：スキンギャラリーの初期化
+        if (res.skins && typeof window.initSkinGallery === 'function') {
+            window.initSkinGallery(res.skins);
+        }
 				if (window.currentDataFolderPath && typeof window.updateBadgeImage === 'function') {
             window.updateBadgeImage(window.currentDataFolderPath);
         }

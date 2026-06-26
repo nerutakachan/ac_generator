@@ -141,3 +141,66 @@ window.updateSpecsDisplay = function(specs) {
     setSpec('ui-specs-acceleration', 'acceleration', 's (0-100)'); // 単位をs (0-100)に明示
     setSpec('ui-specs-pwratio', 'pwratio', 'kg/ps');
 };
+// ★追加：スキンギャラリーの管理変数
+window.allCarSkins = [];
+window.currentSkinIdx = 0;
+
+/**
+ * スキンギャラリーを生成・更新する
+ */
+window.initSkinGallery = function(skins) {
+    window.allCarSkins = skins || [];
+    window.currentSkinIdx = 0;
+
+    const listUl = document.querySelector('.color-list_box ul');
+    const mainPreview = document.getElementById('car-color-preview');
+    if (!listUl || !mainPreview) return;
+
+    listUl.innerHTML = ''; // 既存のダミーを消去
+
+    if (window.allCarSkins.length === 0) {
+        mainPreview.innerHTML = 'スキンなし';
+        return;
+    }
+
+    // リストの生成
+    window.allCarSkins.forEach((skin, idx) => {
+        const li = document.createElement('li');
+        li.innerHTML = `<img src="file:///${skin.path}" alt="${skin.name}" title="${skin.name}">`;
+        li.addEventListener('click', () => window.selectSkin(idx));
+        listUl.appendChild(li);
+    });
+
+    window.selectSkin(0); // 最初のスキンを表示
+    window.setupGalleryArrows(); // 矢印のイベント設定
+};
+
+/**
+ * 指定したインデックスのスキンを表示する
+ */
+window.selectSkin = function(idx) {
+    if (idx < 0 || idx >= window.allCarSkins.length) return;
+    window.currentSkinIdx = idx;
+
+    const skin = window.allCarSkins[idx];
+    const mainPreview = document.getElementById('car-color-preview');
+    mainPreview.innerHTML = `<img src="file:///${skin.path}" style="width:100%; height:100%; object-fit:cover;">`;
+
+    // リストのハイライト更新（枠線を付ける）
+    const items = document.querySelectorAll('.color-list_box li');
+    items.forEach((item, i) => {
+        if (i === idx) item.classList.add('is-active');
+        else item.classList.remove('is-active');
+    });
+};
+
+/**
+ * ◀ ▶ ボタンの動作設定
+ */
+window.setupGalleryArrows = function() {
+    const arrows = document.querySelectorAll('.color-preview-list_box span');
+    if (arrows.length >= 2) {
+        arrows.onclick = () => window.selectSkin(window.currentSkinIdx - 1); // ◀
+        arrows[1].onclick = () => window.selectSkin(window.currentSkinIdx + 1); // ▶
+    }
+};

@@ -898,8 +898,26 @@ ipcMain.handle('read-car-folder-data', async (event, carPath) => {
             });
             console.log("✅ [裏側] ui_car.json を発見しました。");
         }
-        
-        return { success: true, files: filesRead };
+				// 4. skins フォルダの探索 (★追加)
+        const skinsPath = path.join(carPath, 'skins');
+        const skinsFound = [];
+        if (fs.existsSync(skinsPath)) {
+            const skinDirs = fs.readdirSync(skinsPath);
+            for (const skinDir of skinDirs) {
+                const fullSkinPath = path.join(skinsPath, skinDir);
+                if (fs.statSync(fullSkinPath).isDirectory()) {
+                    const previewPath = path.join(fullSkinPath, 'preview.jpg');
+                    if (fs.existsSync(previewPath)) {
+                        skinsFound.push({
+                            name: skinDir,
+                            path: previewPath.replace(/\\/g, '/') // パスを正規化
+                        });
+                    }
+                }
+            }
+        }
+        // 戻り値にスキンのリストを追加
+        return { success: true, files: filesRead, skins: skinsFound };
     } catch (err) {
         console.error("【裏側】車両データ読込エラー:", err);
         return { success: false, error: err.message };
