@@ -750,8 +750,8 @@ document.addEventListener('DOMContentLoaded', () => {
 							}
 						}
 					});
-					li.appendChild(info);
 					li.appendChild(delBtn);
+					li.appendChild(info);
 					listUl.appendChild(li);
 				});
 			} catch (err) {
