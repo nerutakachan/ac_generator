@@ -1972,6 +1972,8 @@ em
 	color: #fff;
 	text-shadow: 5px 4px 3px rgba(0, 0, 0, 0.87), -2px -2px 3px rgba(217, 217, 217, 1), 3px -2px 3px rgba(217, 217, 217, 1), -2px 3px 3px rgba(0, 0, 0, 0.52);
 	font-size: 1.3em;
+	cursor: pointer;
+	user-select: none;
 }
 .color-list_box,
 #color-preview-arrow{

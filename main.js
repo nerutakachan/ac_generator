@@ -1105,45 +1105,50 @@ document.addEventListener('drop', async (e) => {
 	}
 });
 // ACフォルダ選択ボタン（ご自身でHTMLに追加したボタンのIDに合わせてください）
-const btnSelectAC = document.getElementById('btn-select-ac-path'); 
-const acPathInput = document.getElementById('ac-root-path'); // 選択したパスを表示する欄
-const carSelect = document.getElementById('ac-car-select'); // ◀ ご提示いただいたID
+// --- 1. 車両リストを更新する共通関数 (新設) ---
+async function refreshCarList(acRoot) {
+    const carSelect = document.getElementById('ac-car-select');
+    const acPathInput = document.getElementById('ac-root-path');
+    if (!carSelect || !acRoot) return;
+
+    if (acPathInput) acPathInput.value = acRoot;
+
+    const carsPath = acRoot + "\\content\\cars";
+    const res = await window.electronAPI.getFolderList(carsPath);
+
+    if (res.success) {
+        carSelect.innerHTML = '<option value="">-- 車両を選択してください --</option>';
+        res.folders.forEach(carDir => {
+            const opt = document.createElement('option');
+            opt.value = carDir;
+            opt.textContent = carDir;
+            carSelect.appendChild(opt);
+        });
+        console.log("✅ [System] 車両リストを自動更新しました。");
+    }
+}
+
+// --- 2. ACフォルダ選択ボタン & 選択時の挙動 (更新) ---
+const btnSelectAC = document.getElementById('btn-select-ac-path');
+const carSelect = document.getElementById('ac-car-select');
 
 if (btnSelectAC) {
     btnSelectAC.addEventListener('click', async () => {
-        const paths = await window.electronAPI.openDirectoryDialog();
-        if (paths && paths) {
-            const acRoot = paths;
-            if (acPathInput) acPathInput.value = acRoot;
-
-            // 「content/cars」までのフルパスを作成
-            const carsPath = acRoot + "\\content\\cars";
-            
-            // 裏側に「車両フォルダ一覧」を要求
-            const res = await window.electronAPI.getFolderList(carsPath);
-
-            if (res.success) {
-                // セレクトボックスを一旦空にして、読み込んだ車両名を流し込む
-                carSelect.innerHTML = '<option value="">-- 車両を選択してください --</option>';
-                res.folders.forEach(carDir => {
-                    const opt = document.createElement('option');
-                    opt.value = carDir;
-                    opt.textContent = carDir;
-                    carSelect.appendChild(opt);
-                });
-            } else {
-                alert("エラー: content/cars フォルダが見つかりません。\nアセットコルサのインストールフォルダを正しく選択してください。");
+        const path = await window.electronAPI.openDirectoryDialog();
+        if (path) {
+            // 💾 100%の事実：AppStorage [cite: 616] を使ってPCに記憶させます
+            if (typeof AppStorage !== 'undefined') {
+                AppStorage.save('ac_root_path', path);
             }
+            refreshCarList(path);
         }
     });
 }
 
-// 車が選ばれた時、自動的に「新規作成する車両の名前」の初期案を埋めるお助け機能
 if (carSelect) {
     carSelect.addEventListener('change', () => {
-        const newNameInput = document.getElementById('new-car-project-name'); // ◀ ご提示いただいたID
+        const newNameInput = document.getElementById('new-car-project-name');
         if (newNameInput && carSelect.value !== "") {
-            // 例：ae86 を選んだら ae86_new などの名前を自動セット（修正可能です）
             newNameInput.value = carSelect.value + "_mod";
         }
     });
@@ -1234,58 +1239,25 @@ if (btnEditSelected) {
         const selectedCar = document.getElementById('ac-car-select').value;
         if (!acRoot || !selectedCar) return alert("車両を選択してください。");
 
+        // ★追加：編集時は、新規作成用の入力欄に選んだ車両の名前をそのまま表示させる
+        const newNameInput = document.getElementById('new-car-project-name');
+        if (newNameInput) {
+            newNameInput.value = selectedCar;
+        }
+
         const carFullPath = acRoot + "\\content\\cars\\" + selectedCar;
         // そのまま読み込み
         await loadCarToEditor(carFullPath, selectedCar);
         console.log("既存車両を直接読み込みました:", selectedCar);
     });
 }
-// if (btnExecuteCreation) {
-//     btnExecuteCreation.addEventListener('click', async () => {
-//         const acRoot = document.getElementById('ac-root-path').value;
-//         const selectedCar = document.getElementById('ac-car-select').value;
-//         const newCarName = document.getElementById('new-car-project-name').value.trim();
-
-//         // 入力チェック
-//         if (!acRoot || !selectedCar || !newCarName) {
-//             alert("ACフォルダ、ベース車両、車両名（フォルダ名）をすべて入力してください。");
-//             return;
-//         }
-
-//         // 1. 裏側へデータの読み取りを依頼
-//         const carFullPath = acRoot + "\\content\\cars\\" + selectedCar;
-//         const res = await window.electronAPI.readCarFolderData(carFullPath);
-
-//         if (res.success) {
-//             // ★核心の修正1：プロジェクト名(projectName)は上書きせず、
-//             // 「CARMODのフォルダ名」として window.currentCarDirectoryName にセットします [cite: 14, 394, 463]
-//             window.currentCarDirectoryName = newCarName;
-
-//             // 書き出し画面の「プロジェクト名」入力欄にも自動で反映させ、
-//             // エクスポート時にこの名前が使われるようにします [cite: 233, 258, 283]
-//             const exportNameInput = document.getElementById('exportProjectName');
-//             if (exportNameInput) exportNameInput.value = newCarName;
-
-//             // 2. 読み込んだ物理ファイルをインポート処理へ流し込み、エディターを更新します [cite: 12, 392, 461]
-//             const { handleMultiFileUpload } = await import('./js/import.js');
-//             await handleMultiFileUpload(res.files);
-
-//             // ★核心の修正2：saveProject(プロジェクト保存)は実行しません。
-//             // これにより、勝手に「AC_Generator_Projects」フォルダに新しい箱が作られるのを防ぎます。
-
-//             // 3. 画面を切り替えて編集開始（ハブを隠し、エディターを表示） [cite: 781]
-//             const startupHub = document.getElementById('startup-hub');
-//             const wrapper = document.getElementById('wrapper');
-            
-//             startupHub.style.opacity = "0";
-//             setTimeout(() => {
-//                 startupHub.style.display = 'none';
-//                 if (wrapper) wrapper.style.display = 'block';
-//                 console.log("CARMOD「" + newCarName + "」のベースデータを読み込みました。");
-//             }, 300);
-
-//         } else {
-//             alert("エラー: " + res.error);
-//         }
-//     });
-// }
+// --- 3. アプリ起動時に記憶していたパスを復元する ---
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof AppStorage !== 'undefined') {
+        const savedPath = AppStorage.load('ac_root_path');
+        if (savedPath) {
+            console.log("📂 記憶されていたACパスを復元します:", savedPath);
+            refreshCarList(savedPath);
+        }
+    }
+});
