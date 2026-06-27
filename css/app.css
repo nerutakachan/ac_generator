@@ -1911,7 +1911,7 @@ label {
 }
 .color-list_box{
 	border-top: 1px solid #e3e3e3;
-	padding: 0.2em 0 0em 0;
+	padding: 0.2em;
 	justify-content: space-between;
 	position: absolute;
 	top: 0;

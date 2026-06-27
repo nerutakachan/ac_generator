@@ -1113,7 +1113,11 @@ window.refreshCarList = async function(acRoot) {
 
     if (acPathInput) acPathInput.value = acRoot;
 
-    const carsPath = acRoot + "\\content\\cars";
+    // ★修正：すでに content\cars が含まれているパスならそのまま、そうでなければ付与して探りに行く
+    const carsPath = (acRoot.endsWith('content\\cars') || acRoot.endsWith('content/cars')) 
+        ? acRoot 
+        : acRoot + "\\content\\cars";
+        
     const res = await window.electronAPI.getFolderList(carsPath);
 
     if (res.success) {

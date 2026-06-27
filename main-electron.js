@@ -829,19 +829,45 @@ ipcMain.handle('open-directory-dialog', async () => {
 	return result.canceled ? null : result.filePaths[0];
 });
 ipcMain.handle('get-folder-list', async (event, targetPath) => {
-		const fs = require('fs');
-		const path = require('path');
-		try {
-				if (!fs.existsSync(targetPath)) return { success: false, error: 'パスが見つかりません' };
-				
-				// 指定されたパス内の「フォルダ」だけを抜き出す
-				const folders = fs.readdirSync(targetPath).filter(file => {
-						return fs.statSync(path.join(targetPath, file)).isDirectory();
-				});
-				return { success: true, folders: folders };
-		} catch (err) {
-				return { success: false, error: err.message };
-		}
+  const fs = require('fs');
+  const path = require('path');
+  try {
+    let searchPath = targetPath;
+
+    // 1. アセットコルサのルート指定(content\cars)が無い場合、選ばれたフォルダ自身を探索先にする
+    if (!fs.existsSync(searchPath)) {
+      if (searchPath.includes('content\\cars') || searchPath.includes('content/cars')) {
+        searchPath = searchPath.replace(/\\content\\cars$/, '').replace(/\/content\/cars$/, '');
+      }
+    }
+
+    if (!fs.existsSync(searchPath)) return { success: false, error: 'パスが見つかりません' };
+
+    // 2. 指定されたパス内の「フォルダ」をすべて抜き出す
+    let folders = fs.readdirSync(searchPath).filter(file => {
+      return fs.statSync(path.join(searchPath, file)).isDirectory();
+    });
+
+    // 3. そのフォルダ内に「.kn5 ファイル（collider.kn5以外）」が含まれるものを「車両フォルダ」として厳選する！
+    const carFolders = folders.filter(folderName => {
+      const folderPath = path.join(searchPath, folderName);
+      try {
+        const innerFiles = fs.readdirSync(folderPath);
+        return innerFiles.some(f => f.toLowerCase().endsWith('.kn5') && f.toLowerCase() !== 'collider.kn5');
+      } catch (e) {
+        return false;
+      }
+    });
+
+    // 4. .kn5 が入っている車両フォルダが1つでも見つかればそれを優先し、無ければ全フォルダを返す
+    if (carFolders.length > 0) {
+      folders = carFolders;
+    }
+
+    return { success: true, folders: folders };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
 });
 // ★★★ ここから追加（指定された車両フォルダのINIデータを一括で読み取る） ★★★
 ipcMain.handle('read-car-folder-data', async (event, carPath) => {
