@@ -310,6 +310,10 @@ document.addEventListener('DOMContentLoaded', () => {
 				const result = await window.electronAPI.saveProject(window.currentProject);
 				if (result.success) {
 					console.log("新規プロジェクト作成完了:", result.path);
+					 window.currentProjectPath = result.path; // 保存先のパスをアプリに覚えさせる
+						if (typeof window.updateProjectSidebar === 'function') {
+								window.updateProjectSidebar();       // サイドバーの表示を生成する
+						}
 					// ハブをフワッと消してエディターへ
 					startupHub.style.transition = "opacity 0.3s ease";
 					startupHub.style.opacity = "0";
@@ -671,6 +675,10 @@ document.addEventListener('DOMContentLoaded', () => {
 				if (result.success) {
 					console.log("💾 [SAVE] ファイル書き込み成功");
 					window.currentProjectPath = result.path; // パスを記憶
+					if (window.modifiedStatus) {
+            Object.keys(window.modifiedStatus).forEach(k => window.modifiedStatus[k] = false);
+					}
+					window.updateProjectSidebar(); // サイドバーを再描画して「*」を消す
 					btnSaveProject.textContent = "✅ 保存完了";
 					// 履歴リストを更新
 					refreshRecentList();

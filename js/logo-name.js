@@ -250,32 +250,26 @@ window.updateProjectSidebar = async function() {
 
 		// 【改名】showCustomPrompt を使用して保存・フォルダ名変更を実行
 		activeLi.querySelector('.p-edit-name-e-icon').onclick = async () => {
-		const oldPath = window.currentProjectPath; // ★変更前のパスをバックアップ
-		const newName = await showCustomPrompt("プロジェクト名を変更:", currentName);
-		
-		if (newName && newName.trim() !== "" && newName !== currentName) {
-				const confirmedName = newName.trim();
-				window.currentProject.projectName = confirmedName;
-				
-				// 1. 新しい名前で保存を実行（新しいフォルダが作成される）
-				const result = await window.electronAPI.saveProject(window.currentProject); 
-				
-				if (result.success) {
-						// 2. ★保存に成功したら、古いパスのプロジェクトをフォルダごと削除する
-						if (oldPath) {
-								await window.electronAPI.deleteProject(oldPath); 
-						}
-						
-						// 3. 状態を更新して再描画
-						window.currentProjectPath = result.path;
-						window.updateProjectSidebar(); 
-						if (window.electronAPI.setWindowTitle) {
-								window.electronAPI.setWindowTitle(confirmedName);
-						}
-				}
-		}
-};
-
+        const oldPath = window.currentProjectPath; 
+        const newName = await window.showCustomPrompt("プロジェクト名を変更:", currentName);
+        if (newName && newName.trim() !== "" && newName !== currentName) {
+            const confirmedName = newName.trim();
+            window.currentProject.projectName = confirmedName;
+            
+            // 1. 新しい名前で保存（新フォルダ作成）
+            const result = await window.electronAPI.saveProject(window.currentProject); 
+            if (result.success) {
+                // 2. 以前の古いプロジェクトフォルダを削除して「複製」を防ぐ
+                if (oldPath) {
+                    await window.electronAPI.deleteProject(oldPath); 
+                }
+                // 3. 情報を更新してリストを書き換える
+                window.currentProjectPath = result.path;
+                window.updateProjectSidebar(); 
+                if (window.electronAPI.setWindowTitle) window.electronAPI.setWindowTitle(confirmedName);
+            }
+        }
+    };
 		listUl.appendChild(activeLi);
 
 		// --- B. 他のプロジェクト（履歴）を並べる ---
@@ -291,9 +285,9 @@ window.updateProjectSidebar = async function() {
 
 				// 【切替】クリックで読み込み [3]
 				li.querySelector('.p-name-click-area').onclick = async () => {
-						if (isModified && !confirm("未保存の変更があります。破棄して切り替えますか？")) return;
-						const result = await window.electronAPI.loadProjectByPath(proj.path);
-						if (result.success) {
+					if (isModified && !confirm("未保存の変更があります。破棄して切り替えますか？")) return;
+					const result = await window.electronAPI.loadProjectByPath(proj.path); // 番号を消去
+					if (result.success) {
 								window.currentProject = result.data;
 								window.currentProjectPath = proj.path;
 								window.loadProjectToUI(window.currentProject);
