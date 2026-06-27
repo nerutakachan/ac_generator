@@ -693,10 +693,13 @@ export async function handleMultiFileUpload(files) {
         console.log(`🖼 [D&D] ${skinsFound.length} 個のスキンを検出しました。`);
     }
 	const hasIniFiles = fileArray.some(f => f.name && f.name.toLowerCase().endsWith('.ini'));
+	// ★3Dモデルファイルが含まれているかもチェック
+	const hasModelFiles = fileArray.some(f => f.name && (f.name.toLowerCase().endsWith('.fbx') || f.name.toLowerCase().endsWith('.glb') || f.name.toLowerCase().endsWith('.gltf')));
+
 	// ==========================================
-	// ★修正：INIファイルが含まれている（dataフォルダ等のドロップ）場合のみ車名を特定・更新する
+	// ★修正：INIまたはモデルが含まれている場合、車名とルートを特定する
 	// ==========================================
-	if (hasIniFiles) {
+	if (hasIniFiles || hasModelFiles) {
 		let detectedCarName = "名称未設定";
 		let acRootPath = null;
 
@@ -707,44 +710,63 @@ export async function handleMultiFileUpload(files) {
 			const idx = filePath.toLowerCase().indexOf(acMarker);
 			
 			if (idx !== -1) {
-				// 事実：正規ルートの場合、/content/cars/ より前がACルート、直後が車名です
+				// 1. 正規ルート：/content/cars/ より前がルート、直後が車名
 				acRootPath = filePath.substring(0, idx);
 				const afterMarker = filePath.substring(idx + acMarker.length);
-				detectedCarName = afterMarker.split('/'); // 配列の0番目（フォルダ名）を取得
+				// ★修正： を付けることで「配列」ではなく「文字」として取得（カンマ防止）
+				detectedCarName = afterMarker.split('/'); 
 				break; 
-			} else {
-				// 事実：外部（デスクトップ等）からのドロップの場合
-				const parts = filePath.split('/');
-				// dataフォルダまたはINIファイルを見つけ、その「1つ上」を車名とする
-				const dataIdx = parts.findIndex(p => p.toLowerCase() === 'data' || p.toLowerCase().endsWith('.ini'));
-				if (dataIdx > 0) {
-					detectedCarName = parts[dataIdx - 1]; 
-					break;
+			} else { // 事実：外部（デスクトップ等）からのドロップの場合
+			const parts = filePath.split('/');
+			// ★dataフォルダ、INIファイル、または3Dモデルのいずれかを起点に車名フォルダを探す
+			const dataIdx = parts.findIndex(p => p.toLowerCase() === 'data' || p.toLowerCase().endsWith('.ini') || p.toLowerCase().endsWith('.fbx') || p.toLowerCase().endsWith('.glb'));
+			if (dataIdx > 0) {
+				detectedCarName = parts[dataIdx - 1];
+				// ★追加：特定した車名フォルダの「一つ上の階層」をルートパスとして抽出する
+				const carFolderWithSeparator = '/' + detectedCarName + '/';
+				const rootIdx = filePath.toLowerCase().lastIndexOf(carFolderWithSeparator.toLowerCase());
+				if (rootIdx !== -1) {
+					acRootPath = rawPath.substring(0, rootIdx);
 				}
+				break;
 			}
 		}
+		}
 
-		// --- 物理的なUI要素への反映（これが抜けていました） ---
+		// --- UIへの反映（ここが重要） ---
+		// --- 物理的なUI要素への反映 ---
 		const acPathInput = document.getElementById('ac-root-path');
 		const carSelect = document.getElementById('ac-car-select');
 		const newCarProjectName = document.getElementById('new-car-project-name');
 
 		if (acRootPath) {
-			// ACルートが見つかった場合、入力欄にセット
-			if (acPathInput) acPathInput.value = acRootPath.replace(/\//g, '\\');
-			// さきほど global化した refreshCarList を呼び出して車両リストを同期
-			if (typeof window.refreshCarList === 'function') {
-				await window.refreshCarList(acRootPath);
-				// 同期後、ドロップされた車名を選択状態にする
-				if (carSelect) carSelect.value = detectedCarName;
-			}
+		// ACルートが見つかった場合、入力欄にセット（スラッシュを円記号に変換）
+		if (acPathInput) acPathInput.value = acRootPath.replace(/\//g, '\\');
+		// 車両リストを更新
+		if (typeof window.refreshCarList === 'function') {
+			await window.refreshCarList(acRootPath);
 		}
+	}
 
-		// ★ 既存の変数 window.currentCarDirectoryName を更新
+	// ★追加：ドロップされた車名をリストから探し、無ければ強制的に追加して選択する
+	if (carSelect && detectedCarName !== "名称未設定") {
+		let exists = false;
+		for (let i = 0; i < carSelect.options.length; i++) {
+			if (carSelect.options[i].value === detectedCarName) { exists = true; break; }
+		}
+		if (!exists) {
+			const opt = document.createElement('option');
+			opt.value = detectedCarName;
+			opt.textContent = detectedCarName;
+			carSelect.appendChild(opt);
+		}
+		carSelect.value = detectedCarName;
+	}
+
 		window.currentCarDirectoryName = detectedCarName;
-		
-		// ★ 協議事項：_mod を付けず、初めてのD&Dならそのままの名前をセット
-		if (newCarProjectName) {
+
+		// ★ ご要望：初めてのD&D（名前がまだ未設定）の時だけ、プロジェクト名を埋める
+		if (newCarProjectName && (newCarProjectName.value === "" || newCarProjectName.value === "名称未設定")) {
 			newCarProjectName.value = detectedCarName; 
 		}
 		console.log("[MULTI-IMPORT] 特定した車名:", window.currentCarDirectoryName);
