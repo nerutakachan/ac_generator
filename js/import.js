@@ -23,7 +23,12 @@ import {
 	default_view_ini,
 	default_dash_cam_ini
 } from './ini-data.js';
-import { updateBadgeImage, initBadgeHandler, updateUiCarData, collectUiCarData } from './logo-name.js';
+import {
+	updateBadgeImage,
+	initBadgeHandler,
+	updateUiCarData,
+	collectUiCarData
+} from './logo-name.js';
 // --- 1. データ保持・状態管理 ---
 window.THREE = THREE;
 // 各ファイルの編集状態（false:未編集, true:編集済み）を管理するオブジェクト
@@ -391,81 +396,109 @@ export function isGlass(name) {
 	return n.includes('glass') || n.includes('window') || n.includes('vetro') || n.includes('windshield') || n.includes('steklo');
 }
 export function load3DModel(file) {
-		return new Promise((resolve, reject) => {
-				const url = URL.createObjectURL(file);
-				const extension = file.name.split('.').pop().toLowerCase();
-
-				const onObjectLoad = (object) => {
-						URL.revokeObjectURL(url);
-						
-						// 🚨 重要：以前あった object.position.sub(center) などの
-						// 自動センタリング処理を「余計な設定」として完全に削除しました。
-						// これにより、FBX/GLBの持つ本来の原点（Origin）が維持されます。
-
-						// 解析用メモリのリセット [cite: 331, 383]
-						model_3D.BODY = [];
-						model_3D.STEER = null;
-						model_3D.GLASS = [];
-						Object.keys(model_3D.WHEEL).forEach(k => model_3D.WHEEL[k] = null);
-						Object.keys(model_3D.SUSP).forEach(k => model_3D.SUSP[k] = null);
-						Object.keys(model_3D.DISC).forEach(k => model_3D.DISC[k] = null);
-						Object.keys(model_3D.CALIPER).forEach(k => model_3D.CALIPER[k] = null);
-
-						// ノードのトラバースとパーツ特定 [cite: 339, 391]
-						object.traverse((child) => {
-								if (!child.isMesh && !child.isGroup && child.type !== 'Object3D') return;
-								const name = child.name;
-
-								if (isGlass(name)) {
-									if (child.isMesh) {
-											child.material = glassMaterial;
-										}
-										model_3D.GLASS.push(child);
-										return;
-								}
-
-								// パーツ名に基づいた分類（D&D状態の再現）
-								switch (name) {
-										case 'BODY': model_3D.BODY.push(child); break;
-										case 'WHEEL_LF': model_3D.WHEEL.LF = child; break;
-										case 'WHEEL_RF': model_3D.WHEEL.RF = child; break;
-										case 'WHEEL_LR': model_3D.WHEEL.LR = child; break;
-										case 'WHEEL_RR': model_3D.WHEEL.RR = child; break;
-										case 'SUSP_LF': model_3D.SUSP.LF = child; break;
-										case 'SUSP_RF': model_3D.SUSP.RF = child; break;
-										case 'SUSP_LR': model_3D.SUSP.LR = child; break;
-										case 'SUSP_RR': model_3D.SUSP.RR = child; break;
-										case 'STEER_HR':
-										case 'STEER_LR': model_3D.STEER = child; break;
-										case 'DISC_LF': model_3D.DISC.LF = child; break;
-										case 'DISC_RF': model_3D.DISC.RF = child; break;
-										case 'DISC_LR': model_3D.DISC.LR = child; break;
-										case 'DISC_RR': model_3D.DISC.RR = child; break;
-										case 'CALIPER_LF': model_3D.CALIPER.LF = child; break;
-										case 'CALIPER_RF': model_3D.CALIPER.RF = child; break;
-										case 'CALIPER_LR': model_3D.CALIPER.LR = child; break;
-										case 'CALIPER_RR': model_3D.CALIPER.RR = child; break;
-										default:
-												if (child.isMesh) model_3D.BODY.push(child);
-												break;
-								}
-						});
-
-						// 3Dモデルの解析完了後、視覚情報の更新を要求 [cite: 340, 392]
-						if (typeof window.updateSuspensionVisuals === 'function' && window.currentSuspensionData) {
-								window.updateSuspensionVisuals(window.currentSuspensionData);
-						}
-						resolve(object);
-				};
-
-				if (extension === 'fbx') {
-						fbxLoader.load(url, onObjectLoad, undefined, reject);
-				} else if (extension === 'glb' || extension === 'gltf') {
-						gltfLoader.load(url, (g) => onObjectLoad(g.scene), undefined, reject);
-				} else {
-						reject(new Error("非対応形式: " + extension));
+	return new Promise((resolve, reject) => {
+		const url = URL.createObjectURL(file);
+		const extension = file.name.split('.').pop().toLowerCase();
+		const onObjectLoad = (object) => {
+			URL.revokeObjectURL(url);
+			// 🚨 重要：以前あった object.position.sub(center) などの
+			// 自動センタリング処理を「余計な設定」として完全に削除しました。
+			// これにより、FBX/GLBの持つ本来の原点（Origin）が維持されます。
+			// 解析用メモリのリセット [cite: 331, 383]
+			model_3D.BODY = [];
+			model_3D.STEER = null;
+			model_3D.GLASS = [];
+			Object.keys(model_3D.WHEEL).forEach(k => model_3D.WHEEL[k] = null);
+			Object.keys(model_3D.SUSP).forEach(k => model_3D.SUSP[k] = null);
+			Object.keys(model_3D.DISC).forEach(k => model_3D.DISC[k] = null);
+			Object.keys(model_3D.CALIPER).forEach(k => model_3D.CALIPER[k] = null);
+			// ノードのトラバースとパーツ特定 [cite: 339, 391]
+			object.traverse((child) => {
+				if (!child.isMesh && !child.isGroup && child.type !== 'Object3D') return;
+				const name = child.name;
+				if (isGlass(name)) {
+					if (child.isMesh) {
+						child.material = glassMaterial;
+					}
+					model_3D.GLASS.push(child);
+					return;
 				}
-		});
+				// パーツ名に基づいた分類（D&D状態の再現）
+				switch (name) {
+					case 'BODY':
+						model_3D.BODY.push(child);
+						break;
+					case 'WHEEL_LF':
+						model_3D.WHEEL.LF = child;
+						break;
+					case 'WHEEL_RF':
+						model_3D.WHEEL.RF = child;
+						break;
+					case 'WHEEL_LR':
+						model_3D.WHEEL.LR = child;
+						break;
+					case 'WHEEL_RR':
+						model_3D.WHEEL.RR = child;
+						break;
+					case 'SUSP_LF':
+						model_3D.SUSP.LF = child;
+						break;
+					case 'SUSP_RF':
+						model_3D.SUSP.RF = child;
+						break;
+					case 'SUSP_LR':
+						model_3D.SUSP.LR = child;
+						break;
+					case 'SUSP_RR':
+						model_3D.SUSP.RR = child;
+						break;
+					case 'STEER_HR':
+					case 'STEER_LR':
+						model_3D.STEER = child;
+						break;
+					case 'DISC_LF':
+						model_3D.DISC.LF = child;
+						break;
+					case 'DISC_RF':
+						model_3D.DISC.RF = child;
+						break;
+					case 'DISC_LR':
+						model_3D.DISC.LR = child;
+						break;
+					case 'DISC_RR':
+						model_3D.DISC.RR = child;
+						break;
+					case 'CALIPER_LF':
+						model_3D.CALIPER.LF = child;
+						break;
+					case 'CALIPER_RF':
+						model_3D.CALIPER.RF = child;
+						break;
+					case 'CALIPER_LR':
+						model_3D.CALIPER.LR = child;
+						break;
+					case 'CALIPER_RR':
+						model_3D.CALIPER.RR = child;
+						break;
+					default:
+						if (child.isMesh) model_3D.BODY.push(child);
+						break;
+				}
+			});
+			// 3Dモデルの解析完了後、視覚情報の更新を要求 [cite: 340, 392]
+			if (typeof window.updateSuspensionVisuals === 'function' && window.currentSuspensionData) {
+				window.updateSuspensionVisuals(window.currentSuspensionData);
+			}
+			resolve(object);
+		};
+		if (extension === 'fbx') {
+			fbxLoader.load(url, onObjectLoad, undefined, reject);
+		} else if (extension === 'glb' || extension === 'gltf') {
+			gltfLoader.load(url, (g) => onObjectLoad(g.scene), undefined, reject);
+		} else {
+			reject(new Error("非対応形式: " + extension));
+		}
+	});
 }
 // --- 6. メインハンドラ（ファイルのルーティングとデータ同期） ---
 // 共通：解析されたデータをシステムに適用し、切り替えを通知する
@@ -678,126 +711,114 @@ export async function handleMultiFileUpload(files) {
 	// console.log("[IMPORT DEBUG] 許可リスト:", ALLOWED_FILES);
 	// ★追加：ドロップされたファイルの中に設定ファイル（.ini）が1つでもあるかチェック
 	// --- ★追加：D&Dされたファイルからスキン画像を抽出する ---
-    const skinsFound = [];
-    fileArray.forEach(f => {
-        const pathStr = (f.path || f.webkitRelativePath || "").replace(/\\/g, '/');
-        // skins/フォルダ名/preview.jpg という構造をチェック
-        if (pathStr.toLowerCase().includes('/skins/') && pathStr.toLowerCase().endsWith('/preview.jpg')) {
-            const parts = pathStr.split('/');
-            const skinName = parts[parts.length - 2]; // フォルダ名をスキン名とする
-            skinsFound.push({ name: skinName, path: pathStr });
-        }
-    });
-    if (skinsFound.length > 0) {
-        window.initSkinGallery(skinsFound);
-        console.log(`🖼 [D&D] ${skinsFound.length} 個のスキンを検出しました。`);
-    }
-const hasIniFiles = fileArray.some(f => f.name && f.name.toLowerCase().endsWith('.ini'));
-    const hasModelFiles = fileArray.some(f => f.name && (f.name.toLowerCase().endsWith('.fbx') || f.name.toLowerCase().endsWith('.glb') || f.name.toLowerCase().endsWith('.gltf')));
-    // ★追加：KN5ファイルが含まれているかチェック
-    const hasKn5Files = fileArray.some(f => f.name && f.name.toLowerCase().endsWith('.kn5'));
-
-    // ==========================================
-    // ★修正：KN5、INI、またはモデルが含まれている場合、車名とルートを特定する
-    // ==========================================
-    if (hasKn5Files || hasIniFiles || hasModelFiles) {
-        let detectedCarName = "名称未設定";
-        let acRootPath = null;
-
-        // 1. まず「最優先」でメインの .kn5 ファイルを基準に車名を特定する
-        const kn5File = fileArray.find(f => f.name && f.name.toLowerCase().endsWith('.kn5') && f.name.toLowerCase() !== 'collider.kn5');
-        
-        if (kn5File) {
-             const rawPath = kn5File.path || "";
-             const filePath = rawPath.replace(/\\/g, '/');
-             const parts = filePath.split('/');
-             
-             // .kn5ファイルが直接入っているフォルダが間違いなく「車名フォルダ」
-             detectedCarName = parts[parts.length - 2]; 
-             
-             // ルートパスの判定 (/content/cars/ があればそれ以前をルートに)
-             const acMarker = "/content/cars/";
-             const idx = filePath.toLowerCase().indexOf(acMarker);
-             if (idx !== -1) {
-                 acRootPath = filePath.substring(0, idx);
-             } else {
-                 // 外部フォルダからのD&Dの場合、車名フォルダより上の階層をルートとする
-                 const carFolderWithSeparator = '/' + detectedCarName + '/';
-                 const rootIdx = filePath.toLowerCase().lastIndexOf(carFolderWithSeparator);
-                 if (rootIdx !== -1) {
-                     acRootPath = rawPath.substring(0, rootIdx);
-                 }
-             }
-        } else {
-             // 2. もし .kn5 がドロップされなかった場合は、従来のやり方（dataフォルダやINIファイル基準）で探す
-             for (const f of fileArray) {
-                 const rawPath = f.path || "";
-                 const filePath = rawPath.replace(/\\/g, '/'); // 区切り文字を統一
-
-                 const acMarker = "/content/cars/";
-                 const idx = filePath.toLowerCase().indexOf(acMarker);
-
-                 if (idx !== -1) {
-                     acRootPath = filePath.substring(0, idx);
-                     const afterMarker = filePath.substring(idx + acMarker.length);
-                     detectedCarName = afterMarker.split('/')[0];
-                     break;
-                 } else {
-                     const parts = filePath.split('/');
-                     const dataIdx = parts.findIndex(p => 
-                         p.toLowerCase() === 'data' || 
-                         p.toLowerCase().endsWith('.ini') || 
-                         p.toLowerCase().endsWith('.fbx') || 
-                         p.toLowerCase().endsWith('.glb')
-                     );
-                    
-                     if (dataIdx > 0) {
-                         detectedCarName = parts[dataIdx - 1];
-                         const carFolderWithSeparator = '/' + detectedCarName + '/';
-                         const rootIdx = filePath.toLowerCase().lastIndexOf(carFolderWithSeparator.toLowerCase());
-                         if (rootIdx !== -1) {
-                             acRootPath = rawPath.substring(0, rootIdx);
-                         }
-                         break;
-                     }
-                 }
-             }
-        }
-
-        // --- UIへの反映（以下は既存コードと同じ） ---
-        const acPathInput = document.getElementById('ac-root-path');
+	const skinsFound = [];
+	fileArray.forEach(f => {
+		const pathStr = (f.path || f.webkitRelativePath || "").replace(/\\/g, '/');
+		// skins/フォルダ名/preview.jpg という構造をチェック
+		if (pathStr.toLowerCase().includes('/skins/') && pathStr.toLowerCase().endsWith('/preview.jpg')) {
+			const parts = pathStr.split('/');
+			const skinName = parts[parts.length - 2]; // フォルダ名をスキン名とする
+			skinsFound.push({
+				name: skinName,
+				path: pathStr
+			});
+		}
+	});
+	if (skinsFound.length > 0) {
+		window.initSkinGallery(skinsFound);
+		console.log(`🖼 [D&D] ${skinsFound.length} 個のスキンを検出しました。`);
+	}
+	const hasIniFiles = fileArray.some(f => f.name && f.name.toLowerCase().endsWith('.ini'));
+	const hasModelFiles = fileArray.some(f => f.name && (f.name.toLowerCase().endsWith('.fbx') || f.name.toLowerCase().endsWith('.glb') || f.name.toLowerCase().endsWith('.gltf')));
+	// ★追加：KN5ファイルが含まれているかチェック
+	const hasKn5Files = fileArray.some(f => f.name && f.name.toLowerCase().endsWith('.kn5'));
+	// ==========================================
+	// ★修正：KN5、INI、またはモデルが含まれている場合、車名とルートを特定する
+	// ==========================================
+	if (hasKn5Files || hasIniFiles || hasModelFiles) {
+		let detectedCarName = "名称未設定";
+		let acRootPath = null;
+		// 1. まず「最優先」でメインの .kn5 ファイルを基準に車名を特定する
+		const kn5File = fileArray.find(f => f.name && f.name.toLowerCase().endsWith('.kn5') && f.name.toLowerCase() !== 'collider.kn5');
+		if (kn5File) {
+			const rawPath = kn5File.path || "";
+			const filePath = rawPath.replace(/\\/g, '/');
+			const parts = filePath.split('/');
+			// .kn5ファイルが直接入っているフォルダが間違いなく「車名フォルダ」
+			detectedCarName = parts[parts.length - 2];
+			// ルートパスの判定 (/content/cars/ があればそれ以前をルートに)
+			const acMarker = "/content/cars/";
+			const idx = filePath.toLowerCase().indexOf(acMarker);
+			if (idx !== -1) {
+				acRootPath = filePath.substring(0, idx);
+			} else {
+				// 外部フォルダからのD&Dの場合、車名フォルダより上の階層をルートとする
+				const carFolderWithSeparator = '/' + detectedCarName + '/';
+				const rootIdx = filePath.toLowerCase().lastIndexOf(carFolderWithSeparator);
+				if (rootIdx !== -1) {
+					acRootPath = rawPath.substring(0, rootIdx);
+				}
+			}
+		} else {
+			// 2. もし .kn5 がドロップされなかった場合は、従来のやり方（dataフォルダやINIファイル基準）で探す
+			for (const f of fileArray) {
+				const rawPath = f.path || "";
+				const filePath = rawPath.replace(/\\/g, '/'); // 区切り文字を統一
+				const acMarker = "/content/cars/";
+				const idx = filePath.toLowerCase().indexOf(acMarker);
+				if (idx !== -1) {
+					acRootPath = filePath.substring(0, idx);
+					const afterMarker = filePath.substring(idx + acMarker.length);
+					detectedCarName = afterMarker.split('/')[0];
+					break;
+				} else {
+					const parts = filePath.split('/');
+					const dataIdx = parts.findIndex(p => p.toLowerCase() === 'data' || p.toLowerCase().endsWith('.ini') || p.toLowerCase().endsWith('.fbx') || p.toLowerCase().endsWith('.glb'));
+					if (dataIdx > 0) {
+						detectedCarName = parts[dataIdx - 1];
+						const carFolderWithSeparator = '/' + detectedCarName + '/';
+						const rootIdx = filePath.toLowerCase().lastIndexOf(carFolderWithSeparator.toLowerCase());
+						if (rootIdx !== -1) {
+							acRootPath = rawPath.substring(0, rootIdx);
+						}
+						break;
+					}
+				}
+			}
+		}
+		// --- UIへの反映（以下は既存コードと同じ） ---
+		const acPathInput = document.getElementById('ac-root-path');
 		const carSelect = document.getElementById('ac-car-select');
 		const newCarProjectName = document.getElementById('new-car-project-name');
-
 		if (acRootPath) {
-		// ACルートが見つかった場合、入力欄にセット（スラッシュを円記号に変換）
-		if (acPathInput) acPathInput.value = acRootPath.replace(/\//g, '\\');
-		// 車両リストを更新
-		if (typeof window.refreshCarList === 'function') {
-			await window.refreshCarList(acRootPath);
+			// ACルートが見つかった場合、入力欄にセット（スラッシュを円記号に変換）
+			if (acPathInput) acPathInput.value = acRootPath.replace(/\//g, '\\');
+			// 車両リストを更新
+			if (typeof window.refreshCarList === 'function') {
+				await window.refreshCarList(acRootPath);
+			}
 		}
-	}
-
-	// ★追加：ドロップされた車名をリストから探し、無ければ強制的に追加して選択する
-	if (carSelect && detectedCarName !== "名称未設定") {
-		let exists = false;
-		for (let i = 0; i < carSelect.options.length; i++) {
-			if (carSelect.options[i].value === detectedCarName) { exists = true; break; }
+		// ★追加：ドロップされた車名をリストから探し、無ければ強制的に追加して選択する
+		if (carSelect && detectedCarName !== "名称未設定") {
+			let exists = false;
+			for (let i = 0; i < carSelect.options.length; i++) {
+				if (carSelect.options[i].value === detectedCarName) {
+					exists = true;
+					break;
+				}
+			}
+			if (!exists) {
+				const opt = document.createElement('option');
+				opt.value = detectedCarName;
+				opt.textContent = detectedCarName;
+				carSelect.appendChild(opt);
+			}
+			carSelect.value = detectedCarName;
 		}
-		if (!exists) {
-			const opt = document.createElement('option');
-			opt.value = detectedCarName;
-			opt.textContent = detectedCarName;
-			carSelect.appendChild(opt);
-		}
-		carSelect.value = detectedCarName;
-	}
-
 		window.currentCarDirectoryName = detectedCarName;
-
 		// ★ ご要望：初めてのD&D（名前がまだ未設定）の時だけ、プロジェクト名を埋める
 		if (newCarProjectName && (newCarProjectName.value === "" || newCarProjectName.value === "名称未設定")) {
-			newCarProjectName.value = detectedCarName; 
+			newCarProjectName.value = detectedCarName;
 		}
 		console.log("[MULTI-IMPORT] 特定した車名:", window.currentCarDirectoryName);
 	} else {
@@ -810,23 +831,23 @@ const hasIniFiles = fileArray.some(f => f.name && f.name.toLowerCase().endsWith(
 			// ★追加：.kn5 を検知したら FBX への展開を依頼する
 			if (name.endsWith('.kn5')) {
 				if (name === 'collider.kn5') {
-										console.log("⏩ [SKIP] collider.kn5 は展開不要のため無視します。");
-										continue;
-								}
-								console.log("📦 [.kn5] 展開を開始します:", file.path);
-								const res = await window.electronAPI.unpackKn5(file.path);
-								if (res.success) {
-										console.log("✅ [.kn5] 展開成功、安全ルートでFBXを読み込みます:", res.fbxPath);
-										// 事実：model.js にある loadModelByPath は、手動ドロップと同じ動作をパス指定だけで再現します
-										if (typeof window.loadModelByPath === 'function') {
-												await window.loadModelByPath(res.fbxPath);
-										}
-										continue; 
-								} else {
-										console.error("❌ [.kn5] 展開失敗:", res.error);
-										continue;
-								}
-						}
+					console.log("⏩ [SKIP] collider.kn5 は展開不要のため無視します。");
+					continue;
+				}
+				console.log("📦 [.kn5] 展開を開始します:", file.path);
+				const res = await window.electronAPI.unpackKn5(file.path);
+				if (res.success) {
+					console.log("✅ [.kn5] 展開成功、安全ルートでFBXを読み込みます:", res.fbxPath);
+					// 事実：model.js にある loadModelByPath は、手動ドロップと同じ動作をパス指定だけで再現します
+					if (typeof window.loadModelByPath === 'function') {
+						await window.loadModelByPath(res.fbxPath);
+					}
+					continue;
+				} else {
+					console.error("❌ [.kn5] 展開失敗:", res.error);
+					continue;
+				}
+			}
 			// ★追加：3Dモデル以外のファイルは、許可リストにあるかチェックする
 			if (!name.endsWith('.fbx') && !name.endsWith('.glb') && !name.endsWith('.gltf')) {
 				if (!ALLOWED_FILES.includes(name)) {
@@ -883,8 +904,8 @@ const hasIniFiles = fileArray.some(f => f.name && f.name.toLowerCase().endsWith(
 					console.log("[IMPORT] モデルパスをプロジェクトに登録しました:", file.path);
 				}
 				if (window.currentProject.environment.data_folder) {
-						updateBadgeImage(window.currentProject.environment.data_folder);
-					}
+					updateBadgeImage(window.currentProject.environment.data_folder);
+				}
 				// =======================================================
 				// ★修正：メニューの一括読み込みから届いた「パス情報だけのオブジェクト」の場合
 				// プロジェクトロード時にも使われている、実績のある安全な自動復元ルートへ流します
@@ -1056,10 +1077,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	window.addEventListener('dragover', (e) => {
 		e.preventDefault(); // これがないとドロップが許可されない
 	});
-
 	window.addEventListener('drop', async (e) => {
 		e.preventDefault(); // ブラウザが勝手にファイルを開くのを防ぐ
-
 		const files = e.dataTransfer.files;
 		if (files && files.length > 0) {
 			window.isMultiUploading = true;
@@ -1100,7 +1119,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 });
-
 // =========================================================
 // 各エディタ内での変更を監視し、編集フラグを立てる処理
 // =========================================================
@@ -1153,9 +1171,9 @@ document.addEventListener('input', (e) => {
 		}
 	}
 	// ★提案：編集があったので、LIVE SYNC が有効なら書き出しを実行する
-		if (typeof window.triggerLiveSync === 'function') {
-			window.triggerLiveSync();
-		}
+	if (typeof window.triggerLiveSync === 'function') {
+		window.triggerLiveSync();
+	}
 });
 const exportFiles = [{
 		id: 'suspension',
