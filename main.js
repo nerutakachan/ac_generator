@@ -1213,28 +1213,64 @@ const btnExecuteCreation = document.getElementById('btn-execute-car-creation');
 const btnEditSelected = document.getElementById('btn-edit-selected-car'); // ★追加
 // 案：複製して新規作成
 if (btnExecuteCreation) {
-    btnExecuteCreation.addEventListener('click', async () => {
-        const acRoot = document.getElementById('ac-root-path').value;
-        const selectedCar = document.getElementById('ac-car-select').value;
-        const newCarName = document.getElementById('new-car-project-name').value.trim();
+        btnExecuteCreation.addEventListener('click', async () => {
+            const acRoot = document.getElementById('ac-root-path').value;
+            const selectedCar = document.getElementById('ac-car-select').value;
+            const newCarName = document.getElementById('new-car-project-name').value.trim();
 
-        if (!acRoot || !selectedCar || !newCarName) return alert("必要事項をすべて入力してください。");
+            if (!acRoot || !selectedCar || !newCarName) return alert("必要事項をすべて入力してください。");
 
-        const sourcePath = acRoot + "\\content\\cars\\" + selectedCar;
-        const targetPath = acRoot + "\\content\\cars\\" + newCarName;
+            // 【100%の事実に基づく整合性修正】
+            // refreshCarListと同じく、content\\cars を含むかどうかを自動判別します
+            const isAcStructure = (acRoot.endsWith('content\\cars') || acRoot.endsWith('content/cars'));
+            const carsBase = isAcStructure ? acRoot : acRoot + "\\content\\cars";
 
-        // 1. 物理的なフォルダコピーを実行
-        const cloneRes = await window.electronAPI.cloneCarFolder(sourcePath, targetPath);
-        
-        if (cloneRes.success) {
-            // 2. コピー先のフォルダからデータを読み込んでエディターを起動
-            await loadCarToEditor(targetPath, newCarName);
-            console.log("車両の複製に成功しました:", newCarName);
-        } else {
-            alert("複製エラー: " + cloneRes.error);
-        }
-    });
-}
+            // 1次試行：アセットコルサ構造でパスを作成
+            let sourcePath = carsBase + "\\" + selectedCar;
+            let targetPath = carsBase + "\\" + newCarName;
+
+            // もしアセットコルサ構造でフォルダが存在しない場合は、選択されたパスを「そのまま」使用（デスクトップ用）
+            const checkOrigin = await window.electronAPI.checkFolderExists("", sourcePath);
+            if (!checkOrigin) {
+                sourcePath = acRoot + "\\" + selectedCar;
+                targetPath = acRoot + "\\" + newCarName;
+            }
+
+            console.log("📂 [Debug] 複製元:", sourcePath);
+            const cloneRes = await window.electronAPI.cloneCarFolder(sourcePath, targetPath);
+            if (cloneRes.success) {
+                await loadCarToEditor(targetPath, newCarName);
+            } else {
+                alert("複製エラー: " + cloneRes.error);
+            }
+        });
+    }
+
+    // --- 案：この車両を編集（直接読込・整合性修正版） ---
+    if (btnEditSelected) {
+        btnEditSelected.addEventListener('click', async () => {
+            const acRoot = document.getElementById('ac-root-path').value;
+            const selectedCar = document.getElementById('ac-car-select').value;
+            if (!acRoot || !selectedCar) return alert("車両を選択してください。");
+
+            const newNameInput = document.getElementById('new-car-project-name');
+            if (newNameInput) newNameInput.value = selectedCar;
+
+            // 【100%の事実に基づく整合性修正】
+            const isAcStructure = (acRoot.endsWith('content\\cars') || acRoot.endsWith('content/cars'));
+            const carsBase = isAcStructure ? acRoot : acRoot + "\\content\\cars";
+
+            // まずアセットコルサ構造を試し、無ければそのままのパスを使用（デスクトップ用）
+            let carFullPath = carsBase + "\\" + selectedCar;
+            const checkOrigin = await window.electronAPI.checkFolderExists("", carFullPath);
+            if (!checkOrigin) {
+                carFullPath = acRoot + "\\" + selectedCar;
+            }
+
+            console.log("📂 [Debug] 直接読込先:", carFullPath);
+            await loadCarToEditor(carFullPath, selectedCar);
+        });
+    }
 
 // 案：この車両を編集（直接読込）
 if (btnEditSelected) {
