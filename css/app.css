@@ -1792,6 +1792,8 @@ label {
 	padding: 0.2em;
 	border-radius: 0.5em;
 }
+.p-edit-name_box,
+.p-edit-name,
 .setting-item input,
 .setting-item select,
 .input-with-range .text-input,
@@ -1893,6 +1895,7 @@ label {
 .car-select-inner_box > div:not(:last-of-type){
 	margin-bottom: 0.5em;
 }
+.p-edit-name_box,
 .setting-item input,
 .setting-item select{
 	font-size: 0.79em;
@@ -1983,4 +1986,54 @@ em
 .engine-sound-outer_box{
 	max-height: 196px;
 	height: 100%;
+}
+.p-edit-name_box{
+	background-color: #fff;
+	border: 1px solid #333;
+	width: 100%;
+	box-sizing: border-box;
+}
+.p-edit-name_box ul li{
+	box-sizing: border-box;
+	display: flex;
+	justify-content: flex-start;
+	align-items: center;
+}
+.p-edit-icon_box{
+	margin-left: auto;
+}
+/* プロジェクト一覧の表示ボックス */
+.p-edit-name_box {
+	max-height: 250px;    /* 3〜4件分くらいの高さで固定（調整してください） */
+	overflow-y: auto;     /* 縦方向にスクロールを許可 */
+	overflow-x: hidden;   /* 横方向は隠す */
+	padding-right: 5px;   /* スクロールバーとテキストの被り防止 */
+}
+
+/* スクロールバー全体のデザイン（細めにしてスタイリッシュに） */
+.p-edit-name_box::-webkit-scrollbar {
+	width: 6px;
+}
+
+/* スクロールバーの背景（レール） */
+.p-edit-name_box::-webkit-scrollbar-track {
+	background: rgba(255, 255, 255, 0.05);
+	border-radius: 10px;
+}
+
+/* スクロールバーのつまみ部分 */
+.p-edit-name_box::-webkit-scrollbar-thumb {
+	background: #555; /* つまみの色 */
+	border-radius: 10px;
+}
+
+.p-edit-name_box::-webkit-scrollbar-thumb:hover {
+	background: #777; /* ホバー時に少し明るく */
+}
+
+/* リスト内の要素がカクつかないように調整 */
+.p-edit-name_box ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
 }

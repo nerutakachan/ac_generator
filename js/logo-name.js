@@ -211,3 +211,74 @@ window.setupGalleryArrows = function() {
         arrows[1].onclick = () => window.selectSkin(window.currentSkinIdx + 1); // ▶ 右
     }
 };
+/**
+ * プロジェクト一覧を更新する関数
+ * (ini-data.js の末尾などに追加してください)
+ */
+window.updateProjectSidebar = async function() {
+    const listUl = document.getElementById('project-sidebar-list');
+    if (!listUl) return;
+
+    // 1. 最近のプロジェクト履歴を Electron 経由で取得 [2, 3]
+    const recentProjects = await window.electronAPI.getRecentProjects();
+    const currentPath = window.currentProjectPath; // main.js で管理されている現在のパス [4]
+    const currentName = window.currentProject?.projectName || "名称未設定";
+
+    // 2. 未保存状態のチェック (*マーク用) [5]
+    const isModified = Object.values(window.modifiedStatus || {}).some(s => s === true);
+
+    listUl.innerHTML = ''; // 一旦リストを空にする
+
+    // --- A. 編集中のプロジェクトを最上部に作成 ---
+    const activeLi = document.createElement('li');
+    activeLi.className = 'active-project-item'; // CSSで背景色・文字色を変える用
+    activeLi.innerHTML = `
+        <span class="p-delete-icon" style="cursor:pointer;" title="プロジェクトを削除">🗑️</span>
+        <div class="p-name-label" style="flex:1;">${currentName}</div>
+        <div class="p-edit-icon_box">
+            <span class="p-edit-name-e-icon" style="cursor:pointer;" title="名前を変更">✎</span>
+            <span class="p-edit-name-unsaved" style="display: ${isModified ? 'inline' : 'none'}">*</span>
+        </div>
+    `;
+
+    // 改名イベント：showCustomPrompt [6] を使用
+    activeLi.querySelector('.p-edit-name-e-icon').onclick = async () => {
+        const newName = await showCustomPrompt("プロジェクト名を変更:", currentName);
+        if (newName && newName.trim() !== "" && newName !== currentName) {
+            window.currentProject.projectName = newName.trim();
+            const result = await window.electronAPI.saveProject(window.currentProject); // 保存 [7]
+            if (result.success) {
+                window.currentProjectPath = result.path;
+                window.updateProjectSidebar(); // 再描画
+            }
+        }
+    };
+
+    listUl.appendChild(activeLi);
+
+    // --- B. 他のプロジェクト（履歴）を並べる ---
+    recentProjects.forEach(proj => {
+        if (proj.path === currentPath) return; // 今開いているものは飛ばす
+
+        const li = document.createElement('li');
+        li.innerHTML = `
+            <span class="p-delete-icon" style="cursor:pointer;">🗑️</span>
+            <div class="p-name-click-area" style="flex:1; cursor:pointer;">${proj.name}</div>
+            <div class="p-edit-icon_box"></div>
+        `;
+
+        // クリックでプロジェクトを切り替え
+        li.querySelector('.p-name-click-area').onclick = async () => {
+            if (isModified && !confirm("未保存の変更があります。破棄して切り替えますか？")) return;
+            const result = await window.electronAPI.loadProjectByPath(proj.path); [3]
+            if (result.success) {
+                window.currentProject = result.data;
+                window.currentProjectPath = proj.path;
+                window.loadProjectToUI(window.currentProject); // UI全体を復元 [8]
+                window.updateProjectSidebar();
+            }
+        };
+
+        listUl.appendChild(li);
+    });
+};
