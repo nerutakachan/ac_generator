@@ -692,50 +692,80 @@ export async function handleMultiFileUpload(files) {
         window.initSkinGallery(skinsFound);
         console.log(`🖼 [D&D] ${skinsFound.length} 個のスキンを検出しました。`);
     }
-	const hasIniFiles = fileArray.some(f => f.name && f.name.toLowerCase().endsWith('.ini'));
-	// ★3Dモデルファイルが含まれているかもチェック
-	const hasModelFiles = fileArray.some(f => f.name && (f.name.toLowerCase().endsWith('.fbx') || f.name.toLowerCase().endsWith('.glb') || f.name.toLowerCase().endsWith('.gltf')));
+const hasIniFiles = fileArray.some(f => f.name && f.name.toLowerCase().endsWith('.ini'));
+    const hasModelFiles = fileArray.some(f => f.name && (f.name.toLowerCase().endsWith('.fbx') || f.name.toLowerCase().endsWith('.glb') || f.name.toLowerCase().endsWith('.gltf')));
+    // ★追加：KN5ファイルが含まれているかチェック
+    const hasKn5Files = fileArray.some(f => f.name && f.name.toLowerCase().endsWith('.kn5'));
 
-	// ==========================================
-	// ★修正：INIまたはモデルが含まれている場合、車名とルートを特定する
-	// ==========================================
-	if (hasIniFiles || hasModelFiles) {
-		let detectedCarName = "名称未設定";
-		let acRootPath = null;
+    // ==========================================
+    // ★修正：KN5、INI、またはモデルが含まれている場合、車名とルートを特定する
+    // ==========================================
+    if (hasKn5Files || hasIniFiles || hasModelFiles) {
+        let detectedCarName = "名称未設定";
+        let acRootPath = null;
 
-		for (const f of fileArray) {
-			const rawPath = f.path || "";
-			const filePath = rawPath.replace(/\\/g, '/'); // 区切り文字を統一
-			const acMarker = "/content/cars/";
-			const idx = filePath.toLowerCase().indexOf(acMarker);
-			
-			if (idx !== -1) {
-				// 1. 正規ルート：/content/cars/ より前がルート、直後が車名
-				acRootPath = filePath.substring(0, idx);
-				const afterMarker = filePath.substring(idx + acMarker.length);
-				// ★修正： を付けることで「配列」ではなく「文字」として取得（カンマ防止）
-				detectedCarName = afterMarker.split('/'); 
-				break; 
-			} else { // 事実：外部（デスクトップ等）からのドロップの場合
-			const parts = filePath.split('/');
-			// ★dataフォルダ、INIファイル、または3Dモデルのいずれかを起点に車名フォルダを探す
-			const dataIdx = parts.findIndex(p => p.toLowerCase() === 'data' || p.toLowerCase().endsWith('.ini') || p.toLowerCase().endsWith('.fbx') || p.toLowerCase().endsWith('.glb'));
-			if (dataIdx > 0) {
-				detectedCarName = parts[dataIdx - 1];
-				// ★追加：特定した車名フォルダの「一つ上の階層」をルートパスとして抽出する
-				const carFolderWithSeparator = '/' + detectedCarName + '/';
-				const rootIdx = filePath.toLowerCase().lastIndexOf(carFolderWithSeparator.toLowerCase());
-				if (rootIdx !== -1) {
-					acRootPath = rawPath.substring(0, rootIdx);
-				}
-				break;
-			}
-		}
-		}
+        // 1. まず「最優先」でメインの .kn5 ファイルを基準に車名を特定する
+        const kn5File = fileArray.find(f => f.name && f.name.toLowerCase().endsWith('.kn5') && f.name.toLowerCase() !== 'collider.kn5');
+        
+        if (kn5File) {
+             const rawPath = kn5File.path || "";
+             const filePath = rawPath.replace(/\\/g, '/');
+             const parts = filePath.split('/');
+             
+             // .kn5ファイルが直接入っているフォルダが間違いなく「車名フォルダ」
+             detectedCarName = parts[parts.length - 2]; 
+             
+             // ルートパスの判定 (/content/cars/ があればそれ以前をルートに)
+             const acMarker = "/content/cars/";
+             const idx = filePath.toLowerCase().indexOf(acMarker);
+             if (idx !== -1) {
+                 acRootPath = filePath.substring(0, idx);
+             } else {
+                 // 外部フォルダからのD&Dの場合、車名フォルダより上の階層をルートとする
+                 const carFolderWithSeparator = '/' + detectedCarName + '/';
+                 const rootIdx = filePath.toLowerCase().lastIndexOf(carFolderWithSeparator);
+                 if (rootIdx !== -1) {
+                     acRootPath = rawPath.substring(0, rootIdx);
+                 }
+             }
+        } else {
+             // 2. もし .kn5 がドロップされなかった場合は、従来のやり方（dataフォルダやINIファイル基準）で探す
+             for (const f of fileArray) {
+                 const rawPath = f.path || "";
+                 const filePath = rawPath.replace(/\\/g, '/'); // 区切り文字を統一
 
-		// --- UIへの反映（ここが重要） ---
-		// --- 物理的なUI要素への反映 ---
-		const acPathInput = document.getElementById('ac-root-path');
+                 const acMarker = "/content/cars/";
+                 const idx = filePath.toLowerCase().indexOf(acMarker);
+
+                 if (idx !== -1) {
+                     acRootPath = filePath.substring(0, idx);
+                     const afterMarker = filePath.substring(idx + acMarker.length);
+                     detectedCarName = afterMarker.split('/')[0];
+                     break;
+                 } else {
+                     const parts = filePath.split('/');
+                     const dataIdx = parts.findIndex(p => 
+                         p.toLowerCase() === 'data' || 
+                         p.toLowerCase().endsWith('.ini') || 
+                         p.toLowerCase().endsWith('.fbx') || 
+                         p.toLowerCase().endsWith('.glb')
+                     );
+                    
+                     if (dataIdx > 0) {
+                         detectedCarName = parts[dataIdx - 1];
+                         const carFolderWithSeparator = '/' + detectedCarName + '/';
+                         const rootIdx = filePath.toLowerCase().lastIndexOf(carFolderWithSeparator.toLowerCase());
+                         if (rootIdx !== -1) {
+                             acRootPath = rawPath.substring(0, rootIdx);
+                         }
+                         break;
+                     }
+                 }
+             }
+        }
+
+        // --- UIへの反映（以下は既存コードと同じ） ---
+        const acPathInput = document.getElementById('ac-root-path');
 		const carSelect = document.getElementById('ac-car-select');
 		const newCarProjectName = document.getElementById('new-car-project-name');
 
