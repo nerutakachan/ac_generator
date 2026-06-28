@@ -192,7 +192,7 @@ window.selectSkin = function(idx) {
 		const mainPreview = document.getElementById('car-color-preview');
 		
 		// メインプレビューの画像を差し替え
-		mainPreview.innerHTML = `<img src="file:///${skin.path}" style="width:100%; height:100%; object-fit:cover;">`;
+		mainPreview.innerHTML = `<img src="file:///${skin.path}">`;
 
 		// 選択中の <li> に枠を付ける（is-activeクラス）
 		const items = document.querySelectorAll('.color-list_box li');

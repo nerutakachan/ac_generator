@@ -2005,12 +2005,6 @@ em
 	margin-left: auto;
 }
 /* プロジェクト一覧の表示ボックス */
-.p-edit-name_box {
-	max-height: 250px;    /* 3〜4件分くらいの高さで固定（調整してください） */
-	overflow-y: auto;     /* 縦方向にスクロールを許可 */
-	overflow-x: hidden;   /* 横方向は隠す */
-	padding-right: 5px;   /* スクロールバーとテキストの被り防止 */
-}
 
 /* スクロールバー全体のデザイン（細めにしてスタイリッシュに） */
 .p-edit-name_box::-webkit-scrollbar {
@@ -2038,6 +2032,12 @@ em
 	list-style: none;
 	padding: 0;
 	margin: 0;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding-right: 5px;
+	max-height: 140px;
+	height: 100%;
+	padding-right: 5px;
 }
 .p-edit-name-unsaved{
 	aspect-ratio: 1;
