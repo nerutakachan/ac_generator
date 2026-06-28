@@ -831,8 +831,25 @@ export async function handleMultiFileUpload(files) {
 			// ★追加：.kn5 を検知したら FBX への展開を依頼する
 			if (name.endsWith('.kn5')) {
 				if (name === 'collider.kn5') {
-					console.log("⏩ [SKIP] collider.kn5 は展開不要のため無視します。");
-					continue;
+						console.log("⏩ [SKIP] collider.kn5 は展開不要のため無視します。");
+						continue;
+				}
+
+				// --- 案A：既に展開済みのFBXがあるかチェックし、あれば再展開をスキップ ---
+				// KN5のファイル名（例: trw_s14_dmax_dori）を基準にFBXのパスを組み立てる
+				const kn5Dir = file.path.substring(0, file.path.lastIndexOf('\\') + 1 || file.path.lastIndexOf('/') + 1);
+				const kn5Name = file.name.replace('.kn5', '');
+				const expectedFbxPath = `${kn5Dir}fbx\\${kn5Name}.fbx`;
+				
+				// ファイルの実在確認 [cite: 801]
+				const alreadyExists = await window.electronAPI.checkFolderExists("", expectedFbxPath);
+
+				if (alreadyExists) {
+						console.log("🚀 [SKIP] FBXが既に存在するため、展開をスキップして直接読み込みます:", expectedFbxPath);
+						if (typeof window.loadModelByPath === 'function') {
+								await window.loadModelByPath(expectedFbxPath);
+						}
+						continue; // 展開処理（unpackKn5）を飛ばして次のファイルへ
 				}
 				console.log("📦 [.kn5] 展開を開始します:", file.path);
 				const res = await window.electronAPI.unpackKn5(file.path);
@@ -949,12 +966,14 @@ export async function handleMultiFileUpload(files) {
 			}
 		} catch (err) {
 			console.error(`[import.js] ファイル処理失敗: ${file.name}`, err);
+			// --- 修正：FBXエラー時のみ個別に警告 ---
+			if (file.name.toLowerCase().endsWith('.fbx')) {
+					alert(`⚠️ モデル「${file.name}」の解析に失敗しました。ファイルが壊れている可能性があります。\n\n物理データ(INI)の読み込みは続行します。`);
+			}
 		}
-	} // ← ここでファイルの読み込みループ(for)が終了
-	// ==========================================
+	}
 	// ★修正：設定ファイル（.ini）がドロップされた時だけ view.ini の補完を行う
 	// 3Dモデル単体のドロップ時に、既存の本物データをダミー値で上書き破壊するのを防ぎます
-	// ==========================================
 	if (hasIniFiles) {
 		// 1. dash_cam.ini の補完 (すでに入っていればそれを使用、なければひな形)
 		let dashCamParsed = null;

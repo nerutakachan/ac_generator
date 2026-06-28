@@ -707,6 +707,15 @@ window.loadModelByPath = async function(path) {
 			if (typeof window.requestRender === 'function') window.requestRender();
 		}, 500);
 	} catch (error) {
-		console.error("[MODEL] モデルデータの復元処理に失敗しました:", error);
-	}
+            console.error("[MODEL] モデルデータの復元処理に失敗しました:", error);
+            // --- 修正：ユーザーへ警告を表示 ---
+            let msg = "⚠️ 3Dモデルの読み込みに失敗しました。\n\n";
+            if (error.message.includes('name')) {
+                msg += "原因：FBXファイルが破損しているか、非対応の形式です。Blender等で開けるか確認してください。";
+            } else {
+                msg += "原因：" + error.message;
+            }
+            alert(msg);
+            // --------------------------------
+        }
 };

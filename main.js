@@ -368,6 +368,45 @@ window.loadProjectToUI = async function(projectState) {
 	console.log("🏁 [復元開始] データの復元を実行します...", projectState);
 	if (!projectState) return;
 	window.isRestoring = true;
+	const env = projectState.environment || {};
+
+    // 1. 車両名の入力欄を復元
+    const nameInput = document.getElementById('new-car-project-name');
+    if (nameInput && env.output_car_name) {
+        nameInput.value = env.output_car_name;
+    }
+
+    // 2. ベース車両のプルダウン選択を復元
+    if (env.base_car_name) {
+        window.currentCarDirectoryName = env.base_car_name;
+        const carSelect = document.getElementById('ac-car-select');
+        if (carSelect) {
+            // 選択肢になければ追加（外部から読み込んだ車両などの対応）
+            let exists = false;
+            for (let i = 0; i < carSelect.options.length; i++) {
+                if (carSelect.options[i].value === env.base_car_name) { exists = true; break; }
+            }
+            if (!exists) {
+                const opt = document.createElement('option');
+                opt.value = env.base_car_name;
+                opt.textContent = env.base_car_name;
+                carSelect.appendChild(opt);
+            }
+            carSelect.value = env.base_car_name;
+        }
+    }
+
+    // 3. スキンプレビュー（ギャラリー）を復元
+    if (env.all_car_skins && env.all_car_skins.length > 0) {
+        // logo-name.js にある既存の初期化関数を使用
+        if (typeof window.initSkinGallery === 'function') {
+            window.initSkinGallery(env.all_car_skins);
+            // 最後に見ていたスキンを表示
+            if (env.current_skin_idx !== undefined) {
+                window.selectSkin(env.current_skin_idx);
+            }
+        }
+    }
 	if (projectState.projectName && window.electronAPI && window.electronAPI.setWindowTitle) {
 		window.electronAPI.setWindowTitle(projectState.projectName);
 	}
@@ -666,6 +705,14 @@ document.addEventListener('DOMContentLoaded', () => {
 			// ★追加：拡張物理のON/OFF状態もプロジェクトデータに記憶させる
 			if (!window.currentProject.environment) window.currentProject.environment = {};
 			window.currentProject.environment.isExtendedPhysicsEnabled = (window.isExtendedPhysicsEnabled === true);
+			// 1. ベース車両名と、画面に入力されていた車両名を保存
+        window.currentProject.environment.base_car_name = window.currentCarDirectoryName || "";
+        const nameInputEl = document.getElementById('new-car-project-name');
+        window.currentProject.environment.output_car_name = nameInputEl ? nameInputEl.value : "";
+
+        // 2. スキンリストと、現在選んでいるスキンの番号を保存
+        window.currentProject.environment.all_car_skins = window.allCarSkins || [];
+        window.currentProject.environment.current_skin_idx = window.currentSkinIdx || 0;
 			// ★追加：上書き保存用の「データフォルダのパス」も一緒にセーブデータに記憶させる！
 			window.currentProject.environment.data_folder = window.currentDataFolderPath || "";
 			console.log("✅ [SAVE] 拡張物理の状態を回収しました:", window.currentProject.environment.isExtendedPhysicsEnabled);
@@ -1198,18 +1245,21 @@ async function loadCarToEditor(carFullPath, carDirName) {
             importModule.applyIniData(fileName, window.ini_DATA[fileName]);
         });
 
-        // 6. 最後に物理スペック（馬力など）を計算して完成
+         // 6. 最後に物理スペック（馬力など）を計算して完成
         if (typeof window.updateSpecsFromPhysics === 'function') window.updateSpecsFromPhysics();
 
-        // 画面を切り替えてエディターを表示
-        const hub = document.getElementById('startup-hub');
-        const wrapper = document.getElementById('wrapper');
-        if (hub) hub.style.opacity = "0";
-        setTimeout(() => {
-            if (hub) hub.style.display = 'none';
-            if (wrapper) wrapper.style.display = 'block';
-            console.log("✅ D&D互換ルートでの読み込みが完了しました。");
-        }, 300);
+        // --- ★追加：すべての処理（FBX展開・INI解析）が完了したことを確認 ---
+        if (window.isMultiUploading === false) {
+            // 画面を切り替えてエディターを表示
+            const hub = document.getElementById('startup-hub');
+            const wrapper = document.getElementById('wrapper');
+            if (hub) hub.style.opacity = "0";
+            setTimeout(() => {
+                if (hub) hub.style.display = 'none';
+                if (wrapper) wrapper.style.display = 'block';
+                console.log("✅ 全ファイルの正常確認が完了。エディターを表示します。");
+            }, 300);
+        }
     } else {
         window.isMultiUploading = false;
         alert("読み込みエラー: " + res.error);
