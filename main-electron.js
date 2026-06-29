@@ -667,47 +667,6 @@ ipcMain.handle('unpack-kn5', async (event, kn5Path) => {
 		});
 	});
 });
-// ★追加：data.acd を展開してリネームする処理（ログ付き）
-ipcMain.handle('unpack-acd', async (event, carPath) => {
-  const acdPath = path.join(carPath, 'data.acd');
-  const backupPath = path.join(carPath, 'data.acd_backup');
-  const dataFolderPath = path.join(carPath, 'data');
-  const sdkExe = path.join(__dirname, 'tools-folder', 'lib', 'kunossdk.exe');
-
-  console.log(`[ACD-SYSTEM] 処理開始: ${carPath}`);
-
-  return new Promise((resolve) => {
-    // data.acd が存在しない場合
-    if (!fs.existsSync(acdPath)) {
-      console.log("[ACD-SYSTEM] data.acd は存在しません。処理をスキップします。");
-      return resolve({ success: true, message: "acdなし" });
-    }
-
-    // 1. dataフォルダが既にある場合：展開せずリネームのみ
-    if (fs.existsSync(dataFolderPath)) {
-      console.log("[ACD-SYSTEM] dataフォルダを発見。data.acd をバックアップへリネームします。");
-      fs.renameSync(acdPath, backupPath);
-      return resolve({ success: true, message: "バックアップ完了" });
-    }
-
-    // 2. dataフォルダがない場合：展開してからリネーム
-    console.log("[ACD-SYSTEM] dataフォルダ未検出。data.acd の展開を開始します...");
-    const command = `"${sdkExe}" "${acdPath}"`;
-    exec(command, (error) => {
-      if (error) {
-        console.error(`[ACD-SYSTEM] 展開エラー: ${error.message}`);
-        return resolve({ success: false, error: error.message });
-      }
-      
-      // 展開後に acd をリネーム
-      if (fs.existsSync(acdPath)) {
-        console.log("[ACD-SYSTEM] 展開成功。data.acd をバックアップへリネームしました。");
-        fs.renameSync(acdPath, backupPath);
-      }
-      resolve({ success: true });
-    });
-  });
-});
 app.on('window-all-closed', () => {
 	if (process.platform !== 'darwin') app.quit();
 });
