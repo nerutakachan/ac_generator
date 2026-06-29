@@ -572,13 +572,12 @@ function resizeAll() {
 function animate() {
 	requestAnimationFrame(animate);
 	if (needsUpdate) {
-		// ★最適化：現在表示されているタブをチェックし、見えているものだけを処理する
 		const cameraTab = document.getElementById('camera-content');
 		const suspensionTab = document.getElementById('suspension-content');
-		// tab-hidden クラスを持っていない（＝表示されている）かを確認
 		const isCameraVisible = cameraTab && !cameraTab.classList.contains('tab-hidden');
 		const isSuspensionVisible = suspensionTab && !suspensionTab.classList.contains('tab-hidden');
-		// 1. サスペンションの重い計算は、サスペンション画面が見えている時だけ実行
+
+		// 1. サスペンションの計算（表示中のみ）
 		if (isSuspensionVisible) {
 			if (typeof window.updateSuspensionVisuals === 'function' && window.currentSuspensionData) {
 				try {
@@ -588,21 +587,25 @@ function animate() {
 				}
 			}
 		}
-		// 2. カメラタブが表示されている時だけ、6つのカメラを描画する
+
+		// 2. カメラプレビューの描画（表示中 ＆ サイズが確定している時のみ）
 		if (isCameraVisible) {
 			for (let i = 0; i < NUM_CAMERAS; i++) {
-				if (renderers[i] && scenes[i] && cameras[i]) {
+				// ★修正：サイズチェックをループ内の if 文の中に統合します
+				if (renderers[i] && renderers[i].domElement.clientWidth > 0 && scenes[i] && cameras[i]) {
 					renderers[i].render(scenes[i], cameras[i]);
 				}
 			}
 		}
-		// 3. サスペンションタブが表示されている時だけ、サスペンション画面を描画する
+
+		// 3. サスペンション画面の描画（表示中 ＆ サイズが確定している時のみ）
 		if (isSuspensionVisible) {
-			if (suspensionRenderer && suspensionScene && suspensionCamera) {
+			// ★修正：こちらも同様に統合します
+			if (suspensionRenderer && suspensionRenderer.domElement.clientWidth > 0 && suspensionScene && suspensionCamera) {
 				suspensionRenderer.render(suspensionScene, suspensionCamera);
 			}
 		}
-		// 描画が終わったらフラグを戻す
+
 		needsUpdate = false;
 	}
 }
