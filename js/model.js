@@ -674,6 +674,10 @@ window.setupSuspensionReferences = function(model) {
 };
 window.loadModelByPath = async function(path) {
 	if (!path) return;
+	// ★追加：読み込んだFBXのパスをプロジェクトデータに確実に記憶させます
+	if (window.currentProject && window.currentProject.environment) {
+			window.currentProject.environment.model_path = path;
+	}
 	console.log("[MODEL] プロジェクトからモデルを復元します（安全ルート）:", path);
 	try {
 		// 1. preload.js 経由で裏側にファイルの読み込みを依頼する（ブラウザの防壁を回避）
