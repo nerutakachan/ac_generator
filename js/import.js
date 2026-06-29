@@ -704,7 +704,7 @@ export function applyIniData(fileName, parsedData) {
  * 複数ファイルアップロード時のメインエントリポイント
  */
 // （今後UIを追加したら、このリストに名前を足すだけで自動対応します）
-const ALLOWED_FILES = ['aero.ini', 'cameras.ini', 'car.ini', 'colliders.ini', 'dash_cam.ini', 'drivetrain.ini', 'engine.ini', 'final.rto', 'power.lut', 'setup.ini', 'suspensions.ini', 'tyres.ini', 'mirrors.ini', 'ui_car.json'];
+const ALLOWED_FILES = ['aero.ini', 'cameras.ini', 'car.ini', 'colliders.ini', 'dash_cam.ini', 'drivetrain.ini', 'engine.ini', 'final.rto', 'power.lut', 'setup.ini', 'suspensions.ini', 'tyres.ini', 'mirrors.ini', 'ui_car.json', 'data.acd']; // ★末尾に data.acd を追加
 export async function handleMultiFileUpload(files) {
 	const fileArray = Array.from(files); // 使い回せるように一度配列に変換しておく
 	// console.log("[IMPORT DEBUG] 渡ってきた全ファイル:", fileArray.map(f => f.name));
