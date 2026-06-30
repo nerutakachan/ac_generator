@@ -809,7 +809,43 @@ ipcMain.handle('delete-project', async (event, projectPath) => {
 		};
 	}
 });
+ipcMain.handle('unpack-acd', async (event, acdPath) => {
+    // 💡 過去に使用した変数名 sdkExe (kunossdk.exe) をそのまま使用します [cite: 500]
+    const sdkExe = path.join(__dirname, 'tools-folder', 'lib', 'kunossdk.exe');
+    const carDir = path.dirname(acdPath);
+    const outputDir = path.join(carDir, 'data');
 
+    return new Promise((resolve) => {
+        if (!fs.existsSync(sdkExe)) {
+            resolve({ success: false, error: "展開ツール(kunossdk.exe)が見つかりません。" });
+            return;
+        }
+
+        // 💡 事実：kunossdk.exe は acdPath を渡すだけで自動的に data フォルダを作ります
+        // 💡 バックティック (`) を使うことで、変数の値を正しくコマンドへ流し込みます
+        const command = `"${sdkExe}" "${acdPath}"`;
+
+        exec(command, (error, stdout, stderr) => {
+            // 物理的な data フォルダが生成されたかどうかで成功を判定します
+            if (fs.existsSync(outputDir)) {
+                // 展開された INI/LUT ファイルを読み込んでフロントエンドへ返します
+                const files = fs.readdirSync(outputDir)
+                    .filter(f => f.endsWith('.ini') || f.endsWith('.lut'))
+                    .map(f => {
+                        const fullPath = path.join(outputDir, f);
+                        return { 
+                            name: f, 
+                            path: fullPath,
+                            content: fs.readFileSync(fullPath, 'utf8') 
+                        };
+                    });
+                resolve({ success: true, files: files });
+            } else {
+                resolve({ success: false, error: stderr || "dataフォルダが生成されませんでした。" });
+            }
+        });
+    });
+});
 function saveToRecent(name, filePath) {
 	let list = [];
 	if (fs.existsSync(PATHS.recent)) {
