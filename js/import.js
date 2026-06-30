@@ -582,6 +582,12 @@ export function applyIniData(fileName, parsedData) {
 		window.currentMirrorsData = normalizedData;
 		if (typeof window.updateMirrorsVisuals === 'function') window.updateMirrorsVisuals();
 	}
+	const physicsFiles = ['car.ini', 'engine.ini', 'drivetrain.ini', 'tyres.ini', 'power.lut'];
+	if (physicsFiles.some(f => name.includes(f))) {
+		if (typeof window.updateSpecsFromPhysics === 'function') {
+				window.updateSpecsFromPhysics();
+		}
+	}
 }
 /**
  * 複数ファイルアップロード時のメインエントリポイント
@@ -1103,6 +1109,9 @@ document.addEventListener('DOMContentLoaded', () => {
 				if (typeof window.initSetupEditor === 'function') {
 					window.initSetupEditor(window.currentSetupData);
 				}
+			}
+			if (typeof window.updateSpecsFromPhysics === 'function') {
+					window.updateSpecsFromPhysics();
 			}
 		});
 	}

@@ -1199,6 +1199,9 @@ document.addEventListener('drop', async (e) => {
 			console.error("❌ [ERROR] 読み込み中に致命的なエラーを検知しました:", err);
 		} finally {
 			window.isMultiUploading = false;
+			if (typeof window.updateSpecsFromPhysics === 'function') {
+					window.updateSpecsFromPhysics();
+			}
 			console.log("🏁 [Phase C] 旗(isMultiUploading)を false に戻しました");
 		}
 	} else {
