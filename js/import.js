@@ -918,6 +918,18 @@ const ALLOWED_FILES = ['aero.ini', 'cameras.ini', 'car.ini', 'colliders.ini', 'd
 export async function handleMultiFileUpload(files) {
 	const fileArray = Array.from(files);
 	console.log("📂 [Phase 1: Sorter] ファイルスキャンを開始します...");
+	//データファイル（ini等）が含まれている場合、その親フォルダを「保存先」として記憶する
+	for (const f of fileArray) {
+		if (f.path && (f.name.toLowerCase().endsWith('.ini') || f.name.toLowerCase() === 'ui_car.json')) {
+			const filePath = f.path.replace(/\\/g, '/');
+			const lastSlashIdx = filePath.lastIndexOf('/');
+			if (lastSlashIdx !== -1) {
+				window.currentDataFolderPath = filePath.substring(0, lastSlashIdx);
+				console.log(`📌 [IMPORT] 物理ファイルの保存先を特定しました: ${window.currentDataFolderPath}`);
+				break; // 1つ見つかればOK
+			}
+		}
+	}
 	const tasks = {
 		carRoot: null,
 		dataDirExists: false,

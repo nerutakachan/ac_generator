@@ -42,12 +42,67 @@ window.APP_CONFIG = {
 // ==========================================\n
 // ★ここに追加：入力操作を監視し、スペックをリアルタイムで再計算する
 // ==========================================\n
-document.addEventListener('input', (e) => {
+document.addEventListener('input', async (e) => {
+	// ★ログ1：そもそも「何か入力された」ことを検知
+	console.log(`[DEBUG-INPUT] 入力検知: ID=${e.target.id}, Tag=${e.target.tagName}`);
+
 	const isInsideEditor = e.target.closest('#wrapper');
-	// ★修正：条件の先頭に「isInsideEditor &&」を追加する
-	if (isInsideEditor && ['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) {
-		if (typeof window.updateSpecsFromPhysics === 'function') {
-			window.updateSpecsFromPhysics();
+	if (!isInsideEditor) {
+		console.warn("[DEBUG-INPUT] 警告：#wrapper の外側での入力のため無視されました");
+		return;
+	}
+
+	// 1. 物理スペック（馬力など）の再計算
+	if (typeof window.updateSpecsFromPhysics === 'function') {
+		window.updateSpecsFromPhysics();
+	}
+
+	// 2. 「ui\ui_car.json」の同期チェック
+	if (e.target.id && e.target.id.startsWith('ui-')) {
+		console.log(`🚀 [UI-SYNC] 同期対象の入力を確認: ${e.target.id}`);
+
+		// A. パスが確定しているかチェック
+		if (!window.currentDataFolderPath) {
+			console.error("❌ [UI-SYNC] エラー：車両フォルダのパス(currentDataFolderPath)が未設定です。インポートしてから試してください。");
+			return;
+		}
+
+		// B. 画面の最新入力を取得
+		if (typeof window.collectUiCarData !== 'function') {
+			console.error("❌ [UI-SYNC] エラー：collectUiCarData 関数が見つかりません。");
+			return;
+		}
+		const latestUiValues = window.collectUiCarData();
+
+		// C. メモリ上のデータに文字だけを合成
+		if (!window.uiCarData) window.uiCarData = {};
+		Object.assign(window.uiCarData, latestUiValues);
+
+		// D. タグを配列形式に変換
+		if (typeof window.uiCarData.tags === 'string') {
+			window.uiCarData.tags = window.uiCarData.tags.split(',').map(t => t.trim());
+		}
+
+		// E. 保存先パスの計算 (data フォルダの隣にある ui\ui_car.json)
+		const carRoot = window.currentDataFolderPath.replace(/[\\/]data$/i, '');
+		const uiDir = carRoot + '/ui';
+		const content = JSON.stringify(window.uiCarData, null, 2);
+
+		console.log(`📝 [UI-SYNC] 書き込み準備完了: ${uiDir}/ui_car.json`);
+
+		// F. Electron 経由で物理ファイルを直接書き換え
+		const filesToSync = [{ name: 'ui_car.json', content: content }];
+		try {
+			await window.electronAPI.exportFilesToFolder(null, "", filesToSync, true, uiDir);
+			console.log(`✅ [UI-SYNC] ファイルの上書きに成功しました！`);
+		} catch (err) {
+			console.error("❌ [UI-SYNC] ファイル書き込み中に例外が発生しました:", err);
+		}
+
+		// G. サイドバー等の表示更新マークを付ける
+		if (window.modifiedStatus) window.modifiedStatus.car = true;
+		if (typeof window.updateProjectSidebar === 'function') {
+			window.updateProjectSidebar();
 		}
 	}
 });
