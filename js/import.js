@@ -502,206 +502,7 @@ export function load3DModel(file) {
 }
 // --- 6. メインハンドラ（ファイルのルーティングとデータ同期） ---
 // 共通：解析されたデータをシステムに適用し、切り替えを通知する
-// export function applyIniData(fileName, parsedData) {
-// 	// console.log(`[import.js] applyIniData 開始: ${fileName}`, parsedData);
-// 	// データの正規化：配列をカンマ区切りの文字列に変換する
-// 	const normalizedData = JSON.parse(JSON.stringify(parsedData));
-// 	for (let section in normalizedData) {
-// 		for (let key in normalizedData[section]) {
-// 			let val = normalizedData[section][key];
-// 			if (Array.isArray(val)) {
-// 				normalizedData[section][key] = val.join(', ');
-// 			} else if (typeof val === 'number') {
-// 				normalizedData[section][key] = val.toString();
-// 			}
-// 		}
-// 	}
-// 	let detectedExtended = false;
-// 	// car.ini のバージョンチェック
-// 	if (fileName.includes('car.ini') && normalizedData.HEADER?.VERSION === 'extended-2') {
-// 		detectedExtended = true;
-// 	}
-// 	// suspensions.ini の拡張セクションチェック
-// 	if (fileName.includes('suspensions.ini') && (normalizedData._EXTENSION || normalizedData._EXTENSION_FLEX)) {
-// 		detectedExtended = true;
-// 	}
-// 	// ★追加：aero.ini の拡張セクションチェック
-// 	if (fileName.includes('aero.ini')) {
-// 		let hasAeroExt = false;
-// 		if (normalizedData.FIN_0) {
-// 			hasAeroExt = true;
-// 		} else {
-// 			// 全セクションのキーをチェックし、ZONE_ から始まるものがあれば拡張物理と判定
-// 			for (const sec in normalizedData) {
-// 				for (const key in normalizedData[sec]) {
-// 					if (key.startsWith('ZONE_')) {
-// 						hasAeroExt = true;
-// 						break;
-// 					}
-// 				}
-// 				if (hasAeroExt) break;
-// 			}
-// 		}
-// 		if (hasAeroExt) {
-// 			detectedExtended = true;
-// 		}
-// 	}
-// 	if (detectedExtended) {
-// 		window.isExtendedPhysicsEnabled = true;
-// 		const masterSwitch = document.getElementById('extendedPhysicsSwitch'); // ★HTML側で作ったIDと一致させてください
-// 		if (masterSwitch) masterSwitch.checked = true;
-// 	}
-// 	if (!window.ini_DATA) window.ini_DATA = {};
-// 	window.ini_DATA[fileName] = normalizedData;
-// 	if (fileName.includes('suspensions.ini')) {
-// 		// console.log("[import.js] suspensions.ini を適用中...");
-// 		window.currentSuspensionData = normalizedData;
-// 		sortSus(normalizedData);
-// 		if (typeof window.syncSus === 'function') {
-// 			window.syncSus();
-// 		} else {
-// 			console.warn("[import.js] syncSus が見つかりません");
-// 		}
-// 	} else if (fileName.includes('aero.ini')) {
-// 		console.log("[aero.js] 📂 アップロードされたデータ:", normalizedData);
-// 		// 1. 土台として、ini-data.js にある「絶対に FIN_0 が入っている新品」を解析して用意します
-// 		const factoryDefault = window.parseINI(default_aero_ini);
-// 		console.log("[aero.js] 🛠️ 土台となるデフォルト:", factoryDefault);
-// 		// ★追加：合流させる前に、アップロードされた元のデータに本物の FIN_0 が存在していたかチェック
-// 		const hasRealFin0 = normalizedData.hasOwnProperty('FIN_0');
-// 		// 2. その土台の上に、アップロードされたデータを上書き合流させます
-// 		window.currentAeroData = {
-// 			...factoryDefault,
-// 			...normalizedData
-// 		};
-// 		console.log("[aero.js] ✅ 合流後の最終データ:", window.currentAeroData);
-// 		// ==========================================
-// 		// ★ここを追加：本物が無ければ初期状態を強制的に _ENABLED = false (OFF) にする
-// 		// ==========================================
-// 		if (window.currentAeroData && window.currentAeroData.FIN_0) {
-// 			if (hasRealFin0) {
-// 				window.currentAeroData.FIN_0._ENABLED = true; // 実在すれば有効
-// 			} else {
-// 				window.currentAeroData.FIN_0._ENABLED = false; // 実在しなければ無効化（半透明）
-// 			}
-// 		}
-// 		// ==========================================
-// 		if (typeof window.initAeroEditor === 'function') {
-// 			window.initAeroEditor(window.currentAeroData);
-// 		}
-// 		if (typeof window.updateAeroVisuals === 'function') {
-// 			window.updateAeroVisuals();
-// 		}
-// 		if (typeof window.requestRender === 'function') {
-// 			window.requestRender();
-// 		}
-// 	} else if (fileName.includes('tyres.ini')) {
-// 		window.currentTyreData = normalizedData;
-// 		if (typeof window.updateTyreEditorUI === 'function') {
-// 			window.updateTyreEditorUI(window.currentTyreData);
-// 		}
-// 	}
-// 	// ★追加：car.ini の処理（上書きせず既存データと合体させる）
-// 	else if (fileName.includes('car.ini')) {
-// 		// ★修正：メモリをクリアにする際、コライダーデータ（[COLLIDER_0]など）だけは保護して引き継ぐ
-// 		const preservedColliders = {};
-// 		if (window.currentCarData) {
-// 			for (const key in window.currentCarData) {
-// 				if (key.startsWith('COLLIDER_')) {
-// 					preservedColliders[key] = window.currentCarData[key];
-// 				}
-// 			}
-// 		}
-// 		window.currentCarData = {
-// 			...preservedColliders,
-// 			...normalizedData
-// 		};
-// 		if (typeof window.updateCarEditorUI === 'function') {
-// 			window.updateCarEditorUI(window.currentCarData);
-// 		}
-// 	}
-// 	// ★追加：colliders.ini の処理（既存データと合体させ、即座に描画する）
-// 	else if (fileName.includes('colliders.ini')) {
-// 		// ★修正：既存の古いコライダーデータを消去してから、新しいコライダーデータを入れる
-// 		if (window.currentCarData) {
-// 			for (const key in window.currentCarData) {
-// 				if (key.startsWith('COLLIDER_')) {
-// 					delete window.currentCarData[key];
-// 				}
-// 			}
-// 		} else {
-// 			window.currentCarData = {};
-// 		}
-// 		window.currentCarData = {
-// 			...window.currentCarData,
-// 			...normalizedData
-// 		};
-// 		if (typeof window.initColliderEditor === 'function') {
-// 			window.initColliderEditor(normalizedData);
-// 		}
-// 		if (typeof window.updateColliderVisuals === 'function') {
-// 			window.updateColliderVisuals();
-// 		}
-// 	}
-// 	// engine.ini の処理
-// 	else if (fileName.includes('engine.ini')) {
-// 		window.currentEngineData = normalizedData;
-// 		if (typeof window.initEngineEditor === 'function') {
-// 			window.initEngineEditor(window.currentEngineData);
-// 		}
-// 		if (typeof window.updateEngineGraph === 'function') {
-// 			window.updateEngineGraph();
-// 		}
-// 	}
-// 	// drivetrain.ini の処理
-// 	else if (fileName.includes('drivetrain.ini')) {
-// 		// ★追加：drivetrainがアップロードされたことを記憶するフラグ
-// 		window.isDrivetrainIniUploaded = true;
-// 		window.currentDrivetrainData = normalizedData;
-// 		if (typeof window.loadSetupIniForGears === 'function') {
-// 			window.loadSetupIniForGears(window.currentSetupData);
-// 		}
-// 		if (typeof window.initDrivetrainEditor === 'function') {
-// 			window.initDrivetrainEditor(window.currentDrivetrainData, fileName); // ファイル名を渡す
-// 		}
-// 		if (typeof window.updateGearChart === 'function') {
-// 			window.updateGearChart();
-// 		}
-// 	}
-// 	// setup.ini の処理
-// 	else if (fileName.includes('setup.ini')) {
-// 		// ★追加：setupがアップロードされたことを記憶するフラグ
-// 		window.isSetupIniUploaded = true;
-// 		// ★修正：アップロードされたデータをデフォルトデータで補完してからセットする
-// 		const completedData = window.mergeWithDefaultSetup(normalizedData);
-// 		window.currentSetupData = completedData;
-// 		// ★追加：ドラッグ＆ドロップでの読み込み時にもエディターを更新
-// 		if (typeof window.initSetupEditor === 'function') {
-// 			window.initSetupEditor(window.currentSetupData);
-// 			// --- ここから追加：表示の強制リフレッシュ ---
-// 			// 今開いている「GEAR」などのタブボタンを探して、プログラムからクリックさせます
-// 			const activeTabBtn = document.querySelector('#setup-editor .setup-tab-btn.active');
-// 			if (activeTabBtn) {
-// 				activeTabBtn.click();
-// 			}
-// 			// --- ここまで追加 ---
-// 		}
-// 		if (typeof window.loadSetupIniForGears === 'function') {
-// 			window.loadSetupIniForGears(window.currentSetupData);
-// 		}
-// 	}
-// 	// ★追加：mirrors.ini の処理
-// 	else if (fileName.includes('mirrors.ini')) {
-// 		window.currentMirrorsData = normalizedData;
-// 		console.log("[IMPORT] mirrors.ini を読み込みました", window.currentMirrorsData);
-// 		// 3Dモデルからミラーパーツを探す関数を呼ぶ
-// 		if (typeof window.updateMirrorsVisuals === 'function') {
-// 			window.updateMirrorsVisuals();
-// 		}
-// 	}
-// }
 export function applyIniData(fileName, parsedData) {
-<<<<<<< HEAD
 	// console.log(`[import.js] applyIniData 開始: ${fileName}`, parsedData);
 	// データの正規化：配列をカンマ区切りの文字列に変換する
 	const normalizedData = JSON.parse(JSON.stringify(parsedData));
@@ -898,103 +699,12 @@ export function applyIniData(fileName, parsedData) {
 			window.updateMirrorsVisuals();
 		}
 	}
-=======
-    // 1. データの正規化（既存の処理を維持）
-    const normalizedData = JSON.parse(JSON.stringify(parsedData));
-    for (let section in normalizedData) {
-        for (let key in normalizedData[section]) {
-            let val = normalizedData[section][key];
-            if (Array.isArray(val)) {
-                normalizedData[section][key] = val.join(', ');
-            } else if (typeof val === 'number') {
-                normalizedData[section][key] = val.toString();
-            }
-        }
-    }
-
-    // 2. 拡張物理スイッチの自動判定
-    let detectedExtended = false;
-    if (fileName.includes('car.ini') && normalizedData.HEADER?.VERSION === 'extended-2') detectedExtended = true;
-    if (fileName.includes('suspensions.ini') && (normalizedData._EXTENSION || normalizedData._EXTENSION_FLEX)) detectedExtended = true;
-    if (detectedExtended) {
-        window.isExtendedPhysicsEnabled = true;
-        const masterSwitch = document.getElementById('extendedPhysicsSwitch');
-        if (masterSwitch) masterSwitch.checked = true;
-    }
-
-    // 3. 全体データの保存 [5]
-    if (!window.ini_DATA) window.ini_DATA = {};
-    window.ini_DATA[fileName] = normalizedData;
-
-    const name = fileName.toLowerCase();
-
-    // 4. 各ファイル名に応じた「適応」処理
-    if (name.includes('suspensions.ini')) {
-        window.currentSuspensionData = normalizedData;
-        sortSus(normalizedData);
-        if (typeof window.syncSus === 'function') window.syncSus();
-        if (typeof window.updateSuspensionEditorUI === 'function') window.updateSuspensionEditorUI(normalizedData);
-
-    } else if (name.includes('aero.ini')) {
-        const factoryDefault = window.parseINI(default_aero_ini);
-        window.currentAeroData = { ...factoryDefault, ...normalizedData };
-        if (typeof window.initAeroEditor === 'function') window.initAeroEditor(window.currentAeroData);
-
-    } else if (name.includes('tyres.ini')) {
-        window.currentTyreData = normalizedData;
-        if (typeof window.updateTyreEditorUI === 'function') window.updateTyreEditorUI(window.currentTyreData);
-
-    } else if (name.includes('car.ini')) {
-        const preservedColliders = {};
-        if (window.currentCarData) {
-            for (const key in window.currentCarData) {
-                if (key.startsWith('COLLIDER_')) preservedColliders[key] = window.currentCarData[key];
-            }
-        }
-        window.currentCarData = { ...preservedColliders, ...normalizedData };
-        if (typeof window.updateCarEditorUI === 'function') window.updateCarEditorUI(window.currentCarData);
-
-    } else if (name.includes('engine.ini')) {
-        window.currentEngineData = normalizedData;
-        if (typeof window.initEngineEditor === 'function') window.initEngineEditor(window.currentEngineData);
-
-    } else if (name.includes('drivetrain.ini')) {
-        window.isDrivetrainIniUploaded = true;
-        window.currentDrivetrainData = normalizedData;
-        
-        // 💡 重要：以前のゴミを消して新しく作り直します
-        window.gearSetList = []; 
-        if (typeof window.initDrivetrainEditor === 'function') {
-            window.initDrivetrainEditor(window.currentDrivetrainData, fileName);
-        }
-        if (typeof window.loadSetupIniForGears === 'function') {
-            window.loadSetupIniForGears(window.currentSetupData);
-        }
-
-    } else if (name.includes('setup.ini')) {
-        window.isSetupIniUploaded = true;
-        window.currentSetupData = window.mergeWithDefaultSetup(normalizedData);
-        
-        if (typeof window.initSetupEditor === 'function') {
-            window.initSetupEditor(window.currentSetupData);
-        }
-        // 💡 setup.ini からギアの選択肢を読み込みます
-        if (typeof window.loadSetupIniForGears === 'function') {
-            window.loadSetupIniForGears(window.currentSetupData);
-        }
-
-    } else if (name.includes('mirrors.ini')) {
-        window.currentMirrorsData = normalizedData;
-        if (typeof window.updateMirrorsVisuals === 'function') window.updateMirrorsVisuals();
-    }
->>>>>>> 8ffc66899c422023518a9d0704bec0f05f2ae8ee
 }
 /**
  * 複数ファイルアップロード時のメインエントリポイント
  */
 // （今後UIを追加したら、このリストに名前を足すだけで自動対応します）
 const ALLOWED_FILES = ['aero.ini', 'cameras.ini', 'car.ini', 'colliders.ini', 'dash_cam.ini', 'drivetrain.ini', 'engine.ini', 'final.rto', 'power.lut', 'setup.ini', 'suspensions.ini', 'tyres.ini', 'mirrors.ini', 'ui_car.json'];
-<<<<<<< HEAD
 export async function handleMultiFileUpload(files) {
 	const fileArray = Array.from(files); // 使い回せるように一度配列に変換しておく
 	// されたファイルからスキン画像を抽出する ---
@@ -1121,148 +831,16 @@ export async function handleMultiFileUpload(files) {
 						console.log("⏩ [SKIP] collider.kn5 は展開不要のため無視します。");
 						continue;
 				}
-=======
-// export async function handleMultiFileUpload(files) {
-// 	const fileArray = Array.from(files); // 使い回せるように一度配列に変換しておく
-// 	// console.log("[IMPORT DEBUG] 渡ってきた全ファイル:", fileArray.map(f => f.name));
-// 	// console.log("[IMPORT DEBUG] 許可リスト:", ALLOWED_FILES);
-// 	// ★追加：ドロップされたファイルの中に設定ファイル（.ini）が1つでもあるかチェック
-// 	// --- ★追加：D&Dされたファイルからスキン画像を抽出する ---
-// 	const skinsFound = [];
-// 	fileArray.forEach(f => {
-// 		const pathStr = (f.path || f.webkitRelativePath || "").replace(/\\/g, '/');
-// 		// skins/フォルダ名/preview.jpg という構造をチェック
-// 		if (pathStr.toLowerCase().includes('/skins/') && pathStr.toLowerCase().endsWith('/preview.jpg')) {
-// 			const parts = pathStr.split('/');
-// 			const skinName = parts[parts.length - 2]; // フォルダ名をスキン名とする
-// 			skinsFound.push({
-// 				name: skinName,
-// 				path: pathStr
-// 			});
-// 		}
-// 	});
-// 	if (skinsFound.length > 0) {
-// 		window.initSkinGallery(skinsFound);
-// 		console.log(`🖼 [D&D] ${skinsFound.length} 個のスキンを検出しました。`);
-// 	}
-// 	const hasIniFiles = fileArray.some(f => f.name && f.name.toLowerCase().endsWith('.ini'));
-// 	const hasModelFiles = fileArray.some(f => f.name && (f.name.toLowerCase().endsWith('.fbx') || f.name.toLowerCase().endsWith('.glb') || f.name.toLowerCase().endsWith('.gltf')));
-// 	// ★追加：KN5ファイルが含まれているかチェック
-// 	const hasKn5Files = fileArray.some(f => f.name && f.name.toLowerCase().endsWith('.kn5'));
-// 	// ==========================================
-// 	// ★修正：KN5、INI、またはモデルが含まれている場合、車名とルートを特定する
-// 	// ==========================================
-// 	if (hasKn5Files || hasIniFiles || hasModelFiles) {
-// 		let detectedCarName = "名称未設定";
-// 		let acRootPath = null;
-// 		// 1. まず「最優先」でメインの .kn5 ファイルを基準に車名を特定する
-// 		const kn5File = fileArray.find(f => f.name && f.name.toLowerCase().endsWith('.kn5') && f.name.toLowerCase() !== 'collider.kn5');
-// 		if (kn5File) {
-// 			const rawPath = kn5File.path || "";
-// 			const filePath = rawPath.replace(/\\/g, '/');
-// 			const parts = filePath.split('/');
-// 			// .kn5ファイルが直接入っているフォルダが間違いなく「車名フォルダ」
-// 			detectedCarName = parts[parts.length - 2];
-// 			// ルートパスの判定 (/content/cars/ があればそれ以前をルートに)
-// 			const acMarker = "/content/cars/";
-// 			const idx = filePath.toLowerCase().indexOf(acMarker);
-// 			if (idx !== -1) {
-// 				acRootPath = filePath.substring(0, idx);
-// 			} else {
-// 				// 外部フォルダからのD&Dの場合、車名フォルダより上の階層をルートとする
-// 				const carFolderWithSeparator = '/' + detectedCarName + '/';
-// 				const rootIdx = filePath.toLowerCase().lastIndexOf(carFolderWithSeparator);
-// 				if (rootIdx !== -1) {
-// 					acRootPath = rawPath.substring(0, rootIdx);
-// 				}
-// 			}
-// 		} else {
-// 			// 2. もし .kn5 がドロップされなかった場合は、従来のやり方（dataフォルダやINIファイル基準）で探す
-// 			for (const f of fileArray) {
-// 				const rawPath = f.path || "";
-// 				const filePath = rawPath.replace(/\\/g, '/'); // 区切り文字を統一
-// 				const acMarker = "/content/cars/";
-// 				const idx = filePath.toLowerCase().indexOf(acMarker);
-// 				if (idx !== -1) {
-// 					acRootPath = filePath.substring(0, idx);
-// 					const afterMarker = filePath.substring(idx + acMarker.length);
-// 					detectedCarName = afterMarker.split('/')[0];
-// 					break;
-// 				} else {
-// 					const parts = filePath.split('/');
-// 					const dataIdx = parts.findIndex(p => p.toLowerCase() === 'data' || p.toLowerCase().endsWith('.ini') || p.toLowerCase().endsWith('.fbx') || p.toLowerCase().endsWith('.glb'));
-// 					if (dataIdx > 0) {
-// 						detectedCarName = parts[dataIdx - 1];
-// 						const carFolderWithSeparator = '/' + detectedCarName + '/';
-// 						const rootIdx = filePath.toLowerCase().lastIndexOf(carFolderWithSeparator.toLowerCase());
-// 						if (rootIdx !== -1) {
-// 							acRootPath = rawPath.substring(0, rootIdx);
-// 						}
-// 						break;
-// 					}
-// 				}
-// 			}
-// 		}
-// 		// --- UIへの反映（以下は既存コードと同じ） ---
-// 		const acPathInput = document.getElementById('ac-root-path');
-// 		const carSelect = document.getElementById('ac-car-select');
-// 		const newCarProjectName = document.getElementById('new-car-project-name');
-// 		if (acRootPath) {
-// 			// ACルートが見つかった場合、入力欄にセット（スラッシュを円記号に変換）
-// 			if (acPathInput) acPathInput.value = acRootPath.replace(/\//g, '\\');
-// 			// 車両リストを更新
-// 			if (typeof window.refreshCarList === 'function') {
-// 				await window.refreshCarList(acRootPath);
-// 			}
-// 		}
-// 		// ★追加：ドロップされた車名をリストから探し、無ければ強制的に追加して選択する
-// 		if (carSelect && detectedCarName !== "名称未設定") {
-// 			let exists = false;
-// 			for (let i = 0; i < carSelect.options.length; i++) {
-// 				if (carSelect.options[i].value === detectedCarName) {
-// 					exists = true;
-// 					break;
-// 				}
-// 			}
-// 			if (!exists) {
-// 				const opt = document.createElement('option');
-// 				opt.value = detectedCarName;
-// 				opt.textContent = detectedCarName;
-// 				carSelect.appendChild(opt);
-// 			}
-// 			carSelect.value = detectedCarName;
-// 		}
-// 		window.currentCarDirectoryName = detectedCarName;
-// 		// ★ ご要望：初めてのD&D（名前がまだ未設定）の時だけ、プロジェクト名を埋める
-// 		if (newCarProjectName && (newCarProjectName.value === "" || newCarProjectName.value === "名称未設定")) {
-// 			newCarProjectName.value = detectedCarName;
-// 		}
-// 		console.log("[MULTI-IMPORT] 特定した車名:", window.currentCarDirectoryName);
-// 	} else {
-// 		console.log("[MULTI-IMPORT] 3Dモデル単体等のため、既存の正しい車名を維持します:", window.currentCarDirectoryName);
-// 	}
-// 	// 特定が終わってから、本来のファイル読み込みループを開始する
-// 	for (const file of fileArray) {
-// 		const name = file.name.toLowerCase();
-// 		try {
-// 			// ★追加：.kn5 を検知したら FBX への展開を依頼する
-// 			if (name.endsWith('.kn5')) {
-// 				if (name === 'collider.kn5') {
-// 						console.log("⏩ [SKIP] collider.kn5 は展開不要のため無視します。");
-// 						continue;
-// 				}
->>>>>>> 8ffc66899c422023518a9d0704bec0f05f2ae8ee
 
-// 				// --- 案A：既に展開済みのFBXがあるかチェックし、あれば再展開をスキップ ---
-// 				// KN5のファイル名（例: trw_s14_dmax_dori）を基準にFBXのパスを組み立てる
-// 				const kn5Dir = file.path.substring(0, file.path.lastIndexOf('\\') + 1 || file.path.lastIndexOf('/') + 1);
-// 				const kn5Name = file.name.replace('.kn5', '');
-// 				const expectedFbxPath = `${kn5Dir}fbx\\${kn5Name}.fbx`;
+				// --- 案A：既に展開済みのFBXがあるかチェックし、あれば再展開をスキップ ---
+				// KN5のファイル名（例: trw_s14_dmax_dori）を基準にFBXのパスを組み立てる
+				const kn5Dir = file.path.substring(0, file.path.lastIndexOf('\\') + 1 || file.path.lastIndexOf('/') + 1);
+				const kn5Name = file.name.replace('.kn5', '');
+				const expectedFbxPath = `${kn5Dir}fbx\\${kn5Name}.fbx`;
 				
-// 				// ファイルの実在確認 [cite: 801]
-// 				const alreadyExists = await window.electronAPI.checkFolderExists("", expectedFbxPath);
+				// ファイルの実在確認 [cite: 801]
+				const alreadyExists = await window.electronAPI.checkFolderExists("", expectedFbxPath);
 
-<<<<<<< HEAD
 				if (alreadyExists) {
 						console.log("🚀 [SKIP] FBXが既に存在するため、展開をスキップして直接読み込みます:", expectedFbxPath);
 						if (typeof window.loadModelByPath === 'function') {
@@ -1389,353 +967,70 @@ export async function handleMultiFileUpload(files) {
 			if (file.name.toLowerCase().endsWith('.fbx')) {
 					alert(`⚠️ モデル「${file.name}」の解析に失敗しました。ファイルが壊れている可能性があります。\n\n物理データ(INI)の読み込みは続行します。`);
 			}
-=======
-// 				if (alreadyExists) {
-// 						console.log("🚀 [SKIP] FBXが既に存在するため、展開をスキップして直接読み込みます:", expectedFbxPath);
-// 						if (typeof window.loadModelByPath === 'function') {
-// 								await window.loadModelByPath(expectedFbxPath);
-// 						}
-// 						continue; // 展開処理（unpackKn5）を飛ばして次のファイルへ
-// 				}
-// 				console.log("📦 [.kn5] 展開を開始します:", file.path);
-// 				const res = await window.electronAPI.unpackKn5(file.path);
-// 				if (res.success) {
-// 					console.log("✅ [.kn5] 展開成功、安全ルートでFBXを読み込みます:", res.fbxPath);
-// 					// 事実：model.js にある loadModelByPath は、手動ドロップと同じ動作をパス指定だけで再現します
-// 					if (typeof window.loadModelByPath === 'function') {
-// 						await window.loadModelByPath(res.fbxPath);
-// 					}
-// 					continue;
-// 				} else {
-// 					console.error("❌ [.kn5] 展開失敗:", res.error);
-// 					continue;
-// 				}
-// 			}
-// 			// ★追加：3Dモデル以外のファイルは、許可リストにあるかチェックする
-// 			if (!name.endsWith('.fbx') && !name.endsWith('.glb') && !name.endsWith('.gltf')) {
-// 				if (!ALLOWED_FILES.includes(name)) {
-// 					// 許可リストにないファイル（lights.iniなど）はここで華麗にスルー！
-// 					// console.log(`[IMPORT] 対象外ファイルをスキップしました: ${name}`);
-// 					continue;
-// 				}
-// 			}
-// 			if (name.endsWith('.ini') || name.endsWith('.lut') || name.endsWith('.rto') || name === 'ui_car.json') {
-// 				// ★修正：データファイル（ini等）だった場合のみ、その場所を「データ専用の箱」に記憶する
-// 				// ※ただし、ここは初回の一括読み込み時（またはパスが空の時）だけ記憶するように安全装置をかけます
-// 				if (file.path && !window.currentDataFolderPath) {
-// 					const filePath = file.path;
-// 					const lastSlashIdx = Math.max(filePath.lastIndexOf('\\'), filePath.lastIndexOf('/'));
-// 					if (lastSlashIdx !== -1) {
-// 						window.currentDataFolderPath = filePath.substring(0, lastSlashIdx);
-// 						console.log(`[IMPORT] メインの保存先をロックしました: ${window.currentDataFolderPath}`);
-// 					}
-// 				}
-// 				const content = file.content !== undefined ? file.content : await readTextFile(file);
-// 				if (name.endsWith('.lut')) {
-// 					// LUTファイルの場合は専用のパース関数に直接渡す
-// 					if (typeof window.parsePowerLut === 'function') {
-// 						window.parsePowerLut(content);
-// 					}
-// 				} else if (name.endsWith('.rto')) {
-// 					// ★追加：RTOファイルのパース
-// 					if (typeof window.parseFinalRto === 'function') {
-// 						window.parseFinalRto(content);
-// 					}
-// 				} else if (name === 'ui_car.json') {
-// 					console.log(`[IMPORT] ui_car.json を検知しました。処理を開始します。`);
-// 					if (typeof window.updateUiCarData === 'function') {
-// 						window.updateUiCarData(content);
-// 					} else {
-// 						console.warn("[IMPORT] updateUiCarData 関数が見つかりません。");
-// 					}
-// 				} else if (name === 'cameras.ini') {
-// 					// ★修正：cameras.ini は特殊な専用パーサーを通す
-// 					if (typeof window.parseIni === 'function') {
-// 						window.parseIni(content);
-// 					} else if (typeof window.parseCamerasINI === 'function') {
-// 						window.parseCamerasINI(content);
-// 					}
-// 				} else {
-// 					// 通常のINIファイル
-// 					const parsedData = parseINI(content);
-// 					applyIniData(file.name, parsedData);
-// 				}
-// 			} else if (name.endsWith('.fbx') || name.endsWith('.glb') || name.endsWith('.gltf')) {
-// 				// 3Dモデル読み込み
-// 				if (file.path && window.currentProject && window.currentProject.environment) {
-// 					window.currentProject.environment.model_path = file.path;
-// 					console.log("[IMPORT] モデルパスをプロジェクトに登録しました:", file.path);
-// 				}
-// 				if (window.currentProject.environment.data_folder) {
-// 					updateBadgeImage(window.currentProject.environment.data_folder);
-// 				}
-// 				// =======================================================
-// 				// ★修正：メニューの一括読み込みから届いた「パス情報だけのオブジェクト」の場合
-// 				// プロジェクトロード時にも使われている、実績のある安全な自動復元ルートへ流します
-// 				// =======================================================
-// 				if (file.isModel && typeof window.loadModelByPath === 'function') {
-// 					console.log("[IMPORT] メニュー経由のため、安全なパス復元ルートでモデルを読み込みます:", file.path);
-// 					await window.loadModelByPath(file.path);
-// 				} else {
-// 					// =======================================================
-// 					// ★通常：手動D&D（本物のFileオブジェクト）の場合
-// 					// =======================================================
-// 					if (typeof window.handleModelFile === 'function') {
-// 						window.handleModelFile(file);
-// 					}
-// 					await load3DModel(file);
-// 				}
-// 				// ★修正：すでに編集データがある場合は、デフォルト値での上書きをスキップする
-// 				const hasExistingData = window.currentSuspensionData && Object.keys(window.currentSuspensionData).length > 0;
-// 				if (hasExistingData) {
-// 					console.log("[IMPORT] 既存データがあるため、3Dモデルの配置更新のみ行います。");
-// 					// サスペンションの更新
-// 					if (typeof window.updateSuspensionVisuals === 'function') {
-// 						window.updateSuspensionVisuals(window.currentSuspensionData);
-// 					}
-// 					// ★追加：コライダーの更新（これでモデル到着後にコライダーが表示されます）
-// 					if (typeof window.updateColliderVisuals === 'function') {
-// 						window.updateColliderVisuals();
-// 					}
-// 					// ★追加：エアロの更新（これでモデル到着後にエアロが表示されます）
-// 					if (typeof window.updateAeroVisuals === 'function') {
-// 						window.updateAeroVisuals();
-// 					}
-// 				} else { // ✅「 } 」を足して綺麗に仕分けました
-// 					console.log("[IMPORT] データがないため、デフォルト値を適用します。");
-// 					Object.keys(window.ini_DATA).forEach(key => {
-// 						applyIniData(key, window.ini_DATA[key]);
-// 					});
-// 				}
-// 				// 共通の描画更新
-// 				if (typeof window.requestRender === 'function') window.requestRender();
-// 			}
-// 		} catch (err) {
-// 			console.error(`[import.js] ファイル処理失敗: ${file.name}`, err);
-// 			// --- 修正：FBXエラー時のみ個別に警告 ---
-// 			if (file.name.toLowerCase().endsWith('.fbx')) {
-// 					alert(`⚠️ モデル「${file.name}」の解析に失敗しました。ファイルが壊れている可能性があります。\n\n物理データ(INI)の読み込みは続行します。`);
-// 			}
-// 		}
-// 	}
-// 	// ★修正：設定ファイル（.ini）がドロップされた時だけ view.ini の補完を行う
-// 	// 3Dモデル単体のドロップ時に、既存の本物データをダミー値で上書き破壊するのを防ぎます
-// 	if (hasIniFiles) {
-// 		// 1. dash_cam.ini の補完 (すでに入っていればそれを使用、なければひな形)
-// 		let dashCamParsed = null;
-// 		const dashCamFile = fileArray.find(f => f.name && f.name.toLowerCase() === 'dash_cam.ini');
-// 		if (dashCamFile) {
-// 			const text = (typeof dashCamFile.text === 'function') ? await dashCamFile.text() : (dashCamFile.content !== undefined ? dashCamFile.content : await readTextFile(dashCamFile));
-// 			dashCamParsed = parseINI(text);
-// 		} else {
-// 			dashCamParsed = parseINI(default_dash_cam_ini);
-// 		}
-// 		// 2. view.ini の補完 (Electron経由でマイドキュメントへ確実な車名で探しに行く)
-// 		let viewIniParsed = null;
-// 		if (window.electronAPI && window.electronAPI.readViewIni) {
-// 			try {
-// 				// 先ほど完璧に特定した車名を使ってアクセスする
-// 				const result = await window.electronAPI.readViewIni(window.currentCarDirectoryName);
-// 				if (result.success) {
-// 					viewIniParsed = parseINI(result.content);
-// 				} else {
-// 					viewIniParsed = parseINI(default_view_ini);
-// 				}
-// 			} catch (e) {
-// 				viewIniParsed = parseINI(default_view_ini);
-// 			}
-// 		} else {
-// 			viewIniParsed = parseINI(default_view_ini);
-// 		}
-// 		// 3. 取得した座標データを car.ini (GRAPHICS) の中に安全に注入する
-// 		if (window.currentCarData) {
-// 			if (!window.currentCarData.GRAPHICS) window.currentCarData.GRAPHICS = {};
-// 			// dash_cam.ini の反映
-// 			if (dashCamParsed && dashCamParsed.DASH_CAM && dashCamParsed.DASH_CAM.POS) {
-// 				window.currentCarData.GRAPHICS.DASH_CAM_POS = dashCamParsed.DASH_CAM.POS;
-// 			}
-// 			// view.ini の反映
-// 			if (viewIniParsed) {
-// 				if (viewIniParsed.CAMERA) {
-// 					if (viewIniParsed.CAMERA.ON_BOARD_PITCH_ANGLE) {
-// 						window.currentCarData.GRAPHICS.ON_BOARD_PITCH_ANGLE = viewIniParsed.CAMERA.ON_BOARD_PITCH_ANGLE;
-// 					}
-// 					if (viewIniParsed.CAMERA.ON_BOARD_YAW_ANGLE) {
-// 						window.currentCarData.GRAPHICS.ON_BOARD_YAW_ANGLE = viewIniParsed.CAMERA.ON_BOARD_YAW_ANGLE;
-// 					}
-// 				}
-// 				if (viewIniParsed.DRIVER_EYES_POSITION && viewIniParsed.DRIVER_EYES_POSITION.DRIVEREYES) {
-// 					window.currentCarData.GRAPHICS.DRIVEREYES = viewIniParsed.DRIVER_EYES_POSITION.DRIVEREYES;
-// 				}
-// 			}
-// 		}
-// 		// UI側（car.js等）を更新して画面に数値を出す
-// 		if (typeof window.updateCarEditorUI === 'function' && window.currentCarData) {
-// 			window.updateCarEditorUI(window.currentCarData);
-// 		}
-// 	} else {
-// 		// 3Dモデル単体ロード時も、注入済みの既存データでUIを再描画
-// 		if (typeof window.updateCarEditorUI === 'function' && window.currentCarData) {
-// 			window.updateCarEditorUI(window.currentCarData);
-// 		}
-// 	}
-// } // ← ここで handleMultiFileUpload 関数全体が終了
-// 新しい読み込み（統合版テスト）
-export async function handleMultiFileUpload(files) {
-    const fileArray = Array.from(files);
-    console.log("📂 [Phase 1: Sorter] ファイルスキャンを開始します...");
-
-    const tasks = {
-        carRoot: null,
-        dataDirExists: false,
-        kn5ToUnpack: [],
-        modelFiles: [],
-        iniFiles: [],
-        acdFile: null,
-        uiJson: null,
-				skins: [] 
-    };
-
-    // --- STEP 1: Sorter (仕分け) ---
-    for (const file of fileArray) {
-        const name = file.name.toLowerCase();
-        const fullPath = (file.path || "").replace(/\\/g, '/');
-
-        if (name === 'data.acd') {
-            tasks.acdFile = file;
-        } else if (name.endsWith('.kn5') && name !== 'collider.kn5') {
-            tasks.kn5ToUnpack.push(file);
-            const parts = fullPath.split('/');
-            tasks.carRoot = parts[parts.length - 2];
-        } else if (['.fbx', '.glb', '.gltf'].some(ext => name.endsWith(ext))) {
-            tasks.modelFiles.push(file);
-        } else if (['.ini', '.lut', '.rto'].some(ext => name.endsWith(ext))) {
-            tasks.iniFiles.push(file);
-            if (fullPath.includes('/data/')) { tasks.dataDirExists = true; }
-        } else if (name === 'ui_car.json') {
-						tasks.uiJson = file;
-						} else if (fullPath.toLowerCase().includes('/skins/') && name === 'preview.jpg') {
-								// 💡 事実：skins/フォルダ名/preview.jpg という構造からスキン名を取得します
-    const parts = fullPath.split('/');
-    const skinName = parts[parts.length - 2];
-    tasks.skins.push({ name: skinName, path: fullPath });
-}
-    }
-
-    // --- STEP 2: Dispatcher (順次実行) ---
-    console.log("🚀 [Phase 2: Dispatcher] 順次読み込みを開始します...");
-
-    if (tasks.carRoot) window.currentCarDirectoryName = tasks.carRoot;
-		console.log("DEBUG: KN5処理開始...");
-
-    // 1. KN5展開
-    for (const kn5 of tasks.kn5ToUnpack) {
-        console.log(`📦 KN5展開中: ${kn5.name}`);
-        const res = await window.electronAPI.unpackKn5(kn5.path);
-        
-        if (res.success) {
-            // 💡 path.basename(res.fbxPath) の代わりにこれを使います
-            const fileName = res.fbxPath.split(/[\\\/]/).pop(); 
-            tasks.modelFiles.push({ name: fileName, path: res.fbxPath, isModel: true });
-            console.log(`✅ [.kn5] 展開成功、FBXをモデルタスクへ追加: ${fileName}`);
-        }
-    }
-
-    // 2. ACD展開 (物理フォルダがない時のみ)
-    if (!tasks.dataDirExists && tasks.acdFile) {
-        console.log("📦 [ACD] kunossdk.exe で展開します...");
-        const res = await window.electronAPI.unpackAcd(tasks.acdFile.path);
-        if (res.success) {
-            tasks.dataDirExists = true;
-            if (res.files) tasks.iniFiles.push(...res.files);
-        }
-    }
-		console.log("DEBUG: モデル読み込み開始...");
-    // 3. 3Dモデル描写
-    for (const model of tasks.modelFiles) {
-        if (model.path && typeof window.loadModelByPath === 'function') {
-            await window.loadModelByPath(model.path);
-        } else {
-            await load3DModel(model);
-        }
-    }
-		// data フォルダ、または展開された acd 内に ui フォルダがあればロゴを表示
-    if (window.currentDataFolderPath) {
-        const dataPath = window.currentDataFolderPath.replace(/\\/g, '/');
-        // 親フォルダのパスを渡して badge.png を探しに行かせる [cite: 300]
-        const parentPath = dataPath.substring(0, dataPath.lastIndexOf('/'));
-        if (typeof window.updateBadgeImage === 'function') {
-            window.updateBadgeImage(parentPath);
-        }
-    }
-
-    // ui_car.json が見つかっていれば適用 [cite: 301]
-    if (tasks.uiJson) {
-        const uiContent = await readTextFile(tasks.uiJson);
-        if (typeof window.updateUiCarData === 'function') {
-            window.updateUiCarData(uiContent);
-        }
-    }
-		// --- 5.5 スキンギャラリー ---
-		if (tasks.skins.length > 0 && typeof window.initSkinGallery === 'function') {
-			window.initSkinGallery(tasks.skins);
-			console.log(`🖼️ [D&D] ${tasks.skins.length} 個のスキンを検出しました。`);
->>>>>>> 8ffc66899c422023518a9d0704bec0f05f2ae8ee
 		}
-
-    // --- 6. ドキュメント内の view.ini (シート位置) を自動取得 ---
-    if (window.currentCarDirectoryName && window.electronAPI.readViewIni) {
-        console.log("💺 マイドキュメントから視点設定を読み込みます...");
-        const viewRes = await window.electronAPI.readViewIni(window.currentCarDirectoryName);
-        if (viewRes.success) {
-            const parsedView = parseINI(viewRes.content);
-            applyIniData('view.ini', parsedView); // 既存の applyIniData で処理
-            console.log("✅ 視点設定を適用しました。");
-        }
-    }
-		console.log("DEBUG: INI/LUT解析開始...");
-    // --- 7. 設定ファイルの解析 (INI/LUT) ---
-    for (const ini of tasks.iniFiles) {
-        // 空ファイル対策を施した安定版 [cite: 874, 929]
-        const content = (ini.content !== undefined) ? ini.content : await readTextFile(ini);
-
-        if (ini.name.toLowerCase().endsWith('.lut')) {
-            if (ini.name.toLowerCase() === 'power.lut' && typeof window.parsePowerLut === 'function') {
-                window.parsePowerLut(content);
-            }
-            continue;
-        }
-
-        const parsedData = parseINI(content);
-        applyIniData(ini.name, parsedData);
-    }
-		console.log("DEBUG: 全工程終了、関数を抜けます");
-    // すべて終わったらスペック表を最終更新 [cite: 143]
-    if (typeof window.updateSpecsFromPhysics === 'function') {
-        window.updateSpecsFromPhysics();
-    }
-    console.log("✅ 全てのインポート工程が正常に完了しました。");
-    // 4. 設定解析
-    // for (const ini of tasks.iniFiles) {
-    // console.log(`📝 [適応] 解析中: ${ini.name}`);
-    // const content = (ini.content !== undefined) ? ini.content : await readTextFile(ini);
-
-		// 		// 💡 事実：.lut ファイルは INI ではないため、専用のパーサーへ直接渡します
-		// 		if (ini.name.toLowerCase().endsWith('.lut')) {
-		// 				if (ini.name.toLowerCase() === 'power.lut' && typeof window.parsePowerLut === 'function') {
-		// 						window.parsePowerLut(content);
-		// 				}
-		// 				continue; // INI解析へは進ませない
-		// 		}
-				
-
-		// 		// 通常の INI 解析
-		// 		const parsedData = parseINI(content);
-		// 		applyIniData(ini.name, parsedData);
-		// }
-    console.log("✅ 全ての工程が正常に完了しました。");
-}
-
+	}
+	// ★修正：設定ファイル（.ini）がドロップされた時だけ view.ini の補完を行う
+	// 3Dモデル単体のドロップ時に、既存の本物データをダミー値で上書き破壊するのを防ぎます
+	if (hasIniFiles) {
+		// 1. dash_cam.ini の補完 (すでに入っていればそれを使用、なければひな形)
+		let dashCamParsed = null;
+		const dashCamFile = fileArray.find(f => f.name && f.name.toLowerCase() === 'dash_cam.ini');
+		if (dashCamFile) {
+			const text = (typeof dashCamFile.text === 'function') ? await dashCamFile.text() : (dashCamFile.content !== undefined ? dashCamFile.content : await readTextFile(dashCamFile));
+			dashCamParsed = parseINI(text);
+		} else {
+			dashCamParsed = parseINI(default_dash_cam_ini);
+		}
+		// 2. view.ini の補完 (Electron経由でマイドキュメントへ確実な車名で探しに行く)
+		let viewIniParsed = null;
+		if (window.electronAPI && window.electronAPI.readViewIni) {
+			try {
+				// 先ほど完璧に特定した車名を使ってアクセスする
+				const result = await window.electronAPI.readViewIni(window.currentCarDirectoryName);
+				if (result.success) {
+					viewIniParsed = parseINI(result.content);
+				} else {
+					viewIniParsed = parseINI(default_view_ini);
+				}
+			} catch (e) {
+				viewIniParsed = parseINI(default_view_ini);
+			}
+		} else {
+			viewIniParsed = parseINI(default_view_ini);
+		}
+		// 3. 取得した座標データを car.ini (GRAPHICS) の中に安全に注入する
+		if (window.currentCarData) {
+			if (!window.currentCarData.GRAPHICS) window.currentCarData.GRAPHICS = {};
+			// dash_cam.ini の反映
+			if (dashCamParsed && dashCamParsed.DASH_CAM && dashCamParsed.DASH_CAM.POS) {
+				window.currentCarData.GRAPHICS.DASH_CAM_POS = dashCamParsed.DASH_CAM.POS;
+			}
+			// view.ini の反映
+			if (viewIniParsed) {
+				if (viewIniParsed.CAMERA) {
+					if (viewIniParsed.CAMERA.ON_BOARD_PITCH_ANGLE) {
+						window.currentCarData.GRAPHICS.ON_BOARD_PITCH_ANGLE = viewIniParsed.CAMERA.ON_BOARD_PITCH_ANGLE;
+					}
+					if (viewIniParsed.CAMERA.ON_BOARD_YAW_ANGLE) {
+						window.currentCarData.GRAPHICS.ON_BOARD_YAW_ANGLE = viewIniParsed.CAMERA.ON_BOARD_YAW_ANGLE;
+					}
+				}
+				if (viewIniParsed.DRIVER_EYES_POSITION && viewIniParsed.DRIVER_EYES_POSITION.DRIVEREYES) {
+					window.currentCarData.GRAPHICS.DRIVEREYES = viewIniParsed.DRIVER_EYES_POSITION.DRIVEREYES;
+				}
+			}
+		}
+		// UI側（car.js等）を更新して画面に数値を出す
+		if (typeof window.updateCarEditorUI === 'function' && window.currentCarData) {
+			window.updateCarEditorUI(window.currentCarData);
+		}
+	} else {
+		// 3Dモデル単体ロード時も、注入済みの既存データでUIを再描画
+		if (typeof window.updateCarEditorUI === 'function' && window.currentCarData) {
+			window.updateCarEditorUI(window.currentCarData);
+		}
+	}
+} // ← ここで handleMultiFileUpload 関数全体が終了
 // サスペンションINI処理
 // --- suspensions.ini 用のハンドラ ---
 export async function processSuspensionIni(file) {
@@ -1799,25 +1094,20 @@ document.addEventListener('DOMContentLoaded', () => {
 		e.preventDefault(); // これがないとドロップが許可されない
 	});
 	window.addEventListener('drop', async (e) => {
-		e.preventDefault();
+		e.preventDefault(); // ブラウザが勝手にファイルを開くのを防ぐ
 		const files = e.dataTransfer.files;
 		if (files && files.length > 0) {
-			try {
-				window.isMultiUploading = true;
-				await handleMultiFileUpload(Array.from(files));
-			} catch (err) {
-				console.error("Drop import failed:", err);
-			} finally {
-				// 成功しても失敗しても、必ず false に戻す
-				window.isMultiUploading = false;
-			}
+			window.isMultiUploading = true;
+			// 取得したファイルを既存の処理に流し込む
+			await handleMultiFileUpload(Array.from(files));
+			window.isMultiUploading = false;
 		}
 	});
 	// まとめてアップロード（マルチ）用の処理
 	const multiFileInput = document.getElementById('multiFileUpload');
 	if (multiFileInput) {
-		// multiFileInput.addEventListener('change', async (e) => {
-		// 	window.isMultiUploading = true;
+		multiFileInput.addEventListener('change', async (e) => {
+			window.isMultiUploading = true;
 			// // ★追加：LIVE SYNC の ON/OFF 切り替え時のデータ復元処理
 			// 	const liveSyncSwitch = document.getElementById('liveSyncSwitch');
 			// 	if (liveSyncSwitch) {
@@ -1835,25 +1125,13 @@ document.addEventListener('DOMContentLoaded', () => {
 			// 			}
 			// 		});
 			// 	}
-			// const files = Array.from(e.target.files);
+			const files = Array.from(e.target.files);
 			// ★修正：ここでは一括でパスを記憶せず（3Dモデルのパスを誤認するのを防ぐため）、
 			// 上記の handleMultiFileUpload 内でデータファイルごとに記憶するように処理を移動しました。
 			// handleMultiFileUpload を直接呼び出し、一括処理を開始する
-		// 	await handleMultiFileUpload(files);
-		// 	window.isMultiUploading = false;
-		// 	e.target.value = ''; // 選択をリセット
-		// });
-		multiFileInput.addEventListener('change', async (e) => {
-			const files = Array.from(e.target.files);
-			try {
-				window.isMultiUploading = true;
-				await handleMultiFileUpload(files);
-			} catch (err) {
-				console.error("Multi upload failed:", err);
-			} finally {
-				window.isMultiUploading = false;
-				e.target.value = ''; // 選択をリセット
-			}
+			await handleMultiFileUpload(files);
+			window.isMultiUploading = false;
+			e.target.value = ''; // 選択をリセット
 		});
 	}
 });
