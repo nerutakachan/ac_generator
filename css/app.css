@@ -1854,7 +1854,6 @@ label {
 	padding: 0.5em;
 	min-height: 149px;
 	max-height: 150px;
-	aspect-ratio: 3/2;
 }
 .torque-graph-outer_box > div:nth-child(2) {
 	flex: 7;
