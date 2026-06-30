@@ -1017,7 +1017,10 @@ export async function handleMultiFileUpload(files) {
 	}
 	// ui_car.json が見つかっていれば適用 [cite: 301]
 	if (tasks.uiJson) {
-		const uiContent = await readTextFile(tasks.uiJson);
+		const uiContent = (tasks.uiJson.content !== undefined) 
+			? tasks.uiJson.content 
+			: await readTextFile(tasks.uiJson);
+
 		if (typeof window.updateUiCarData === 'function') {
 			window.updateUiCarData(uiContent);
 		}
