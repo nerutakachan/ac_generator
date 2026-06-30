@@ -84,11 +84,13 @@ document.addEventListener('input', async (e) => {
 		}
 
 		// E. 保存先パスの計算 (data フォルダの隣にある ui\ui_car.json)
-		const carRoot = window.currentDataFolderPath.replace(/[\\/]data$/i, '');
+		const carRoot = window.currentCarRootPath || window.currentDataFolderPath.replace(/[\\/](data|extension)[\\/]?$/i, '');
 		const uiDir = carRoot + '/ui';
+		const fileName = 'ui_car.json';
 		const content = JSON.stringify(window.uiCarData, null, 2);
 
-		console.log(`📝 [UI-SYNC] 書き込み準備完了: ${uiDir}/ui_car.json`);
+		console.log(`📝 [UI-SYNC] 書き込み準備完了: ${uiDir}/${fileName}`);
+
 
 		// F. Electron 経由で物理ファイルを直接書き換え
 		const filesToSync = [{ name: 'ui_car.json', content: content }];

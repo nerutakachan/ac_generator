@@ -950,6 +950,11 @@ export async function handleMultiFileUpload(files) {
 			tasks.kn5ToUnpack.push(file);
 			const parts = fullPath.split('/');
 			tasks.carRoot = parts[parts.length - 2];
+			const lastSlashIdx = fullPath.lastIndexOf('/');
+			if (lastSlashIdx !== -1) {
+				window.currentCarRootPath = fullPath.substring(0, lastSlashIdx);
+				console.log(`📌 [IMPORT] 車両のルート(KN5の階層)を特定しました: ${window.currentCarRootPath}`);
+			}
 		} else if (['.fbx', '.glb', '.gltf'].some(ext => name.endsWith(ext))) {
 			tasks.modelFiles.push(file);
 		} else if (['.ini', '.lut', '.rto'].some(ext => name.endsWith(ext))) {

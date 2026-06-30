@@ -1020,20 +1020,21 @@ ipcMain.handle('export-files-to-folder', async (event, baseDir, folderName, file
 				targetDir = sourcePath; // パスを知っていればダイアログを出さずに即座に上書き
 			}
 			// ★修正：上書き用バックアップフォルダの準備
-			const backupDir = path.join(targetDir, 'data_backup');
-			if (!fs.existsSync(backupDir)) {
-				fs.mkdirSync(backupDir, {
-					recursive: true
-				});
-			}
-			// ★修正：送られてきた「書き出し予定のファイル」だけを狙い撃ちしてバックアップ（GLBなどは無視）
-			for (const file of files) {
-				const srcFile = path.join(targetDir, file.name);
-				const destFile = path.join(backupDir, file.name);
-				// 元のフォルダにそのファイルが存在しており、かつ「まだバックアップされていない」場合のみコピー
-				if (fs.existsSync(srcFile) && !fs.existsSync(destFile)) {
-					if (fs.statSync(srcFile).isFile()) {
-						fs.copyFileSync(srcFile, destFile);
+			const isUiFolder = targetDir.replace(/[\\/]$/, '').toLowerCase().endsWith('ui');
+
+			// ★修正：ui フォルダ以外（通常の data フォルダ等）の場合のみ、バックアップを作成する
+			if (!isUiFolder) {
+				const backupDir = path.join(targetDir, 'data_backup');
+				if (!fs.existsSync(backupDir)) {
+					fs.mkdirSync(backupDir, { recursive: true });
+				}
+				for (const file of files) {
+					const srcFile = path.join(targetDir, file.name);
+					const destFile = path.join(backupDir, file.name);
+					if (fs.existsSync(srcFile) && !fs.existsSync(destFile)) {
+						if (fs.statSync(srcFile).isFile()) {
+							fs.copyFileSync(srcFile, destFile);
+						}
 					}
 				}
 			}
@@ -1074,17 +1075,19 @@ ipcMain.handle('export-files-to-folder', async (event, baseDir, folderName, file
 				console.error(`ファイル ${file.name} の書き込みに失敗しました:`, writeErr.message);
 			}
 		}
-		// ★ここに追加：ループが終わった直後、リターンする前
-		if (sourcePath && fs.existsSync(sourcePath)) {
-			const uiDirPath = path.join(targetDir, 'ui'); // targetDir は上で定義されています
+		// 保存先が ui フォルダそのものではない（＝通常の data フォルダ等である）場合のみ実行
+		if (sourcePath && fs.existsSync(sourcePath) && !isUiFolder) {
+			const uiDirPath = path.join(targetDir, 'ui'); 
 			if (!fs.existsSync(uiDirPath)) {
-				fs.mkdirSync(uiDirPath, {
-					recursive: true
-				});
+				fs.mkdirSync(uiDirPath, { recursive: true });
 			}
 			const destPath = path.join(uiDirPath, 'badge.png');
-			fs.copyFileSync(sourcePath, destPath);
-			console.log("✅ バッジ画像をコピーしました:", destPath);
+			
+			// sourcePathがファイルであることを確認してコピー
+			if (fs.statSync(sourcePath).isFile()) {
+				fs.copyFileSync(sourcePath, destPath);
+				console.log("✅ バッジ画像をコピーしました:", destPath);
+			}
 		}
 		return {
 			success: true,
