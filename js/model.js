@@ -172,7 +172,7 @@ function autoLoadDefaultSky() {
 		if (typeof requestRender === 'function') {
 			requestRender();
 		}
-		console.log("Panoramic background 'sky.jpg' has been auto-loaded to all scenes.");
+		// console.log("Panoramic background 'sky.jpg' has been auto-loaded to all scenes.");
 	});
 
 	// CSS側の背景設定（3D描画前の隙間埋め用）

@@ -492,7 +492,7 @@ window.loadProjectToUI = async function(projectState) {
 	// =======================================================
 	// 5. CAMERAの完全復元とUI同期
 	// =======================================================
-	console.log("📸 [UI更新] カメラ設定の直接同期を開始します");
+	// console.log("📸 [UI更新] カメラ設定の直接同期を開始します");
 	if (files['camera_configs']) {
 		window.cameraConfigs = files['camera_configs'].currentData;
 		window.initialConfigs = JSON.parse(JSON.stringify(window.cameraConfigs));
@@ -1085,7 +1085,7 @@ document.addEventListener('drop', async (e) => {
 						} else {
 							// console.log(`[DEBUG] 現在探索中: ${item.name}`);
 							if (item.name === 'ui') {
-								console.log(`[DEBUG] UIフォルダ内のエントリ数: ${allEntries.length}`);
+								// console.log(`[DEBUG] UIフォルダ内のエントリ数: ${allEntries.length}`);
 								allEntries.forEach(entry => {
 									// console.log(`[DEBUG] 探索中のファイル名: ${entry.name}`);
 									if (entry.name.toLowerCase() === 'badge.png') {

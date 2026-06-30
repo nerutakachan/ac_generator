@@ -563,10 +563,10 @@ export function applyIniData(fileName, parsedData) {
 			console.warn("[import.js] syncSus が見つかりません");
 		}
 	} else if (fileName.includes('aero.ini')) {
-		console.log("[aero.js] 📂 アップロードされたデータ:", normalizedData);
+		// console.log("[aero.js] 📂 アップロードされたデータ:", normalizedData);
 		// 1. 土台として、ini-data.js にある「絶対に FIN_0 が入っている新品」を解析して用意します
 		const factoryDefault = window.parseINI(default_aero_ini);
-		console.log("[aero.js] 🛠️ 土台となるデフォルト:", factoryDefault);
+		// console.log("[aero.js] 🛠️ 土台となるデフォルト:", factoryDefault);
 		// ★追加：合流させる前に、アップロードされた元のデータに本物の FIN_0 が存在していたかチェック
 		const hasRealFin0 = normalizedData.hasOwnProperty('FIN_0');
 		// 2. その土台の上に、アップロードされたデータを上書き合流させます
@@ -574,7 +574,7 @@ export function applyIniData(fileName, parsedData) {
 			...factoryDefault,
 			...normalizedData
 		};
-		console.log("[aero.js] ✅ 合流後の最終データ:", window.currentAeroData);
+		// console.log("[aero.js] ✅ 合流後の最終データ:", window.currentAeroData);
 		// ==========================================
 		// ★ここを追加：本物が無ければ初期状態を強制的に _ENABLED = false (OFF) にする
 		// ==========================================
@@ -693,7 +693,7 @@ export function applyIniData(fileName, parsedData) {
 	// ★追加：mirrors.ini の処理
 	else if (fileName.includes('mirrors.ini')) {
 		window.currentMirrorsData = normalizedData;
-		console.log("[IMPORT] mirrors.ini を読み込みました", window.currentMirrorsData);
+		// console.log("[IMPORT] mirrors.ini を読み込みました", window.currentMirrorsData);
 		// 3Dモデルからミラーパーツを探す関数を呼ぶ
 		if (typeof window.updateMirrorsVisuals === 'function') {
 			window.updateMirrorsVisuals();
@@ -707,17 +707,14 @@ export function applyIniData(fileName, parsedData) {
 const ALLOWED_FILES = ['aero.ini', 'cameras.ini', 'car.ini', 'colliders.ini', 'dash_cam.ini', 'drivetrain.ini', 'engine.ini', 'final.rto', 'power.lut', 'setup.ini', 'suspensions.ini', 'tyres.ini', 'mirrors.ini', 'ui_car.json'];
 export async function handleMultiFileUpload(files) {
 	const fileArray = Array.from(files); // 使い回せるように一度配列に変換しておく
-	// console.log("[IMPORT DEBUG] 渡ってきた全ファイル:", fileArray.map(f => f.name));
-	// console.log("[IMPORT DEBUG] 許可リスト:", ALLOWED_FILES);
-	// ★追加：ドロップされたファイルの中に設定ファイル（.ini）が1つでもあるかチェック
-	// --- ★追加：D&Dされたファイルからスキン画像を抽出する ---
+	// されたファイルからスキン画像を抽出する ---
 	const skinsFound = [];
 	fileArray.forEach(f => {
 		const pathStr = (f.path || f.webkitRelativePath || "").replace(/\\/g, '/');
 		// skins/フォルダ名/preview.jpg という構造をチェック
 		if (pathStr.toLowerCase().includes('/skins/') && pathStr.toLowerCase().endsWith('/preview.jpg')) {
 			const parts = pathStr.split('/');
-			const skinName = parts[parts.length - 2]; // フォルダ名をスキン名とする
+			const skinName = parts[parts.length - 2];
 			skinsFound.push({
 				name: skinName,
 				path: pathStr
@@ -730,10 +727,10 @@ export async function handleMultiFileUpload(files) {
 	}
 	const hasIniFiles = fileArray.some(f => f.name && f.name.toLowerCase().endsWith('.ini'));
 	const hasModelFiles = fileArray.some(f => f.name && (f.name.toLowerCase().endsWith('.fbx') || f.name.toLowerCase().endsWith('.glb') || f.name.toLowerCase().endsWith('.gltf')));
-	// ★追加：KN5ファイルが含まれているかチェック
+	// KN5ファイルが含まれているかチェック
 	const hasKn5Files = fileArray.some(f => f.name && f.name.toLowerCase().endsWith('.kn5'));
 	// ==========================================
-	// ★修正：KN5、INI、またはモデルが含まれている場合、車名とルートを特定する
+	// KN5、INI、またはモデルが含まれている場合、車名とルートを特定する
 	// ==========================================
 	if (hasKn5Files || hasIniFiles || hasModelFiles) {
 		let detectedCarName = "名称未設定";
@@ -900,7 +897,7 @@ export async function handleMultiFileUpload(files) {
 					if (typeof window.updateUiCarData === 'function') {
 						window.updateUiCarData(content);
 					} else {
-						console.warn("[IMPORT] updateUiCarData 関数が見つかりません。");
+						// console.warn("[IMPORT] updateUiCarData 関数が見つかりません。");
 					}
 				} else if (name === 'cameras.ini') {
 					// ★修正：cameras.ini は特殊な専用パーサーを通す
