@@ -1065,6 +1065,12 @@ ipcMain.handle('export-files-to-folder', async (event, baseDir, folderName, file
 		}
 		for (const file of files) {
 			const fullPath = path.join(targetDir, file.name);
+			// ui_car.json の場合、既存ファイルがあれば _backup としてコピー保存します
+			if (file.name === 'ui_car.json' && fs.existsSync(fullPath)) {
+				const backupPath = fullPath + "_backup";
+				fs.copyFileSync(fullPath, backupPath);
+				console.log("🛡️ [Backup] ui_car.json_backup を作成しました。");
+			}
 			// ratios.rto がすでに存在する場合はスキップ
 			if (file.name === 'ratios.rto' && fs.existsSync(fullPath)) {
 				continue;

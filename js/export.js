@@ -309,6 +309,7 @@ window.triggerLiveSync = function() {
 		console.log("🔄 [LIVE SYNC] 自動書き出しを実行中...");
 		// executeBulkExportを「上書きモード」かつ「通知なし」で実行する仕組み
 		// ここでは簡易的に、現在編集中の全ファイルを data フォルダへ流し込みます
+		let viewIniContent = null; 
 		const filesToExport = [];
 		for (const file of window.EXPORT_CONFIG) {
 			// 1. 🛡️ 安全ガード：データが読み込まれていない項目はスキップ

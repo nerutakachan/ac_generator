@@ -563,6 +563,11 @@ window.updateUiCurveGraph = function() {
 		let params = window.calculateEngineParams(rpm, engine, turboCount, baseTorque);
 		torqueData.push(params.torque);
 		powerData.push(params.power * 1.01387); // BHPをPS(仏馬力)に変換
+		// ui_car.json 書き出し用の [RPM, Value] 配列を作成します
+		if (!window.uiTorqueCurveData) window.uiTorqueCurveData = [];
+		if (!window.uiPowerCurveData) window.uiPowerCurveData = [];
+		window.uiTorqueCurveData.push([rpm, params.torque]);
+		window.uiPowerCurveData.push([rpm, params.power * 1.01387]);
 	}
 	if (window.uiCurveChartInstance) window.uiCurveChartInstance.destroy();
 	window.uiCurveChartInstance = new Chart(canvas, {
