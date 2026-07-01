@@ -35,9 +35,6 @@ window.parsePowerLut = function(text) {
 	if (typeof window.updateUiCurveGraph === 'function') {
 		window.updateUiCurveGraph();
 	}
-	if (typeof window.triggerLiveSync === 'function') {
-			window.triggerLiveSync();
-	}
 };
 // --- ターボ専用UIの生成関数 ---
 window.renderTurboUI = function(container, data) {
@@ -548,9 +545,7 @@ window.updateUiCurveGraph = function() {
 	const canvas = document.getElementById('ui-torqueCurve');
 	// データが揃っていない場合は描画しない
 	if (!canvas || !window.currentEngineData || !window.currentPowerLut || window.currentPowerLut.length === 0) return;
-
-	window.uiTorqueCurveData = [];
-	window.uiPowerCurveData = [];	const engine = window.currentEngineData;
+	const engine = window.currentEngineData;
 	// ★修正1：ターボ数の判定を自動計算と同じロジックにする（ターボ反映漏れを防止）
 	let turboCount = window.activeTurboCount;
 	if (turboCount === null || turboCount === undefined) {
@@ -560,8 +555,6 @@ window.updateUiCurveGraph = function() {
 	const labels = [],
 		torqueData = [],
 		powerData = [];
-		window.uiTorqueCurveData = [];
-    window.uiPowerCurveData = [];
 	// 200RPM刻みでプロットデータを生成
 	for (let rpm = 0; rpm <= limiter; rpm += 200) {
 		labels.push(rpm);
@@ -570,11 +563,6 @@ window.updateUiCurveGraph = function() {
 		let params = window.calculateEngineParams(rpm, engine, turboCount, baseTorque);
 		torqueData.push(params.torque);
 		powerData.push(params.power * 1.01387); // BHPをPS(仏馬力)に変換
-		// ui_car.json 書き出し用の [RPM, Value] 配列を作成します
-		if (!window.uiTorqueCurveData) window.uiTorqueCurveData = [];
-		if (!window.uiPowerCurveData) window.uiPowerCurveData = [];
-		window.uiTorqueCurveData.push([rpm, params.torque]);
-		window.uiPowerCurveData.push([rpm, params.power * 1.01387]);
 	}
 	if (window.uiCurveChartInstance) window.uiCurveChartInstance.destroy();
 	window.uiCurveChartInstance = new Chart(canvas, {

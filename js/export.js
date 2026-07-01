@@ -309,7 +309,6 @@ window.triggerLiveSync = function() {
 		console.log("🔄 [LIVE SYNC] 自動書き出しを実行中...");
 		// executeBulkExportを「上書きモード」かつ「通知なし」で実行する仕組み
 		// ここでは簡易的に、現在編集中の全ファイルを data フォルダへ流し込みます
-		let viewIniContent = null; 
 		const filesToExport = [];
 		for (const file of window.EXPORT_CONFIG) {
 			// 1. 🛡️ 安全ガード：データが読み込まれていない項目はスキップ
@@ -348,13 +347,7 @@ window.triggerLiveSync = function() {
 		// 3. 変更があったファイルがある場合のみ、Electron経由で実ファイルを上書き
 		if (filesToExport.length > 0) {
 			console.log(`📤 [LIVE SYNC] ${filesToExport.length}個の変更を反映中...`);
-			// 💡 物理パスの特定：ui_car.json は ui フォルダへ、その他は data フォルダへ送ります
-			const carRoot = window.currentCarRootPath || window.currentDataFolderPath.replace(/[\/](data|ui)$/i, '');
-			
-			for (const file of filesToExport) {
-					const targetDir = (file.name === 'ui_car.json') ? `${carRoot}/ui` : window.currentDataFolderPath;
-					await window.electronAPI.exportFilesToFolder(null, "", [file], true, targetDir);
-			}
+			await window.electronAPI.exportFilesToFolder(null, "", filesToExport, true, window.currentDataFolderPath);
 			// ★ここを追加：保管された view.ini のデータがあれば、マイドキュメントへ保存
 			if (viewIniContent) {
 				const carName = window.currentCarDirectoryName || "Unknown-Car";

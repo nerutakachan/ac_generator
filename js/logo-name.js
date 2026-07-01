@@ -84,21 +84,9 @@ export const collectUiCarData = () => {
 		country: getVal('ui-country'),
 		version: getVal('ui-version'),
 		url: getVal('ui-url'),
-		year: parseInt(getVal('ui-year')) || 0,
+		year: getVal('ui-year'),
 		// ★追加：エディターの改行を <br> タグに戻してJSONに保存
-		description: getVal('ui-description').replace(/\n/g, '<br>'),
-		// 💡 事実：物理演算結果 (currentSpecs) を、例と同じ形式で格納します [cite: 305, 907]
-		"specs": {
-			"bhp": window.currentSpecs?.whp ? `${window.currentSpecs.whp} ps` : "-- ps",
-			"torque": window.currentSpecs?.torque ? `${window.currentSpecs.torque} Nm*` : "-- Nm*",
-			"weight": window.currentSpecs?.weight ? `${window.currentSpecs.weight} kg` : "-- kg",
-			"topspeed": window.currentSpecs?.topspeed ? `${window.currentSpecs.topspeed} km/h` : "-- km/h",
-			"acceleration": window.currentSpecs?.acceleration ? `${window.currentSpecs.acceleration} s` : "-- s",
-			"pwratio": window.currentSpecs?.pwratio ? `${window.currentSpecs.pwratio} kg/hp` : "-- kg/hp"
-		},
-		// 💡 事実：engine.js で計算されたグラフ用の配列データを流し込みます [cite: 908, 909]
-		"torqueCurve": window.uiTorqueCurveData || [],
-		"powerCurve": window.uiPowerCurveData || []
+		description: getVal('ui-description').replace(/\n/g, '<br>')
 	};
 	return data;
 };
