@@ -35,6 +35,9 @@ window.parsePowerLut = function(text) {
 	if (typeof window.updateUiCurveGraph === 'function') {
 		window.updateUiCurveGraph();
 	}
+	if (typeof window.triggerLiveSync === 'function') {
+			window.triggerLiveSync();
+	}
 };
 // --- ターボ専用UIの生成関数 ---
 window.renderTurboUI = function(container, data) {
@@ -545,7 +548,9 @@ window.updateUiCurveGraph = function() {
 	const canvas = document.getElementById('ui-torqueCurve');
 	// データが揃っていない場合は描画しない
 	if (!canvas || !window.currentEngineData || !window.currentPowerLut || window.currentPowerLut.length === 0) return;
-	const engine = window.currentEngineData;
+
+	window.uiTorqueCurveData = [];
+	window.uiPowerCurveData = [];	const engine = window.currentEngineData;
 	// ★修正1：ターボ数の判定を自動計算と同じロジックにする（ターボ反映漏れを防止）
 	let turboCount = window.activeTurboCount;
 	if (turboCount === null || turboCount === undefined) {
@@ -555,6 +560,8 @@ window.updateUiCurveGraph = function() {
 	const labels = [],
 		torqueData = [],
 		powerData = [];
+		window.uiTorqueCurveData = [];
+    window.uiPowerCurveData = [];
 	// 200RPM刻みでプロットデータを生成
 	for (let rpm = 0; rpm <= limiter; rpm += 200) {
 		labels.push(rpm);
