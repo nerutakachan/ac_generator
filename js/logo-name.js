@@ -50,7 +50,8 @@ export const updateUiCarData = (data) => {
 		setVal('ui-name', parsedData.name);
 		setVal('ui-author', parsedData.author);
 		setVal('ui-brand', parsedData.brand);
-		setVal('ui-tags', parsedData.tags);
+		const tagsDisplay = Array.isArray(parsedData.tags) ? parsedData.tags.join(', ') : (parsedData.tags || '');
+    setVal('ui-tags', tagsDisplay);
 		setVal('ui-class', parsedData.class);
 		setVal('ui-country', parsedData.country);
 		setVal('ui-version', parsedData.version);
@@ -79,7 +80,7 @@ export const collectUiCarData = () => {
 		name: getVal('ui-name'),
 		author: getVal('ui-author'),
 		brand: getVal('ui-brand'),
-		tags: getVal('ui-tags'),
+		tags: getVal('ui-tags').split(',').map(t => t.trim()).filter(t => t !== ""),
 		class: getVal('ui-class'),
 		country: getVal('ui-country'),
 		version: getVal('ui-version'),
