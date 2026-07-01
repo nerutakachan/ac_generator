@@ -57,16 +57,17 @@ document.addEventListener('input', async (e) => {
         window.updateSpecsFromPhysics();
     }
 
-    // ★修正：基本情報の入力かどうかを triggerLiveSync に伝えます
-    const isUiField = e.target.id && e.target.id.startsWith('ui-');
-    
+    // ★事実に基づく修正：あなたが指定した「常に更新してほしいメタデータ」のIDリスト
+    const alwaysSyncIds = [
+        'ui-name', 'ui-author', 'ui-brand', 'ui-tags', 'ui-class', 
+        'ui-country', 'ui-version', 'ui-url', 'ui-year', 'ui-description'
+    ];
+    // 入力された項目のIDがリストに含まれているか確認
+    const isUiField = alwaysSyncIds.includes(e.target.id);
+
     if (typeof window.triggerLiveSync === 'function') {
-        // 第1引数に true/false を渡すように変更します
         window.triggerLiveSync(isUiField);
     }
-
-    // ★重要：ここから下にあった「if (e.target.id && e.target.id.startsWith('ui-')) { ... }」の塊（約40行）は
-    // 全て削除して、この関数の閉じカッコ「 }); 」に繋げてください。
 });
 // 以下、既存のコードが続く...
 // 起動時のチラつき防止（目印がある場合は最初から透明にしておく）

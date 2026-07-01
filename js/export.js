@@ -301,34 +301,31 @@ document.addEventListener('DOMContentLoaded', () => {
 // ★追加：リアルタイム連動（デバウンス）ロジック
 let syncTimer = null;
 window.triggerLiveSync = function(isUiField = false) {
-    // dataフォルダのパスが無い場合は保存できないので中断
     if (!window.currentDataFolderPath) return;
 
     const syncSwitch = document.getElementById('liveSyncSwitch');
-    const isLiveSyncOn = syncSwitch && syncSwitch.checked;
+    const isLiveSyncOn = (syncSwitch && syncSwitch.checked);
 
-    // ★重要：スイッチがOFF、かつ基本情報の入力でもない場合は、何もせず終了
+    // スイッチOFFかつUI項目の入力でもない場合は、保存をブロック
     if (!isLiveSyncOn && !isUiField) return;
 
     if (syncTimer) clearTimeout(syncTimer);
     syncTimer = setTimeout(async () => {
-        console.log(`🔄 [SYNC] 自動保存を開始します (LIVE SYNC: ${isLiveSyncOn ? 'ON' : 'OFF'})`);
-
-        // 1. ui_car.json の保存（基本情報入力時、またはLIVE SYNCがONの時）
         if (window.uiCarData) {
+            // 画面上の最新テキスト（車両名など）を取得
             const latestUiValues = (typeof window.collectUiCarData === 'function') ? window.collectUiCarData() : {};
+            // メモリ上のデータに合体（engine.jsがOFFなら、スペック・グラフは元のまま）
             Object.assign(window.uiCarData, latestUiValues);
 
-            // 正しい ui フォルダのパスを計算（data フォルダの1つ上にある ui）
             const carRoot = window.currentDataFolderPath.replace(/[\\/]data$/i, '');
             const uiPath = carRoot + '/ui';
-
             const uiJsonContent = JSON.stringify(window.uiCarData, null, 2);
+
             await window.electronAPI.exportFilesToFolder(null, "", [{ name: 'ui_car.json', content: uiJsonContent }], true, uiPath);
-            console.log(`✅ [SYNC] ui_car.json を反映しました: ${uiPath}`);
+            console.log(`✅ [SYNC] ui_car.json を反映しました (${isLiveSyncOn ? '計算反映' : 'メタ情報のみ'})`);
         }
 
-        // 2. INIファイルなどの保存（LIVE SYNC が ON の時のみ実行）
+        // 2. その他のINIファイル保存（LIVE SYNC が ON の時のみ実行）
         if (isLiveSyncOn) {
             const filesToExport = [];
             for (const file of window.EXPORT_CONFIG) {
