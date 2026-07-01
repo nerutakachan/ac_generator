@@ -346,28 +346,23 @@ window.triggerLiveSync = function() {
 		}
 		// 3. 変更があったファイルがある場合のみ、Electron経由で実ファイルを上書き
 		if (window.uiCarData) {
-            const latestValues = (typeof window.collectUiCarData === 'function') ? window.collectUiCarData() : {};
-            Object.assign(window.uiCarData, latestValues); // テキスト入力分を最終合成
+            const latestUiValues = (typeof window.collectUiCarData === 'function') ? window.collectUiCarData() : {};
+            Object.assign(window.uiCarData, latestUiValues);
             
+            // ui フォルダのパスを計算（dataの親フォルダ/ui）
+            const carRoot = window.currentCarRootPath || window.currentDataFolderPath?.replace(/[\/]?data$/i, '');
+            const uiPath = carRoot + '/ui';
+
             const uiJsonContent = JSON.stringify(window.uiCarData, null, 2);
-            filesToExport.push({ name: 'ui_car.json', content: uiJsonContent, isUiFile: true });
-            console.log("📝 [LIVE SYNC] ui_car.json (スペック・グラフ込) を保存対象に追加しました。");
-        }
-		if (filesToExport.length > 0) {
-			console.log(`📤 [LIVE SYNC] ${filesToExport.length}個の変更を反映中...`);
-			await window.electronAPI.exportFilesToFolder(null, "", filesToExport, true, window.currentDataFolderPath);
-			// ★ここを追加：保管された view.ini のデータがあれば、マイドキュメントへ保存
-			if (window.uiCarData) {
-            const uiJsonContent = JSON.stringify(window.uiCarData, null, 2);
-            filesToExport.push({ name: 'ui_car.json', content: uiJsonContent, isUiFile: true });
+            await window.electronAPI.exportFilesToFolder(null, "", [{ name: 'ui_car.json', content: uiJsonContent }], true, uiPath);
+            console.log("✅ [LIVE SYNC] ui_car.json を ui フォルダへ反映しました。");
         }
 
         if (filesToExport.length > 0) {
-            console.log(`📤 [LIVE SYNC] ${filesToExport.length}個の変更を反映中...`);
-            // ★重要：ui_car.json だけ保存先が data の隣の ui フォルダなので、Electron側で判定させる
+            // INIファイルなどは今まで通り data フォルダへ保存
+            console.log(`📤 [LIVE SYNC] ${filesToExport.length}個の物理データを反映中...`);
             await window.electronAPI.exportFilesToFolder(null, "", filesToExport, true, window.currentDataFolderPath);
-			}
-		}
+        }
 	}, 300); // 0.3秒間操作が止まったら書き出し
 };
 window.downloadFinalRto = function(isExport = false) {

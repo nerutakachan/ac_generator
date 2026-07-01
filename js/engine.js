@@ -546,8 +546,9 @@ window.updateSpecsFromPhysics = function() {
     for (let rpm = 0; rpm <= limiter; rpm += 200) {
         let baseTorque = window.getInterpolatedTorque(rpm, window.currentPowerLut);
         let params = window.calculateEngineParams(rpm, engine, turboCount, baseTorque);
-        window.uiCarData.torqueCurve.push([rpm, params.torque]);
-        window.uiCarData.powerCurve.push([rpm, params.power * 1.01387]);
+        // 整数に丸めて格納（Assetto Corsa の JSON 形式に準拠）
+        window.uiCarData.torqueCurve.push([rpm, Math.round(params.torque)]);
+        window.uiCarData.powerCurve.push([rpm, Math.round(params.power * 1.01387)]);
     }
 
     console.log("📊 [ENGINE-SYNC] 物理計算とグラフデータの準備が完了しました。保存を実行します。");

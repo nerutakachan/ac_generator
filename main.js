@@ -67,56 +67,9 @@ document.addEventListener('input', async (e) => {
     if (typeof window.triggerLiveSync === 'function') {
         window.triggerLiveSync();
     }
-	// 2. 「ui\ui_car.json」の同期チェック
-	if (e.target.id && e.target.id.startsWith('ui-')) {
-		console.log(`🚀 [UI-SYNC] 同期対象の入力を確認: ${e.target.id}`);
-
-		// A. パスが確定しているかチェック
-		if (!window.currentDataFolderPath) {
-			console.error("❌ [UI-SYNC] エラー：車両フォルダのパス(currentDataFolderPath)が未設定です。インポートしてから試してください。");
-			return;
-		}
-
-		// B. 画面の最新入力を取得
-		if (typeof window.collectUiCarData !== 'function') {
-			console.error("❌ [UI-SYNC] エラー：collectUiCarData 関数が見つかりません。");
-			return;
-		}
-		const latestUiValues = window.collectUiCarData();
-
-		// C. メモリ上のデータに文字だけを合成
-		if (!window.uiCarData) window.uiCarData = {};
-		Object.assign(window.uiCarData, latestUiValues);
-
-		// D. タグを配列形式に変換
-		if (typeof window.uiCarData.tags === 'string') {
-			window.uiCarData.tags = window.uiCarData.tags.split(',').map(t => t.trim());
-		}
-
-		// E. 保存先パスの計算 (data フォルダの隣にある ui\ui_car.json)
-		const carRoot = window.currentCarRootPath || window.currentDataFolderPath.replace(/[\\/](data|extension)[\\/]?$/i, '');
-		const uiDir = carRoot + '/ui';
-		const fileName = 'ui_car.json';
-		const content = JSON.stringify(window.uiCarData, null, 2);
-
-		console.log(`📝 [UI-SYNC] 書き込み準備完了: ${uiDir}/${fileName}`);
-
-
-		// F. Electron 経由で物理ファイルを直接書き換え
-		const filesToSync = [{ name: 'ui_car.json', content: content }];
-		try {
-			await window.electronAPI.exportFilesToFolder(null, "", filesToSync, true, uiDir);
-			console.log(`✅ [UI-SYNC] ファイルの上書きに成功しました！`);
-		} catch (err) {
-			console.error("❌ [UI-SYNC] ファイル書き込み中に例外が発生しました:", err);
-		}
-
-		// G. サイドバー等の表示更新マークを付ける
-		if (window.modifiedStatus) window.modifiedStatus.car = true;
-		if (typeof window.updateProjectSidebar === 'function') {
-			window.updateProjectSidebar();
-		}
-	}
+    
+    // ★重要：ここから下にあった「if (e.target.id && e.target.id.startsWith('ui-')) { ... }」の塊は、
+    // 全て削除して、この関数の閉じカッコ「 }); 」に繋げてください。
 });
 // 以下、既存のコードが続く...
 // 起動時のチラつき防止（目印がある場合は最初から透明にしておく）
