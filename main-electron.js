@@ -837,6 +837,15 @@ ipcMain.handle('unpack-acd', async (event, acdPath) => {
 							} catch (renameErr) {
 									console.error("❌ [ACD] リネームに失敗しました:", renameErr.message);
 							}
+							// ★追加：元の data.acd を data.acd_backup にリネームする
+							try {
+									if (fs.existsSync(acdPath)) {
+											fs.renameSync(acdPath, acdPath + "_backup");
+											console.log(`✅ [ACD] ${path.basename(acdPath)} をバックアップ化しました。`);
+									}
+							} catch (renameErr) {
+									console.error("❌ [ACD] リネームに失敗しました:", renameErr.message);
+							}
                 // 展開された INI/LUT ファイルを読み込んでフロントエンドへ返します
                 const files = fs.readdirSync(outputDir)
                     .filter(f => f.endsWith('.ini') || f.endsWith('.lut'))

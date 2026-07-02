@@ -100,7 +100,7 @@ h5 {
 	justify-content: center;
 	align-items: center;
 	aspect-ratio: 16 / 9;
-	border: 5px #333 solid;
+	border: 0.5em #ffffffe6 solid;
 	border-radius: 0.5rem;
 	box-sizing: border-box;
 }

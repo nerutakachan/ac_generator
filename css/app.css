@@ -691,8 +691,30 @@ label {
 	margin: 0 auto;
 	display: block;
 }
+#tyres-explain_box{
+	background-color: #fff;
+}
 .suspension-item-title_box {
 	margin-bottom: 0.2rem;
+}
+.suspension-item-title_box > p{
+	padding: 0.3em;
+	background-color: transparent;
+	line-height: 1;
+	border-radius: 0.2em;
+	box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.5), inset 0px -2px 2px -3px rgba(0, 0, 0, 0.3);
+}
+.final-editor-ui-edit_box .suspension-item > input{
+	cursor: pointer;
+	width: 1em;
+	aspect-ratio: 1;
+	background: transparent;
+	color: #333;
+	border: none;
+	padding: 0;
+	font-size: 1.2em;
+	border-radius: 0;
+	box-shadow: none;
 }
 #gear-set-list {
 	margin-bottom: 0.5rem;
@@ -1006,7 +1028,7 @@ label {
 }
 .final-editor-ui-edit_box>div:first-of-type {
 	padding: 10px;
-	color: #858585;
+	color: #ffffff;
 	font-size: 12px;
 	border-bottom: 1px solid #333;
 	margin-bottom: 10px;
@@ -1318,7 +1340,7 @@ label {
 }
 
 .export-file-list {
-	max-height: 400px;
+	max-height: 500px;
 	overflow-y: auto;
 	margin: 15px 0;
 	background: #121212;
