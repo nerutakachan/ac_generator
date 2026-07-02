@@ -1337,7 +1337,11 @@ window.EXPORT_CONFIG = [{
 	id: 'setup',
 	name: 'setup.ini',
 	func: 'downloadSetupIni'
-}, {
+},{
+	id: 'ui_car',
+	name: 'ui_car.json',
+	func: 'downloadUiCarData'
+},{
 	id: 'cameras',
 	name: 'cameras.ini',
 	func: 'downloadCamerasIni'

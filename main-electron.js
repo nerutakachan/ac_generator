@@ -1057,24 +1057,37 @@ ipcMain.handle('export-files-to-folder', async (event, baseDir, folderName, file
 				targetDir = path.join(baseDir, folderName);
 			}
 		}
-		// 📁 共通：ファイルの書き出し処理
-		if (!fs.existsSync(targetDir)) {
-			fs.mkdirSync(targetDir, {
-				recursive: true
-			});
-		}
-		for (const file of files) {
-			const fullPath = path.join(targetDir, file.name);
-			// ratios.rto がすでに存在する場合はスキップ
-			if (file.name === 'ratios.rto' && fs.existsSync(fullPath)) {
-				continue;
-			}
-			try {
-				fs.writeFileSync(fullPath, file.content, 'utf8');
-			} catch (writeErr) {
-				console.error(`ファイル ${file.name} の書き込みに失敗しました:`, writeErr.message);
-			}
-		}
+		// 📁 フォルダの準備
+        if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+
+        // ★修正：新規書き出し（isOverwrite=false）の時だけ、子フォルダを作る
+        const dataDir = isOverwrite ? targetDir : path.join(targetDir, 'data');
+        const uiDir = isOverwrite ? targetDir : path.join(targetDir, 'ui');
+
+        if (!isOverwrite) {
+            if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+            if (!fs.existsSync(uiDir)) fs.mkdirSync(uiDir, { recursive: true });
+        }
+
+        for (const file of files) {
+            // ★修正：ファイル名によって保存先を自動で振り分ける
+            let finalPath;
+            if (file.name === 'ui_car.json') {
+                finalPath = path.join(uiDir, file.name);
+            } else {
+                finalPath = path.join(dataDir, file.name);
+            }
+
+            // ratios.rto の重複チェック
+            if (file.name === 'ratios.rto' && fs.existsSync(finalPath)) continue;
+
+            try {
+                fs.writeFileSync(finalPath, file.content, 'utf8');
+                console.log(`📝 [Export] ${file.name} -> ${path.basename(path.dirname(finalPath))} フォルダ`);
+            } catch (writeErr) {
+                console.error(`❌ ファイル ${file.name} の書き込みに失敗:`, writeErr.message);
+            }
+        }
 		// 保存先が ui フォルダそのものではない（＝通常の data フォルダ等である）場合のみ実行
 		if (sourcePath && fs.existsSync(sourcePath) && !isUiFolder) {
 			const uiDirPath = path.join(targetDir, 'ui'); 

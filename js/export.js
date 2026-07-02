@@ -231,8 +231,9 @@ window.executeBulkExport = async function() {
 	let exportSuccess = true;
 	let dataResultPath = "";
 	if (filesToExport.length > 0) {
-		const result = await window.electronAPI.exportFilesToFolder(baseDir, projectName, window.EXPORT_CONFIG, isOverwrite, window.pendingBadgePath || null);
-		console.log("🏁 [DEBUG] 書き出し結果:", result);
+        // ★修正：第3引数を window.EXPORT_CONFIG ではなく、実際に集めた filesToExport に変更します
+        const result = await window.electronAPI.exportFilesToFolder(baseDir, projectName, filesToExport, isOverwrite, window.pendingBadgePath || null);
+        console.log("🏁 [Export] プロセス完了。");
 		if (result && result.success) {
 			dataResultPath = result.path;
 		} else {
@@ -1015,4 +1016,31 @@ window.downloadCarIni = function(isExport = false) {
 		document.body.removeChild(a);
 		window.URL.revokeObjectURL(url);
 	}, 0);
+};
+/** ui_car.json の手動書き出し用データ生成 */
+window.downloadUiCarData = function(isExport = false) {
+    // メモリ上にベースデータがなければ何もしない
+    if (!window.uiCarData) return null;
+
+    // 1. エディター上の最新テキスト（配列化されたタグを含む）を logo-name.js の関数で回収
+    const latestUiValues = (typeof window.collectUiCarData === 'function') ? window.collectUiCarData() : {};
+    
+    // 2. メモリ上のデータに合体
+    // engine.js が更新した最新のスペックやグラフデータが保持されている window.uiCarData に、
+    // 最新のテキスト情報を上書き合流させます。
+    Object.assign(window.uiCarData, latestUiValues);
+
+    // 3. Assetto Corsa形式（改行・字下げあり）でJSON文字列化
+    const jsonContent = JSON.stringify(window.uiCarData, null, 2);
+    
+    if (isExport === true) return jsonContent;
+
+    // 個別保存ボタン用の処理
+    const blob = new Blob([jsonContent], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ui_car.json';
+    a.click();
+    URL.revokeObjectURL(url);
 };
