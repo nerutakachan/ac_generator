@@ -1037,6 +1037,25 @@ ipcMain.handle('export-files-to-folder', async (event, baseDir, folderName, file
 			} else {
 				targetDir = sourcePath; // パスを知っていればダイアログを出さずに即座に上書き
 			}
+			// 🌟 修正ポイント：ui フォルダのバックアップ (ui_backup) を作成
+            // 車両のルート（dataやuiの親）を特定して、uiフォルダのパスを組み立てる
+            const carRoot = (targetDir.toLowerCase().endsWith('data') || targetDir.toLowerCase().endsWith('ui')) 
+                            ? path.dirname(targetDir) : targetDir;
+            const uiPath = path.join(carRoot, 'ui');
+
+            if (fs.existsSync(uiPath)) {
+                const uiBackupDir = path.join(uiPath, 'ui_backup');
+                if (!fs.existsSync(uiBackupDir)) fs.mkdirSync(uiBackupDir, { recursive: true });
+
+                const uiFiles = ['ui_car.json', 'badge.png'];
+                uiFiles.forEach(f => {
+                    const src = path.join(uiPath, f);
+                    if (fs.existsSync(src)) {
+                        fs.copyFileSync(src, path.join(uiBackupDir, f));
+                    }
+                });
+                console.log("📂 [Overwrite] ui/ui_backup にUI関連ファイルをバックアップしました。");
+            }
 			// ★修正：上書き用バックアップフォルダの準備
 			const isUiFolder = targetDir.replace(/[\\/]$/, '').toLowerCase().endsWith('ui');
 

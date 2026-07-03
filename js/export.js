@@ -231,9 +231,12 @@ window.executeBulkExport = async function() {
 	let exportSuccess = true;
     let dataResultPath = "";
     if (filesToExport.length > 0) {
-        // ★修正：画像パスではなく、アプリが保持している現在のデータフォルダパスを渡します
-        const targetPath = isOverwrite ? window.currentDataFolderPath : (window.pendingBadgePath || null);
-        const result = await window.electronAPI.exportFilesToFolder(baseDir, projectName, filesToExport, isOverwrite, targetPath);
+        // 🌟 修正ポイント：引数の役割を「保存先フォルダ」と「新しい画像パス」に明確に分けます
+    const folderPath = isOverwrite ? window.currentDataFolderPath : null;
+    const imagePath = window.pendingBadgePath || null;
+    
+    // 第5引数に folderPath、第6引数に imagePath を渡すように修正
+    const result = await window.electronAPI.exportFilesToFolder(baseDir, projectName, filesToExport, isOverwrite, folderPath, imagePath);
         console.log("🏁 [Export] プロセス完了。");
 		if (result && result.success) {
 			dataResultPath = result.path;
