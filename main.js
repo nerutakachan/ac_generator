@@ -564,8 +564,22 @@ window.loadProjectToUI = async function(projectState) {
 	console.log("✅ [同期完了] すべてのデータが復元されました。");
 	window.isRestoring = false;
 	if (window.currentProject && window.currentProject.environment) {
-		window.updateBadgeImage(window.currentProject.environment.data_folder);
-	}
+        const env = window.currentProject.environment;
+        const badgeImg = document.getElementById('ui-badge');
+
+        if (badgeImg) {
+            if (env.custom_badge_path) {
+                // 1. もし「置換」ボタンで個別に選んだパスがあれば、そちらを優先して表示
+                badgeImg.src = `file:///${env.custom_badge_path.replace(/\\/g, '/')}`;
+                // 次回の「保存」に備えて、作業用変数(pendingBadgePath)も同期しておく
+                window.pendingBadgePath = env.custom_badge_path;
+                console.log(" [RESTORE] 置換されたカスタム画像を復元しました:", env.custom_badge_path);
+            } else if (env.data_folder) {
+                // 2. 個別パスが保存されていない場合は、標準の「車両フォルダ/ui/badge.png」を表示
+                window.updateBadgeImage(env.data_folder);
+            }
+        }
+    }
 	if (typeof window.updateProjectSidebar === 'function') {
 		window.updateProjectSidebar();
 	}
@@ -672,6 +686,15 @@ document.addEventListener('DOMContentLoaded', () => {
 			btnSaveProject.style.opacity = "0.5";
 			btnSaveProject.style.pointerEvents = "none";
 			if (!window.currentProject.files) window.currentProject.files = {};
+			// --- 追加：環境情報（フォルダパスや置換した画像パス）の更新 ---
+			window.currentProject.environment = {
+					// 車両データ全体のフォルダパスを保持
+					data_folder: window.currentDataFolderPath || "",
+					// 3Dモデルのパスを保持（既存の値を優先）
+					model_path: window.currentProject.environment?.model_path || "",
+					// ★最重要：置換ボタンで選ばれた「新しいロゴ画像の絶対パス」を記録！
+					custom_badge_path: window.pendingBadgePath || ""
+			};
 			// 2. 画面のデータをすべて回収（最新の全ファイルに対応）
 			const dataMap = {
 				'suspensions': window.currentSuspensionData,
