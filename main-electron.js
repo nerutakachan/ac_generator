@@ -1116,32 +1116,31 @@ ipcMain.handle('export-files-to-folder', async (event, baseDir, folderName, file
             }
         }
 
-		// 🌟 修正ポイント：Live Sync用のコピー処理を追加
-		// 1. Live Syncの場合： imageSource (新しい画像のパス) が届いていれば、保存先へ直接コピー
-		if (imageSource && fs.existsSync(imageSource)) {
-			const destPath = path.join(targetDir, 'badge.png');
-			fs.copyFileSync(imageSource, destPath);
-			console.log("✅ [LIVE SYNC] バッジ画像を更新しました:", destPath);
-		}
-		// 2. 通常の「まるごと書き出し」の場合：今まで通りの処理 (sourcePath を使用)
-		else if (sourcePath && fs.existsSync(sourcePath) && !isUiFolder) {
-			const uiDirPath = path.join(targetDir, 'ui'); 
-			if (!fs.existsSync(uiDirPath)) {
-				fs.mkdirSync(uiDirPath, { recursive: true });
-			}
-			const destPath = path.join(uiDirPath, 'badge.png');
-			
-			// sourcePathがファイルであることを確認してコピー
-			if (fs.statSync(sourcePath).isFile()) {
-				fs.copyFileSync(sourcePath, destPath);
-				console.log("✅ バッジ画像をコピーしました:", destPath);
-			}
-		}
+		// 🌟 [LIVE SYNC 専用] 
+        // もし第6引数(imageSource)に画像パスが入っていれば、無条件で badge.png として保存先にコピーする
+        if (imageSource && fs.existsSync(imageSource)) {
+            const destPath = path.join(targetDir, 'badge.png');
+            fs.copyFileSync(imageSource, destPath);
+            console.log("✅ [LIVE SYNC] 画像を更新しました:", destPath);
+        }
+        // 🌟 [通常の「一括書き出し」専用] 
+        // 保存先が通常のフォルダ（data等）で、sourcePathが指定されている場合（古い仕様の互換用）
+        else if (sourcePath && fs.existsSync(sourcePath) && !isUiFolder) {
+            const uiDirPath = path.join(targetDir, 'ui'); 
+            if (!fs.existsSync(uiDirPath)) {
+                fs.mkdirSync(uiDirPath, { recursive: true });
+            }
+            const destPath = path.join(uiDirPath, 'badge.png');
+            if (fs.statSync(sourcePath).isFile()) {
+                fs.copyFileSync(sourcePath, destPath);
+                console.log("✅ 通常書き出し: バッジ画像をコピーしました:", destPath);
+            }
+        }
 
-		return {
-			success: true,
-			path: targetDir
-		};
+        return {
+            success: true,
+            path: targetDir
+        };
 	} catch (error) {
 		return {
 			success: false,

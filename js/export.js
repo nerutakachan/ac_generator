@@ -324,19 +324,20 @@ window.triggerLiveSync = function(isUiField = false) {
             const uiJsonContent = JSON.stringify(window.uiCarData, null, 2);
 
             await window.electronAPI.exportFilesToFolder(null, "", [{ name: 'ui_car.json', content: uiJsonContent }], true, uiPath);
-            console.log(`✅ [SYNC] ui_car.json を反映しました (${isLiveSyncOn ? '計算反映' : 'メタ情報のみ'})`);
-						// 1.5 バッジ画像(badge.png)のリアルタイムコピー
-        // 置換ボタンで選ばれたパス(pendingBadgePath)があれば、それをuiフォルダへ強制コピー
-					if (window.pendingBadgePath) {
-      // 🌟 修正ポイント：第5引数に保存先(uiPath)、第6引数にコピー元(pendingBadgePath)を渡す
-						await window.electronAPI.exportFilesToFolder(null, "", [], true, uiPath, window.pendingBadgePath);
-						console.log("✅ [SYNC] badge.png を物理コピーして反映しました。");
-					}
-        }
+      console.log(`✅ [SYNC] ui_car.json を反映しました (${isLiveSyncOn ? '計算反映' : 'メタ情報のみ'})`);
+    }
 
-        // 2. その他のINIファイル保存（LIVE SYNC が ON の時のみ実行）
-        if (isLiveSyncOn) {
-            const filesToExport = [];
+    // 2. その他の物理ファイル保存（LIVE SYNC が ON の時のみ実行）
+    if (isLiveSyncOn) {
+      // 🌟 ここに引っ越しました：スイッチがONの時だけ画像をコピーする
+      if (window.pendingBadgePath) {
+        const carRoot = window.currentDataFolderPath.replace(/[\/]data$/i, '');
+        const uiPath = carRoot + '/ui';
+        await window.electronAPI.exportFilesToFolder(null, "", [], true, uiPath, window.pendingBadgePath);
+        console.log("✅ [SYNC] badge.png を物理コピーして反映しました。");
+      }
+
+      const filesToExport = [];
             for (const file of window.EXPORT_CONFIG) {
                 // UIファイルや読み込まれていないデータはスキップ
                 if (file.id === 'view' || file.id === 'ui_car' || file.name === 'ui_car.json') continue;

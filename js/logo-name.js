@@ -60,7 +60,7 @@ export const initBadgeHandler = () => {
             console.log(" [DEBUG-BADGE] file:/// 形式で表示を更新しました。");
 						// LIVE SYNCがONなら、今すぐゲームフォルダにコピーを実行させる
             if (typeof window.triggerLiveSync === 'function') {
-                window.triggerLiveSync(true); 
+                window.triggerLiveSync(false); 
             }
         } else {
             // ブラウザ環境：メモリ上の一時URLを生成
