@@ -79,10 +79,17 @@ window.renderTurboUI = function(container, data) {
 			window.updateEngineGraph();
 		});
 		tBox.innerHTML = `<div class="suspension-item-title_box"><p>${section}</p></div>`;
-		const innerBox = document.createElement('div');
-		innerBox.className = 'suspension-item_box';
-		if (!data[section]) data[section] = data['TURBO_0'] ? JSON.parse(JSON.stringify(data['TURBO_0'])) : {};
-		Object.keys(data[section]).forEach(key => {
+    const innerBox = document.createElement('div');
+    innerBox.className = 'suspension-item_box';
+
+    // 🌟 修正ポイント：勝手なデータ作成を廃止し、データがない場合はガードする
+    if (!data[section]) {
+        innerBox.innerHTML = '<p style="padding:10px; color:#fff;">設定なし</p>';
+        tBox.appendChild(innerBox);
+        return tBox;
+    }
+
+    Object.keys(data[section]).forEach(key => {
 			const val = data[section][key];
 			const editorRule = window.getEditorStep(key, val);
 			const step = typeof editorRule === 'object' ? editorRule.step : editorRule;
@@ -124,11 +131,27 @@ window.renderTurboUI = function(container, data) {
 		pages.push(pageDiv);
 	}
 	const selectEl = turboHeader.querySelector('#turbo-count-select');
-	selectEl.addEventListener('change', (e) => {
-		currentSelectValue = parseInt(e.target.value, 10);
-		window.activeTurboCount = currentSelectValue; // ★追加: 選択値をグローバルに記憶する
-		// 選択された基数に合わせてUI全体のタブボタンの生成をリフレッシュする
-		window.initEngineEditor(window.currentEngineData);
+    selectEl.addEventListener('change', (e) => {
+        currentSelectValue = parseInt(e.target.value, 10);
+        window.activeTurboCount = currentSelectValue;
+
+        // 🌟 協議したロジックの追加：増やす時に「複製」または「デフォルト作成」を行う
+        const engineData = window.currentEngineData;
+        const defaultTurbo = window.ini_DATA['engine.ini']?.['TURBO_0'] || {};
+
+        for (let i = 0; i < currentSelectValue; i++) {
+            const section = `TURBO_${i}`;
+            if (!engineData[section]) {
+                // 1. 読み込んだデータにTURBO_0があれば複製
+                // 2. なければ ini-data.js のデフォルト値から作成
+                const template = engineData['TURBO_0'] || defaultTurbo;
+                engineData[section] = JSON.parse(JSON.stringify(template));
+                console.log(`✅ [ENGINE] ${section} を作成しました。`);
+            }
+        }
+
+        // 選択された基数に合わせてUI全体のタブボタンの生成をリフレッシュする
+        window.initEngineEditor(window.currentEngineData);
 		window.updateEngineGraph();
 		if (typeof window.updateSpecsFromPhysics === 'function') {
 			window.updateSpecsFromPhysics();
