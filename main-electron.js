@@ -848,16 +848,14 @@ ipcMain.handle('unpack-acd', async (event, acdPath) => {
 							}
                 // 展開された INI/LUT ファイルを読み込んでフロントエンドへ返します
                 const files = fs.readdirSync(outputDir)
-                    .filter(f => f.endsWith('.ini') || f.endsWith('.lut'))
-                    .map(f => {
-                        const fullPath = path.join(outputDir, f);
-                        return { 
-                            name: f, 
-                            path: fullPath,
-                            content: fs.readFileSync(fullPath, 'utf8') 
-                        };
-                    });
-                resolve({ success: true, files: files });
+									.filter(f => f.endsWith('.ini') || f.endsWith('.lut'))
+									.map(f => {
+										const fullPath = path.join(outputDir, f);
+										// ★修正：utf8固定をやめ、バイナリをBase64文字列として変換して転送する
+										const buffer = fs.readFileSync(fullPath);
+										return { name: f, path: fullPath, content: buffer.toString('base64'), isBase64: true };
+									});
+								resolve({ success: true, files: files });
             } else {
                 resolve({ success: false, error: stderr || "dataフォルダが生成されませんでした。" });
             }
@@ -951,6 +949,13 @@ ipcMain.handle('read-car-folder-data', async (event, carPath) => {
 						isModel: true // 重要：これを付けることでフロント側で自動展開処理へ誘導します
 					});
 				}
+				// ★追加：data.acd も読み取り対象に含める（これがないとボタン経由で展開が始まりません）
+        else if (lowerName === 'data.acd') {
+          filesRead.push({
+            name: file,
+            path: path.join(carPath, file)
+          });
+        }
 			}
 		}
 		// 2. 「data」フォルダ内の設定ファイルを読み取る
