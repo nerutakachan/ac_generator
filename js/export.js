@@ -328,9 +328,9 @@ window.triggerLiveSync = function(isUiField = false) {
 						// 1.5 バッジ画像(badge.png)のリアルタイムコピー
         // 置換ボタンで選ばれたパス(pendingBadgePath)があれば、それをuiフォルダへ強制コピー
 					if (window.pendingBadgePath) {
-							// Electron側の既存のコピー機能を流用
-							await window.electronAPI.exportFilesToFolder(null, "", [], true, window.pendingBadgePath);
-							console.log("✅ [SYNC] badge.png を物理コピーして反映しました。");
+      // 🌟 修正ポイント：第5引数に保存先(uiPath)、第6引数にコピー元(pendingBadgePath)を渡す
+						await window.electronAPI.exportFilesToFolder(null, "", [], true, uiPath, window.pendingBadgePath);
+						console.log("✅ [SYNC] badge.png を物理コピーして反映しました。");
 					}
         }
 

@@ -32,7 +32,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
 	openDirectoryDialog: () => ipcRenderer.invoke('open-directory-dialog'),
 	getFolderList: (targetPath) => ipcRenderer.invoke('get-folder-list', targetPath),
 	cloneCarFolder: (sourcePath, targetPath) => ipcRenderer.invoke('clone-car-folder', sourcePath, targetPath),
-	exportFilesToFolder: (baseDir, folderName, files, isOverwrite, sourcePath) => ipcRenderer.invoke('export-files-to-folder', baseDir, folderName, files, isOverwrite, sourcePath),
+	exportFilesToFolder: (baseDir, folderName, files, isOverwrite, sourcePath, imageSource) => 
+    ipcRenderer.invoke('export-files-to-folder', baseDir, folderName, files, isOverwrite, sourcePath, imageSource),
 	checkFolderExists: (baseDir, folderName) => ipcRenderer.invoke('check-folder-exists', baseDir, folderName),
 	onMenuRequestExport: (callback) => ipcRenderer.on('menu-request-export', () => callback()),
 	onAppVersion: (callback) => ipcRenderer.on('send-app-version', (event, version) => callback(version)),

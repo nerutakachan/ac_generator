@@ -1016,8 +1016,8 @@ ipcMain.handle('read-car-folder-data', async (event, carPath) => {
 	}
 });
 // ★引数を (event, baseDir, folderName, files, isOverwrite, sourcePath) であることを確認
-ipcMain.handle('export-files-to-folder', async (event, baseDir, folderName, files, isOverwrite, sourcePath) => {
-	try {
+ipcMain.handle('export-files-to-folder', async (event, baseDir, folderName, files, isOverwrite, sourcePath, imageSource) => {
+  try {
 		let targetDir = "";
 		if (isOverwrite) {
 			// 🔄 【スイッチON：元のデータに上書き】
@@ -1115,8 +1115,16 @@ ipcMain.handle('export-files-to-folder', async (event, baseDir, folderName, file
                 console.error(`❌ ファイル ${file.name} の書き込みに失敗:`, writeErr.message);
             }
         }
-		// 保存先が ui フォルダそのものではない（＝通常の data フォルダ等である）場合のみ実行
-		if (sourcePath && fs.existsSync(sourcePath) && !isUiFolder) {
+
+		// 🌟 修正ポイント：Live Sync用のコピー処理を追加
+		// 1. Live Syncの場合： imageSource (新しい画像のパス) が届いていれば、保存先へ直接コピー
+		if (imageSource && fs.existsSync(imageSource)) {
+			const destPath = path.join(targetDir, 'badge.png');
+			fs.copyFileSync(imageSource, destPath);
+			console.log("✅ [LIVE SYNC] バッジ画像を更新しました:", destPath);
+		}
+		// 2. 通常の「まるごと書き出し」の場合：今まで通りの処理 (sourcePath を使用)
+		else if (sourcePath && fs.existsSync(sourcePath) && !isUiFolder) {
 			const uiDirPath = path.join(targetDir, 'ui'); 
 			if (!fs.existsSync(uiDirPath)) {
 				fs.mkdirSync(uiDirPath, { recursive: true });
@@ -1129,6 +1137,7 @@ ipcMain.handle('export-files-to-folder', async (event, baseDir, folderName, file
 				console.log("✅ バッジ画像をコピーしました:", destPath);
 			}
 		}
+
 		return {
 			success: true,
 			path: targetDir
