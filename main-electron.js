@@ -1020,62 +1020,49 @@ ipcMain.handle('export-files-to-folder', async (event, baseDir, folderName, file
   try {
 		let targetDir = "";
 		if (isOverwrite) {
-			// 🔄 【スイッチON：元のデータに上書き】
-			if (!sourcePath) {
-				// ★修正：パスを知らない（手動読み込み等）場合は、エラーで止めずに「上書き先」を聞く専用ダイアログを出す！
-				const result = await dialog.showOpenDialog({
-					properties: ['openDirectory'],
-					title: '上書き先のデータフォルダ（dataフォルダなど）を選択してください'
-				});
-				if (result.canceled || result.filePaths.length === 0) {
-					return {
-						success: false,
-						error: 'キャンセルされました'
-					};
-				}
-				targetDir = result.filePaths[0];
-			} else {
-				targetDir = sourcePath; // パスを知っていればダイアログを出さずに即座に上書き
-			}
-			// 🌟 修正ポイント：ui フォルダのバックアップ (ui_backup) を作成
-            // 車両のルート（dataやuiの親）を特定して、uiフォルダのパスを組み立てる
-            const carRoot = (targetDir.toLowerCase().endsWith('data') || targetDir.toLowerCase().endsWith('ui')) 
-                            ? path.dirname(targetDir) : targetDir;
-            const uiPath = path.join(carRoot, 'ui');
-
-            if (fs.existsSync(uiPath)) {
-                const uiBackupDir = path.join(uiPath, 'ui_backup');
-                if (!fs.existsSync(uiBackupDir)) fs.mkdirSync(uiBackupDir, { recursive: true });
-
-                const uiFiles = ['ui_car.json', 'badge.png'];
-                uiFiles.forEach(f => {
-                    const src = path.join(uiPath, f);
-                    if (fs.existsSync(src)) {
-                        fs.copyFileSync(src, path.join(uiBackupDir, f));
-                    }
-                });
-                console.log("📂 [Overwrite] ui/ui_backup にUI関連ファイルをバックアップしました。");
+            // 🔄 【スイッチON：元のデータに上書き】
+            if (!sourcePath) {
+                const result = await dialog.showOpenDialog({ properties: ['openDirectory'], title: '上書き先のデータフォルダを選択してください' });
+                if (result.canceled || result.filePaths.length === 0) return { success: false, error: 'キャンセルされました' };
+                targetDir = result.filePaths;
+            } else {
+                targetDir = sourcePath;
             }
-			// ★修正：上書き用バックアップフォルダの準備
-			const isUiFolder = targetDir.replace(/[\\/]$/, '').toLowerCase().endsWith('ui');
 
-			// ★修正：ui フォルダ以外（通常の data フォルダ等）の場合のみ、バックアップを作成する
-			if (!isUiFolder) {
-				const backupDir = path.join(targetDir, 'data_backup');
-				if (!fs.existsSync(backupDir)) {
-					fs.mkdirSync(backupDir, { recursive: true });
-				}
-				for (const file of files) {
-					const srcFile = path.join(targetDir, file.name);
-					const destFile = path.join(backupDir, file.name);
-					if (fs.existsSync(srcFile) && !fs.existsSync(destFile)) {
-						if (fs.statSync(srcFile).isFile()) {
-							fs.copyFileSync(srcFile, destFile);
-						}
-					}
-				}
-			}
-		} else {
+            // 🌟 修正ポイント：手動の上書き（folderNameが空ではない）の時だけバックアップを実行
+            if (folderName !== "") { 
+                
+                // 1. ui_backup の作成（UI関連ファイルの保護）
+                const carRoot = (targetDir.toLowerCase().endsWith('data') || targetDir.toLowerCase().endsWith('ui')) 
+                                ? path.dirname(targetDir) : targetDir;
+                const uiPath = path.join(carRoot, 'ui');
+
+                if (fs.existsSync(uiPath)) {
+                    const uiBackupDir = path.join(uiPath, 'ui_backup');
+                    if (!fs.existsSync(uiBackupDir)) fs.mkdirSync(uiBackupDir, { recursive: true });
+                    ['ui_car.json', 'badge.png'].forEach(f => {
+                        const src = path.join(uiPath, f);
+                        if (fs.existsSync(src)) fs.copyFileSync(src, path.join(uiBackupDir, f));
+                    });
+                    console.log("📂 [Overwrite] 手動上書きのため ui_backup を作成しました。");
+                }
+
+                // 2. data_backup の作成（INIファイルの保護）
+                const isUiFolder = targetDir.replace(/[\/]$/, '').toLowerCase().endsWith('ui');
+                if (!isUiFolder) {
+                    const backupDir = path.join(targetDir, 'data_backup');
+                    if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
+                    for (const file of files) {
+                        const srcFile = path.join(targetDir, file.name);
+                        const destFile = path.join(backupDir, file.name);
+                        if (fs.existsSync(srcFile) && !fs.existsSync(destFile)) {
+                            fs.copyFileSync(srcFile, destFile);
+                        }
+                    }
+                    console.log("📂 [Overwrite] 手動上書きのため data_backup を作成しました。");
+                }
+            } // 🌟 ここまでが手動上書き専用のバックアップ処理
+        } else {
 			// 💾 【スイッチOFF：新規書き出し】
 			// バックアップは絶対に作らない
 			if (!baseDir) {
