@@ -1304,6 +1304,8 @@ if (btnExecuteCreation) {
 		console.log("📂 [Debug] 複製元:", sourcePath);
 		const cloneRes = await window.electronAPI.cloneCarFolder(sourcePath, targetPath);
 		if (cloneRes.success) {
+			// サウンド：(新しいパス, 元の名前, 新しい名前)
+			await window.fixCarSound(targetPath, selectedCar, newCarName);
 			await loadCarToEditor(targetPath, newCarName);
 		} else {
 			alert("複製エラー: " + cloneRes.error);

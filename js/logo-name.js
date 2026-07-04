@@ -326,6 +326,9 @@ document.getElementById('car-name-edit').addEventListener('click', async () => {
 		if (res.success) {
 			// 保存パスを新しいフォルダ基準のdataフォルダに書き換える
 			window.currentDataFolderPath = res.newPath + "\\data";
+			// リネーム成功直後にサウンド修正を呼び出す
+			await window.fixCarSound(res.newPath, oldName, newName);
+
 		} else {
 			return alert("フォルダのリネームに失敗しました: " + res.error);
 		}
@@ -334,3 +337,17 @@ document.getElementById('car-name-edit').addEventListener('click', async () => {
 	window.currentCarDirectoryName = newName;
 	alert(`車両名を「${newName}」に変更しました。`);
 });
+// ==========================================
+// ★ 新設：サウンドの整合性を整える共通司令塔
+// ==========================================
+window.fixCarSound = async function(carPath, oldName, newName) {
+    console.log(`🎵 [SFX] サウンド修正を開始: ${oldName} -> ${newName}`);
+    // preload.js で作った窓口を通じて、裏側の物理操作（リネーム・置換）を実行 [cite: 850]
+    const res = await window.electronAPI.updateCarSound(carPath, oldName, newName);
+    
+    if (res.success) {
+        console.log("✅ [SFX] サウンドの自動修正が完了しました。");
+    } else {
+        console.error("❌ [SFX] サウンド修正中にエラーが発生しました:", res.error);
+    }
+};

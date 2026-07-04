@@ -1568,3 +1568,43 @@ ipcMain.handle('rename-car-folder', async (event, oldPath, newName) => {
 		};
 	}
 });
+// ==========================================
+// ★ 新設：サウンドファイルの整合性を整える共通API
+// ==========================================
+ipcMain.handle('update-car-sound', async (event, carPath, oldName, newName) => {
+    const fs = require('fs');
+    const path = require('path');
+    try {
+        const sfxPath = path.join(carPath, 'sfx');
+        // sfxフォルダがない車両（サウンド未設定など）は、エラーにせず静かに終わらせる
+        if (!fs.existsSync(sfxPath)) return { success: true, info: 'sfxフォルダがないためスキップしました' };
+
+        // 1. .bank ファイルのリネーム（例：old.bank -> new.bank）
+        const oldBankPath = path.join(sfxPath, `${oldName}.bank`);
+        const newBankPath = path.join(sfxPath, `${newName}.bank`);
+        if (fs.existsSync(oldBankPath)) {
+            fs.renameSync(oldBankPath, newBankPath);
+            console.log(`🎵 [SFX] リネーム成功: ${oldName}.bank -> ${newName}.bank`);
+        }
+
+        // 2. GUIDs.txt の中身を新しいフォルダ名に一括置換
+        const guidsPath = path.join(sfxPath, 'GUIDs.txt');
+        if (fs.existsSync(guidsPath)) {
+            let content = fs.readFileSync(guidsPath, 'utf8');
+            // 置換ルール： /cars/元の名前/ ➔ /cars/新しい名前/
+            const searchStr = `/cars/${oldName}/`;
+            const replaceStr = `/cars/${newName}/`;
+
+            if (content.includes(searchStr)) {
+                // 文字列に含まれる全ての該当箇所を置換して上書き保存
+                const newContent = content.split(searchStr).join(replaceStr);
+                fs.writeFileSync(guidsPath, newContent, 'utf8');
+                console.log(`📝 [SFX] GUIDs.txt の文字列置換を完了しました`);
+            }
+        }
+        return { success: true };
+    } catch (err) {
+        console.error("❌ [SFX] サウンド修正中にエラー:", err.message);
+        return { success: false, error: err.message };
+    }
+});
