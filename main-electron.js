@@ -1436,6 +1436,9 @@ ipcMain.handle('clone-car-folder', async (event, sourcePath, targetPath) => {
         const dataDirPath = path.join(sourcePath, 'data');
         const acdPath = path.join(sourcePath, 'data.acd');
         const sdkExe = path.join(__dirname, 'tools-folder', 'lib', 'kunossdk.exe');
+				// ★記憶領域
+				const initialDataDirExisted = fs.existsSync(dataDirPath); // 元からdataフォルダがあったか？
+				let originalAcdFileName = 'data.acd';                    // 元のACDファイル名（初期値）
         let isTemporarilyUnpacked = false;
 
         // ==========================================
@@ -1448,8 +1451,9 @@ ipcMain.handle('clone-car-folder', async (event, sourcePath, targetPath) => {
             const allFiles = fs.readdirSync(sourcePath);
             const anyAcdBackup = allFiles.find(f => f.startsWith('data.acd') && f !== 'data.acd');
             if (anyAcdBackup) {
-                fs.renameSync(path.join(sourcePath, anyAcdBackup), acdPath);
-                console.log(`🔄 ACD復帰成功: ${anyAcdBackup}`);
+							originalAcdFileName = anyAcdBackup;
+							fs.renameSync(path.join(sourcePath, anyAcdBackup), acdPath);
+							console.log(`🔄 ACD復帰成功: ${anyAcdBackup}`);
             }
         }
 
@@ -1471,7 +1475,7 @@ ipcMain.handle('clone-car-folder', async (event, sourcePath, targetPath) => {
         console.log("✅ コピーが完了しました。");
 
         // ==========================================
-        // PHASE 3: 複製先でのメインKN5リネーム処理
+        // PHASE 3: 複製先でのメインKN5リネーム処理安ど&FBXに展開
         // ==========================================
         console.log("📝 [PHASE 3] 複製先でのメインKN5のリネームを開始...");
 
@@ -1493,6 +1497,45 @@ ipcMain.handle('clone-car-folder', async (event, sourcePath, targetPath) => {
             }
         } else {
             console.warn("⚠️ [PHASE 3] 警告：複製先にメインの.kn5ファイルが見つかりませんでした。");
+        }
+				// ==========================================
+        // PHASE 4: 複製先でのコンパイル（data.acdの生成）
+        // ==========================================
+        console.log("🏗 [PHASE 4] 複製先でのコンパイルを開始...");
+
+        const targetDataDirPath = path.join(targetPath, 'data'); // 複製先のdataフォルダ
+        if (fs.existsSync(targetDataDirPath)) {
+            // dataフォルダをコンパイルして、新しい data.acd を生成・上書きする [cite: 580, 581]
+            execSync(`"${sdkExe}" "${targetDataDirPath}"`);
+            console.log("✅ [PHASE 4] コンパイル成功：新しい data.acd が生成されました。");
+        }
+				// ==========================================
+        // PHASE 5: 複製先での data.acd の固定（バックアップ化）
+        // ==========================================
+        console.log("🔒 [PHASE 5] 複製先での data.acd の固定を開始...");
+
+        const targetAcdPath = path.join(targetPath, 'data.acd');
+        if (fs.existsSync(targetAcdPath)) {
+            // 生成された data.acd をリネームし、dataフォルダが優先される状態にする [cite: 534, 535]
+            fs.renameSync(targetAcdPath, targetAcdPath + "_backup");
+            console.log("✅ [PHASE 5] 固定成功：data.acd をバックアップ化しました。");
+        }
+				// ==========================================
+        // STEP 8: 元フォルダの復元（検証ログのみ）
+        // ==========================================
+        console.log("🧹 [STEP 8] 元フォルダの状態復元（後片付け）を実行...");
+
+        // 1. 一時的に作成した data フォルダを削除
+        if (!initialDataDirExisted && isTemporarilyUnpacked && fs.existsSync(dataDirPath)) {
+            fs.rmSync(dataDirPath, { recursive: true, force: true });
+            console.log("🗑️ 元フォルダ内の一時的な data フォルダを削除しました。");
+        }
+
+        // 2. ACDファイルの名前を元の名前に戻す
+        if (originalAcdFileName !== 'data.acd' && fs.existsSync(acdPath)) {
+            const originalAcdPath = path.join(sourcePath, originalAcdFileName);
+            fs.renameSync(acdPath, originalAcdPath);
+            console.log(`🔄 data.acd を元の名前「${originalAcdFileName}」に戻しました。`);
         }
 
 // --- 修正箇所の「下」数行（次のPHASEへ続く） ---
