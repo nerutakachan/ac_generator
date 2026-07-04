@@ -1608,3 +1608,23 @@ ipcMain.handle('update-car-sound', async (event, carPath, oldName, newName) => {
         return { success: false, error: err.message };
     }
 });
+// ★再利用：メインの .kn5 ファイルを探してリネームする独立API
+ipcMain.handle('rename-car-kn5', async (event, carPath, newName) => {
+    const fs = require('fs');
+    const path = require('path');
+    try {
+        const files = fs.readdirSync(carPath);
+        // 過去のロジックを100%継承：collider以外で一番最初に見つかった.kn5を対象にする [cite: 611, 784]
+        const targetKn5 = files.find(f => f.toLowerCase().endsWith('.kn5') && f.toLowerCase() !== 'collider.kn5');
+        
+        if (targetKn5) {
+            const oldKn5Path = path.join(carPath, targetKn5);
+            const newKn5Path = path.join(carPath, `${newName}.kn5`);
+            fs.renameSync(oldKn5Path, newKn5Path);
+            console.log(`💎 [MODEL] リネーム成功: ${targetKn5} -> ${newName}.kn5`);
+        }
+        return { success: true };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
+});

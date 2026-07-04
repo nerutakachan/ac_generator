@@ -1233,6 +1233,9 @@ async function loadCarToEditor(carFullPath, carDirName) {
 	if (typeof window.updateLoadingProgress === 'function') {
 		window.updateLoadingProgress(10, `「${carDirName}」を読み込み中...`, "初期化しています...");
 	}
+	// 読み込みを開始した瞬間にパスを「絶対に」記憶させる
+	window.currentDataFolderPath = carFullPath + "\\data";
+	window.currentCarDirectoryName = carDirName;
 	// 1. D&Dと同じ「一括処理中フラグ」を立てて、途中のUI更新を一時停止させる
 	window.isMultiUploading = true;
 	// 2. 裏側(Electron)にフォルダ内のINIやKN5のリストアップを依頼
