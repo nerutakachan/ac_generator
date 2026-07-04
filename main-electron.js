@@ -848,16 +848,18 @@ ipcMain.handle('unpack-acd', async (event, acdPath) => {
 							}
                 // 展開された INI/LUT ファイルを読み込んでフロントエンドへ返します
                 const files = fs.readdirSync(outputDir)
-                    .filter(f => f.endsWith('.ini') || f.endsWith('.lut'))
-                    .map(f => {
-                        const fullPath = path.join(outputDir, f);
-                        return { 
+									.filter(f => f.endsWith('.ini') || f.endsWith('.lut'))
+									.map(f => {
+										const fullPath = path.join(outputDir, f);
+										// ★修正：utf8固定をやめ、バイナリをBase64文字列として変換して転送する
+										const buffer = fs.readFileSync(fullPath);
+										return { 
                             name: f, 
                             path: fullPath,
                             content: fs.readFileSync(fullPath, 'utf8') 
                         };
-                    });
-                resolve({ success: true, files: files });
+									});
+								resolve({ success: true, files: files });
             } else {
                 resolve({ success: false, error: stderr || "dataフォルダが生成されませんでした。" });
             }
@@ -1386,6 +1388,31 @@ ipcMain.handle('sync-backup-start', async (event, folderPath, files) => {
 		};
 	}
 });
+// ★ 認識のみ：フォルダ内の車体ファイルを特定し、ログに報告する関数
+async function recognizeMainKn5File(carPath) {
+  const fs = require('fs');
+  const path = require('path');
+  console.log("--- 🔍 [RECOGNITION-TEST] 認識ステップ開始 ---");
+  console.log("探索対象パス:", carPath);
+
+  try {
+    const files = fs.readdirSync(carPath);
+    
+    // 既存のFBX展開時と同じ認識ルール [cite: 324, 707]
+    const targetFile = files.find(f => 
+      f.toLowerCase().endsWith('.kn5') && f.toLowerCase() !== 'collider.kn5'
+    );
+
+    if (targetFile) {
+      console.log("✅ 【認識成功】メイン車体として特定したファイル:", targetFile);
+      console.log("💡 次のステップでは、このファイルを「" + path.basename(carPath) + ".kn5」に変える予定です。");
+    } else {
+      console.log("❌ 【認識失敗】.kn5（collider以外）が見つかりませんでした。");
+    }
+  } catch (err) {
+    console.error("❌ 【エラー】フォルダのスキャン自体に失敗:", err.message);
+  }
+}
 ipcMain.handle('sync-restore-end', async (event, folderPath) => {
 	return {
 		success: cleanupSyncBackup(folderPath, true)
@@ -1393,29 +1420,36 @@ ipcMain.handle('sync-restore-end', async (event, folderPath) => {
 });
 // フォルダを丸ごとコピーする処理
 ipcMain.handle('clone-car-folder', async (event, sourcePath, targetPath) => {
-	const fs = require('fs');
-	try {
-		if (!fs.existsSync(sourcePath)) return {
-			success: false,
-			error: '元の車両が見つかりません'
-		};
-		if (fs.existsSync(targetPath)) return {
-			success: false,
-			error: '指定した名前の車両は既に存在します'
-		};
-		// フォルダを再帰的に丸ごとコピー（Node.js 16.7.0以降が必要）
-		fs.cpSync(sourcePath, targetPath, {
-			recursive: true
-		});
-		return {
-			success: true
-		};
-	} catch (err) {
-		return {
-			success: false,
-			error: err.message
-		};
-	}
+  const fs = require('fs');
+  const path = require('path');
+  try {
+    if (!fs.existsSync(sourcePath)) return { success: false, error: '元の車両が見つかりません' };
+    if (fs.existsSync(targetPath)) return { success: false, error: '指定した名前の車両は既に存在します' };
+
+    // 1. フォルダを丸ごとコピー
+    fs.cpSync(sourcePath, targetPath, { recursive: true });
+
+    // 2. 【実行ステップ】認識した.kn5をフォルダ名に合わせてリネームする
+    const files = fs.readdirSync(targetPath);
+    const targetKn5 = files.find(f => f.toLowerCase().endsWith('.kn5') && f.toLowerCase() !== 'collider.kn5');
+
+    if (targetKn5) {
+      const folderName = path.basename(targetPath);
+      const oldPath = path.join(targetPath, targetKn5);
+      const newPath = path.join(targetPath, `${folderName}.kn5`);
+
+      if (oldPath !== newPath) {
+        // ★この1行が、整合性を整えるための「本番」の命令です
+        fs.renameSync(oldPath, newPath);
+        console.log(`✅ [SUCCESS] 物理名を変更しました: ${targetKn5} -> ${folderName}.kn5`);
+      }
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error("❌ クローン・リネーム処理エラー:", err.message);
+    return { success: false, error: err.message };
+  }
 });
 // フォルダ名変更
 ipcMain.handle('rename-car-folder', async (event, oldPath, newName) => {
