@@ -151,12 +151,6 @@ window.currentSpecs = {
 	acceleration: null,
 	pwratio: null
 };
-window.updateEngineDisplay = function(name) {
-	const display = document.getElementById('current-engine-name');
-	if (display) {
-		display.textContent = name || "-- 未設定 --";
-	}
-};
 window.updateSpecsDisplay = function(specs) {
 	if (window.isMultiUploading || window.isRestoring) return;
 	if (!specs) return;
@@ -428,42 +422,6 @@ document.getElementById('sound-swap_btn').addEventListener('click', async () => 
             }
         } else {
             alert("スワップ失敗: " + res.error);
-        }
-    }
-});
-// エンジンスワップ
-document.addEventListener('click', async (e) => {
-    // 1. クリックされた要素のIDがボタンと一致するかチェック
-    if (e.target && e.target.id === 'btn-engine-swap-start') {
-        
-        // 【事実確認A】まずは画面に「クリックされた」ことを直接通知します
-        alert("✅ ボタンのクリックを検知しました！");
-
-        const donorSelect = document.getElementById('engine-select');
-        const donorName = donorSelect ? donorSelect.value : null;
-
-        if (!donorName || donorName.startsWith('--')) {
-            return alert("移植元（ドナー）を選択してください");
-        }
-
-        // 【事実確認B】変数が正しくセットされているか確認
-        if (!window.currentDataFolderPath) {
-            return alert("❌ エラー：車両が読み込まれていないため、自分の住所がわかりません");
-        }
-
-        // 住所の計算（main.js 1260行目の変数名に合わせる [cite: 594]）
-        const currentRoot = window.currentDataFolderPath.replace(/\\[^\\]+$/, '');
-        const carsFolder = currentRoot.substring(0, currentRoot.lastIndexOf('\\'));
-        const donorPath = carsFolder + "\\" + donorName;
-
-        console.log(`🔎 [DEBUG] ドナーの住所を計算しました: ${donorPath}`);
-
-        // 【事実確認C】通信路（Bridge）が生きているか確認
-        if (window.electronAPI && typeof window.electronAPI.checkEngineFiles === 'function') {
-            const res = await window.electronAPI.checkEngineFiles(donorPath);
-            alert("📥 裏側（Electron）から返答が来ました！ターミナルを確認してください");
-        } else {
-            alert("❌ 致命的エラー：preload.js での通信路が設定されていません");
         }
     }
 });

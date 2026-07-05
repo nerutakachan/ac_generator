@@ -1702,20 +1702,3 @@ function updateLodsIni(carPath, newName) {
         console.log(`❌ [LODS-CHECK] 保存対象のファイルが見つかりません: ${lodsIniPath}`);
     }
 }
-// --- 新しい受付窓口（IPCハンドラ） ---
-ipcMain.handle('check-engine-files', async (event, donorPath) => {
-    const fs = require('fs');
-    const path = require('path');
-    
-    // ターミナルに「命令を受け取った」という事実を表示します
-    console.log(`📡 [Main-Process] エンジン確認命令を受信: ${donorPath}`);
-
-    const engineIniPath = path.join(donorPath, 'data', 'engine.ini');
-    if (fs.existsSync(engineIniPath)) {
-        console.log(`✅ [Main-Process] ファイル発見: ${engineIniPath}`);
-        return { success: true, path: engineIniPath };
-    } else {
-        console.log(`❌ [Main-Process] ファイル欠落: ${engineIniPath}`);
-        return { success: false, error: "engine.iniが見つかりません" };
-    }
-});

@@ -42,7 +42,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
 	// ★追加：マイドキュメントの view.ini とやり取りするための新しい窓口
 	readViewIni: (carName) => ipcRenderer.invoke('read-view-ini', carName),
 	saveViewIni: (carName, content) => ipcRenderer.invoke('save-view-ini', carName, content),
-	checkEngineFiles: (donorPath) => ipcRenderer.invoke('check-engine-files', donorPath),
 	syncBackupStart: (folderPath, files) => ipcRenderer.invoke('sync-backup-start', folderPath, files),
 	syncRestoreEnd: (folderPath) => ipcRenderer.invoke('sync-restore-end', folderPath),
 	setProjectLoaded: (status) => ipcRenderer.send('set-project-loaded', status),
