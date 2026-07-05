@@ -413,7 +413,17 @@ document.getElementById('sound-swap_btn').addEventListener('click', async () => 
             // --- [PHASE 4] 再利用：移植された音の中身を今の車に適合させる ---
             console.log("🎵 [PHASE 4] 移植されたサウンドの整合性を修正中...");
             await window.fixCarSound(targetPath, donorName, targetName);
+					// ★追加：UIの表示を更新し、プロジェクトの記憶に刻む
+            const soundDataBox = document.getElementById('sound-data');
+            if (soundDataBox) {
+                // 黄色い文字（#fbbf24）でドナー名を表示します
+                soundDataBox.innerHTML = `<div>現在のサウンド</div><div>${donorName}</div>`;
+            }
 
+            // プロジェクトデータに保存（保存ボタンを押した時に消えないようにする） [cite: 314]
+            if (window.currentProject && window.currentProject.environment) {
+                window.currentProject.environment.engine_origin = donorName;
+            }
             // --- [PHASE 5] 完了通知 ---
             if (typeof window.showCustomPopup === 'function') {
                 window.showCustomPopup(`✅ <strong>${donorName}</strong> のサウンドを移植しました。<br>元の音は 'old-sound' フォルダに保管されています。`);
@@ -495,7 +505,7 @@ document.addEventListener('click', async (e) => {
                             const engineDataBox = document.getElementById('engine-data');
                             if (engineDataBox) {
                                 // あなたが用意した #engine-data の中身を「移植後の名前」に書き換えます
-                                engineDataBox.innerHTML = `<div>現在のエンジン</div><div>${donorName} (移植済み)</div>`;
+                                engineDataBox.innerHTML = `<div>現在のエンジン</div><div>${donorName}</div>`;
                             }
 														const soundSelect = document.getElementById('sound-select');
                             if (soundSelect) {
@@ -504,7 +514,7 @@ document.addEventListener('click', async (e) => {
 														// ✅ 【ここを追加】サウンド表示枠（#sound-data）も移植済みの名前に書き換えます
                             const soundDataBox = document.getElementById('sound-data');
                             if (soundDataBox) {
-                                soundDataBox.innerHTML = `<div>現在のサウンド</div><div style="font-weight:bold; color:#fbbf24;">${donorName} (移植済み)</div>`;
+                                soundDataBox.innerHTML = `<div>現在のサウンド</div><div>${donorName}</div>`;
                             }
 
                             // プロジェクトデータに「エンジンの由来」を記録（保存用）
