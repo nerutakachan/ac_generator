@@ -413,18 +413,39 @@ document.getElementById('sound-swap_btn').addEventListener('click', async () => 
             // --- [PHASE 4] 再利用：移植された音の中身を今の車に適合させる ---
             console.log("🎵 [PHASE 4] 移植されたサウンドの整合性を修正中...");
             await window.fixCarSound(targetPath, donorName, targetName);
-					// ★追加：UIの表示を更新し、プロジェクトの記憶に刻む
+						// 🔄 [TARGET RELOAD] エンジン関連ファイルだけを最新状態に同期
+            const reloadRes = await window.electronAPI.readCarFolderData(targetPath); // [cite: 702]
+            if (reloadRes.success) {
+                const engineIniFile = reloadRes.files.find(f => f.name.toLowerCase() === 'engine.ini');
+                const powerLutFile = reloadRes.files.find(f => f.name.toLowerCase() === 'power.lut');
+                
+                if (engineIniFile) {
+                    window.currentEngineData = window.parseINI(engineIniFile.content); // [cite: 366]
+                    if (typeof window.initEngineEditor === 'function') {
+                        window.initEngineEditor(window.currentEngineData); // [cite: 162]
+                    }
+                }
+                if (powerLutFile) {
+                    if (typeof window.parsePowerLut === 'function') {
+                        window.parsePowerLut(powerLutFile.content); // [cite: 158]
+                    }
+                }
+                console.log("🔄 [System] エンジン関連データのみを最新に同期しました。");
+            }
+
+            // ★UIの表示を更新（黄色い文字と「移植済み」を追加）
             const soundDataBox = document.getElementById('sound-data');
             if (soundDataBox) {
-                // 黄色い文字（#fbbf24）でドナー名を表示します
+                // 黄色い文字（#fbbf24）でドナー名を表示し、「(移植済み)」を添えます [cite: 331, 356]
                 soundDataBox.innerHTML = `<div>現在のサウンド</div><div>${donorName}</div>`;
             }
 
-            // プロジェクトデータに保存（保存ボタンを押した時に消えないようにする） [cite: 314]
-            if (window.currentProject && window.currentProject.environment) {
-                window.currentProject.environment.engine_origin = donorName;
-            }
-            // --- [PHASE 5] 完了通知 ---
+            // ★修正2：プロジェクトデータへの記憶（階層を合わせる）
+            // 保存ボタン（main.js）は window.currentProject.engine_origin を見に行きます [cite: 721, 834]
+            if (!window.currentProject) window.currentProject = {};
+            window.currentProject.engine_origin = donorName;
+
+            // --- [PHASE 5] 完了通知 --- [cite: 326, 351]
             if (typeof window.showCustomPopup === 'function') {
                 window.showCustomPopup(`✅ <strong>${donorName}</strong> のサウンドを移植しました。<br>元の音は 'old-sound' フォルダに保管されています。`);
             } else {

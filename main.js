@@ -580,13 +580,13 @@ window.loadProjectToUI = async function(projectState) {
 		const engineDataBox = document.getElementById('engine-data');
 		if (engineDataBox) {
 			// 移植済みであることを示すため、黄色い文字（#fbbf24）で表示します
-			engineDataBox.innerHTML = `<div>現在のエンジン</div><div>${env.engine_origin} (移植済み)</div>`;
+			engineDataBox.innerHTML = `<div>現在のエンジン</div><div>${env.engine_origin}</div>`;
 		}
 		 // ✅ 【ここを追加】サウンド表示枠（#sound-data）も保存データから復元します
 		const soundDataBox = document.getElementById('sound-data');
 		if (soundDataBox) {
 			// エンジンと同じく、黄色い文字（#fbbf24）でドナー名を表示します
-			soundDataBox.innerHTML = `<div>現在のサウンド</div><div style="font-weight:bold; color:#fbbf24;">${env.engine_origin} (移植済み)</div>`;
+			soundDataBox.innerHTML = `<div>現在のサウンド</div><div>${env.engine_origin}</div>`;
 		}
 	}
 	if (typeof window.updateProjectSidebar === 'function') {
@@ -1276,7 +1276,7 @@ async function loadCarToEditor(carFullPath, carDirName) {
 		if (engineDataBox) {
             // ✅ 修正：もしプロジェクトデータに「エンジンの由来」が記録されていれば、それを表示する
             const originName = (window.currentProject && window.currentProject.engine_origin) 
-                               ? window.currentProject.engine_origin + " (移植済み)" 
+                               ? window.currentProject.engine_origin 
                                : carDirName;
             
             const color = (window.currentProject && window.currentProject.engine_origin) ? "#fbbf24" : "#4ade80";
