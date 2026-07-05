@@ -42,6 +42,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
 	// ★追加：マイドキュメントの view.ini とやり取りするための新しい窓口
 	readViewIni: (carName) => ipcRenderer.invoke('read-view-ini', carName),
 	saveViewIni: (carName, content) => ipcRenderer.invoke('save-view-ini', carName, content),
+	checkEngineFiles: (donorPath) => ipcRenderer.invoke('check-engine-files', donorPath),
+	createEngineBackup: (targetDataPath) => ipcRenderer.invoke('create-engine-backup', targetDataPath),
+	readTextFile: (filePath) => ipcRenderer.invoke('read-text-file', filePath),
+	copyEngineFiles: (donorPath, targetPath) => ipcRenderer.invoke('copy-engine-files', donorPath, targetPath),
 	syncBackupStart: (folderPath, files) => ipcRenderer.invoke('sync-backup-start', folderPath, files),
 	syncRestoreEnd: (folderPath) => ipcRenderer.invoke('sync-restore-end', folderPath),
 	setProjectLoaded: (status) => ipcRenderer.send('set-project-loaded', status),
@@ -51,5 +55,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
 	unpackAcd: (filePath) => ipcRenderer.invoke('unpack-acd', filePath),
 	updateCarSound: (carPath, oldName, newName) => ipcRenderer.invoke('update-car-sound', carPath, oldName, newName),
 	renameCarKn5: (carPath, newName) => ipcRenderer.invoke('rename-car-kn5', carPath, newName),
+	cleanupDonorData: (donorPath) => ipcRenderer.invoke('cleanup-donor-data', donorPath),
 	swapCarSound: (targetPath, donorPath) => ipcRenderer.invoke('swap-car-sound', targetPath, donorPath),
 });

@@ -1702,3 +1702,123 @@ function updateLodsIni(carPath, newName) {
         console.log(`❌ [LODS-CHECK] 保存対象のファイルが見つかりません: ${lodsIniPath}`);
     }
 }
+// エンジンスワップ
+ipcMain.handle('check-engine-files', async (event, donorPath) => {
+    const fs = require('fs');
+    const path = require('path');
+    const { execSync } = require('child_process');
+    // あなたが既にプロジェクト内で定義しているSDKのパスを使用します [cite: 532, 584]
+    const sdkExe = path.join(__dirname, 'tools-folder', 'lib', 'kunossdk.exe');
+    const dataDir = path.join(donorPath, 'data');
+    const acdPath = path.join(donorPath, 'data.acd');
+
+    console.log(`📡 [Main] ドナー調査開始: ${donorPath}`);
+
+    // ① すでに data フォルダがある場合
+    if (fs.existsSync(path.join(dataDir, 'engine.ini'))) {
+        return { success: true, path: path.join(dataDir, 'engine.ini'), wasAcd: false };
+    }
+
+    // ② data フォルダがなく、data.acd がある場合（既存の展開ロジックを使用）
+    if (fs.existsSync(acdPath) && fs.existsSync(sdkExe)) {
+        console.log("📦 data.acd を発見。一時展開します...");
+        try {
+            // 既存のクローン機能と同じく、SDKを叩いて展開します [cite: 532]
+            execSync(`"${sdkExe}" "${acdPath}"`);
+            return { success: true, path: path.join(dataDir, 'engine.ini'), wasAcd: true };
+        } catch (err) {
+            return { success: false, error: "ACD展開に失敗しました" };
+        }
+    }
+    return { success: false, error: "エンジンデータが見つかりません" };
+});
+ipcMain.handle('cleanup-donor-data', async (event, donorPath) => {
+    const fs = require('fs');
+    const path = require('path');
+    const dataDir = path.join(donorPath, 'data');
+    const acdBackup = path.join(donorPath, 'data.acd_backup');
+    const acdOriginal = path.join(donorPath, 'data.acd');
+
+    try {
+        // 既存のクリーンアップ処理（Source 542）をスワップ用に転用
+        if (fs.existsSync(dataDir)) {
+            fs.rmSync(dataDir, { recursive: true, force: true });
+            console.log("🗑 一時的な data フォルダを削除しました。");
+        }
+        if (fs.existsSync(acdBackup)) {
+            fs.renameSync(acdBackup, acdOriginal);
+            console.log("🔄 data.acd を元の状態に戻しました。");
+        }
+        return { success: true };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
+});
+ipcMain.handle('create-engine-backup', async (event, dataPath) => {
+    const fs = require('fs');
+    const path = require('path');
+    const backupDir = path.join(dataPath, 'old-engine');
+
+    try {
+        // 1. 避難所（フォルダ）がなければ作る
+        if (!fs.existsSync(backupDir)) {
+            fs.mkdirSync(backupDir, { recursive: true });
+            console.log(`📁 [Main] 避難所を作成しました: ${backupDir}`);
+        }
+
+        // 2. 現在のエンジンデータを避難所へコピー（資産：engine.ini と power.lut）
+        const filesToBackUp = ['engine.ini', 'power.lut'];
+        filesToBackUp.forEach(file => {
+            const src = path.join(dataPath, file);
+            if (fs.existsSync(src)) {
+                fs.copyFileSync(src, path.join(backupDir, file));
+                console.log(`💾 [Main] 退避成功: ${file}`);
+            }
+        });
+
+        return { success: true, path: backupDir };
+    } catch (err) {
+        console.error(`❌ [Main] 避難所作成エラー: ${err.message}`);
+        return { success: false, error: err.message };
+    }
+});
+ipcMain.handle('read-text-file', async (event, filePath) => {
+    const fs = require('fs');
+    try {
+        // ドナーの engine.ini をテキスト形式(utf8)で読み込む
+        const content = fs.readFileSync(filePath, 'utf8');
+        
+        // ターミナルに事実を報告
+        console.log(`📄 [Main] 読込テスト成功: ${filePath} (${content.length} 文字)`);
+        
+        // 最初の100文字だけを表側に返して確認させます
+        return { success: true, preview: content.substring(0, 100), length: content.length };
+    } catch (err) {
+        console.error(`❌ [Main] 読込エラー: ${err.message}`);
+        return { success: false, error: err.message };
+    }
+});
+// ✅ 追加：工程4（物理的なファイル移植）
+ipcMain.handle('copy-engine-files', async (event, donorPath, targetPath) => {
+    const fs = require('fs');
+    const path = require('path');
+    try {
+        // 移植対象のセット（この2つは常にペアで動く事実に基づきます [cite: 309, 313]）
+        const filesToCopy = ['engine.ini', 'power.lut'];
+        
+        filesToCopy.forEach(file => {
+            const src = path.join(donorPath, 'data', file);
+            const dest = path.join(targetPath, file);
+            
+            if (fs.existsSync(src)) {
+                fs.copyFileSync(src, dest);
+                console.log(`🚚 [Main] 移植成功: ${file}`);
+            }
+        });
+
+        return { success: true };
+    } catch (err) {
+        console.error(`❌ [Main] 移植エラー: ${err.message}`);
+        return { success: false, error: err.message };
+    }
+});

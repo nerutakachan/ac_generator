@@ -572,6 +572,23 @@ window.loadProjectToUI = async function(projectState) {
 			}
 		}
 	}
+	// エンジンスワップ情報の復元
+	if (env.engine_origin) {
+		// 1. メモリ上のプロジェクトデータに復元
+		window.currentProject.engine_origin = env.engine_origin;
+		// 2. 画面上の表示（あなたが用意した #engine-data）を更新
+		const engineDataBox = document.getElementById('engine-data');
+		if (engineDataBox) {
+			// 移植済みであることを示すため、黄色い文字（#fbbf24）で表示します
+			engineDataBox.innerHTML = `<div>現在のエンジン</div><div>${env.engine_origin} (移植済み)</div>`;
+		}
+		 // ✅ 【ここを追加】サウンド表示枠（#sound-data）も保存データから復元します
+		const soundDataBox = document.getElementById('sound-data');
+		if (soundDataBox) {
+			// エンジンと同じく、黄色い文字（#fbbf24）でドナー名を表示します
+			soundDataBox.innerHTML = `<div>現在のサウンド</div><div style="font-weight:bold; color:#fbbf24;">${env.engine_origin} (移植済み)</div>`;
+		}
+	}
 	if (typeof window.updateProjectSidebar === 'function') {
 		window.updateProjectSidebar();
 	}
@@ -685,7 +702,9 @@ document.addEventListener('DOMContentLoaded', () => {
 				// 3Dモデルのパスを保持（既存の値を優先）
 				model_path: window.currentProject.environment?.model_path || "",
 				// ★最重要：置換ボタンで選ばれた「新しいロゴ画像の絶対パス」を記録！
-				custom_badge_path: window.pendingBadgePath || ""
+				custom_badge_path: window.pendingBadgePath || "",
+				// スワップしたエンジンの名前を保存データに含めます
+				engine_origin: window.currentProject ? window.currentProject.engine_origin : null
 			};
 			// 2. 画面のデータをすべて回収（最新の全ファイルに対応）
 			const dataMap = {
@@ -1253,6 +1272,17 @@ async function loadCarToEditor(carFullPath, carDirName) {
 	// 読み込みを開始した瞬間にパスを「絶対に」記憶させる
 	window.currentDataFolderPath = carFullPath + "\\data";
 	window.currentCarDirectoryName = carDirName;
+	const engineDataBox = document.getElementById('engine-data');
+		if (engineDataBox) {
+            // ✅ 修正：もしプロジェクトデータに「エンジンの由来」が記録されていれば、それを表示する
+            const originName = (window.currentProject && window.currentProject.engine_origin) 
+                               ? window.currentProject.engine_origin + " (移植済み)" 
+                               : carDirName;
+            
+            const color = (window.currentProject && window.currentProject.engine_origin) ? "#fbbf24" : "#4ade80";
+            
+            engineDataBox.innerHTML = `<div>現在のエンジン</div><div style="font-weight:bold; color:${color};">${originName}</div>`;
+        }
 	// 1. D&Dと同じ「一括処理中フラグ」を立てて、途中のUI更新を一時停止させる
 	window.isMultiUploading = true;
 	// 2. 裏側(Electron)にフォルダ内のINIやKN5のリストアップを依頼
