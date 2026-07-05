@@ -458,95 +458,106 @@ document.getElementById('sound-swap_btn').addEventListener('click', async () => 
 });
 // エンジンスワップ
 document.addEventListener('click', async (e) => {
-	// 1. ボタンID "engine-swap_btn" かどうかを判定
-	if (!e.target || e.target.id !== 'engine-swap_btn') return;
+    // 1. あなたが用意したボタンID "engine-swap_btn" かどうかを判定 
+    if (e.target && e.target.id === 'engine-swap_btn') {
+        
+        const donorName = document.getElementById('engine-select').value;
+        if (!donorName || donorName.startsWith('--')) return alert("移植元（ドナー）を選択してください");
 
-	const donorName = document.getElementById('engine-select').value;
-	if (!donorName || donorName.startsWith('--')) {
-			return alert("移植元（ドナー）を選択してください");
-	}
+        // 過去の資産を活用：現在の車両の data フォルダの住所を取得 
+        const currentDataPath = window.currentDataFolderPath; 
+        if (!currentDataPath) return alert("先に車両を読み込んでください");
 
-	const currentDataPath = window.currentDataFolderPath; 
-	if (!currentDataPath) {
-			return alert("先に車両を読み込んでください");
-	}
+        // ✅ 【ここが修正のキモ】スラッシュの向きに左右されず、確実に2つ上のフォルダへ戻る計算
+        // 手順1：末尾の "/data" または "\data" を消して、自分の車のフォルダにする
+        const carRoot = currentDataPath.replace(/[\\\/]data$/i, '');
+        // 手順2：自分の車のフォルダ名の直前にある「最後の区切り文字（\ または /）」が何文字目か探す
+        const lastSlashIndex = Math.max(carRoot.lastIndexOf('\\'), carRoot.lastIndexOf('/'));
+        // 手順3：そこまでを切り出し、大元の cars フォルダを特定する
+        const carsFolder = carRoot.substring(0, lastSlashIndex);
+        
+        // 手順4：Windowsの作法に合わせてドナーの名前を合体させる
+        const donorPath = carsFolder + "\\" + donorName;
 
-	// 住所の計算
-	const carRoot = currentDataPath.replace(/[\\\/]data$/i, '');
-	const lastSlashIndex = Math.max(carRoot.lastIndexOf('\\'), carRoot.lastIndexOf('/'));
-	const carsFolder = carRoot.substring(0, lastSlashIndex);
-	const donorPath = carsFolder + "\\" + donorName;
+        console.log(`🔎 [SWAP-PHASE1] 住所を修正しました: ${donorPath}`);
 
-	console.log(`🔎 [SWAP-PHASE1] 住所を修正しました: ${donorPath}`);
+        // 2. 裏側（Electron）に「この住所に engine.ini があるか」を聞く
+        const res = await window.electronAPI.checkEngineFiles(donorPath);
 
+        if (res.success) {
+            // ✅ 【ここが繋ぎ目】工程1が成功したら、すぐに工程2を呼び出す
+            console.log(`🛠 [SWAP-PHASE2] 工程1成功につき、避難所の作成を開始します...`);
 
-	// ==========================================
-	// 🚀 ここから早期リターンでネストを平坦化
-	// ==========================================
+            // 裏側に避難所作成を依頼（今の自分の data フォルダの住所を渡す）
+            const backupRes = await window.electronAPI.createEngineBackup(currentDataPath);
 
-	// 工程1: ドナーファイルの確認
-	const res = await window.electronAPI.checkEngineFiles(donorPath);
-	if (!res.success) {
-			return alert(`❌ 失敗：${res.error}\n計算された住所：${donorPath}`);
-	}
-	console.log(`🛠 [SWAP-PHASE2] 工程1成功につき、避難所の作成を開始します...`);
+            if (backupRes.success) {
+                // ✅ 【ここが繋ぎ目】工程2が成功したら、工程3（読込テスト）を開始
+                console.log(`🧪 [SWAP-PHASE3] 避難所作成完了。ドナーのファイル読込テストを開始します...`);
 
-	// 工程2: 避難所の作成
-	const backupRes = await window.electronAPI.createEngineBackup(currentDataPath);
-	if (!backupRes.success) {
-			return alert(`❌ 工程2失敗：自分のデータの退避に失敗しました。\n${backupRes.error}`);
-	}
-	console.log(`🧪 [SWAP-PHASE3] 避難所作成完了。ドナーのファイル読込テストを開始します...`);
+                // 工程1で見つけた res.path (ドナーの engine.ini) を読み込む
+                const readRes = await window.electronAPI.readTextFile(res.path);
 
-	// 工程3: ドナーファイルの読込テスト
-	const readRes = await window.electronAPI.readTextFile(res.path);
-	if (!readRes.success) {
-			return alert(`❌ 工程3失敗：ドナーのファイルを読み取れませんでした。\n${readRes.error}`);
-	}
-	console.log(`🚚 [SWAP-PHASE4] 読込テスト完了。物理コピーを開始します...`);
+                if (readRes.success) {
+                    // ✅ 【ここが繋ぎ目】読込テストができたら、いよいよ物理コピー（工程4）を開始
+                    console.log(`🚚 [SWAP-PHASE4] 読込テスト完了。物理コピーを開始します...`);
 
-	// 工程4: 物理コピー
-	const copyRes = await window.electronAPI.copyEngineFiles(donorPath, currentDataPath);
-	if (!copyRes.success) {
-			return alert(`❌ 工程4失敗：ファイルのコピーに失敗しました。\n${copyRes.error}`);
-	}
-	console.log(`🔊 [SWAP-PHASE5] サウンド移植を開始します（既存の関数を使用）...`);
+                    // donorPath（車のルート）と currentDataPath（自分のdataフォルダ）を渡す
+                    const copyRes = await window.electronAPI.copyEngineFiles(donorPath, currentDataPath);
 
-	// 工程5: サウンド移植
-	const targetRoot = currentDataPath.replace(/[\\\/]data$/i, '');
-	const soundRes = await window.electronAPI.swapCarSound(targetRoot, donorPath);
-	if (!soundRes.success) {
-			return alert(`❌ 工程5失敗：サウンドのコピーに失敗しました。\n${soundRes.error}`);
-	}
+                    if (copyRes.success) {
+                        // ✅ 工程4成功。既存の資産を使用してサウンド移植（工程5）を開始します
+                        console.log(`🔊 [SWAP-PHASE5] サウンド移植を開始します（既存の関数を使用）...`);
 
+                        // 自分の車両ルートを特定（例: .../cars/my_car）
+                        const targetRoot = currentDataPath.replace(/[\\\/]data$/i, '');
 
-	// ==========================================
-	// ✨ 全工程成功後の処理
-	// ==========================================
+                        // ★既に preload.js [cite: 812] にある関数を呼び出します
+                        // 引数：(自分のパス, ドナーのパス)
+                        const soundRes = await window.electronAPI.swapCarSound(targetRoot, donorPath);
 
-	await window.fixCarSound(targetRoot, donorName, window.currentCarDirectoryName);
-	
-	if (res.wasAcd) {
-			console.log("🧹 ドナー車両の状態を元に戻しています...");
-			await window.electronAPI.cleanupDonorData(donorPath);
-	}
+                        if (soundRes.success) {
+                            await window.fixCarSound(targetRoot, donorName, window.currentCarDirectoryName);
+													if (res.wasAcd) {
+                                console.log("🧹 ドナー車両の状態を元に戻しています...");
+                                await window.electronAPI.cleanupDonorData(donorPath);
+                            }
+                            // ✅ 工程6：UIの表示更新とデータの記録
+                            const engineDataBox = document.getElementById('engine-data');
+                            if (engineDataBox) {
+                                // あなたが用意した #engine-data の中身を「移植後の名前」に書き換えます
+                                engineDataBox.innerHTML = `<div>現在のエンジン</div><div>${donorName}</div>`;
+                            }
+														const soundSelect = document.getElementById('sound-select');
+                            if (soundSelect) {
+                                soundSelect.value = donorName;
+                            }
+														// ✅ 【ここを追加】サウンド表示枠（#sound-data）も移植済みの名前に書き換えます
+                            const soundDataBox = document.getElementById('sound-data');
+                            if (soundDataBox) {
+                                soundDataBox.innerHTML = `<div>現在のサウンド</div><div>${donorName}</div>`;
+                            }
 
-	// 工程6：UIの表示更新とデータの記録
-	// （少しでもコードを減らすため、要素の更新処理を共通化しました）
-	const updateUI = (id, html) => {
-			const el = document.getElementById(id);
-			if (el) el.innerHTML = html;
-	};
+                            // プロジェクトデータに「エンジンの由来」を記録（保存用）
+                            if (!window.currentProject) window.currentProject = {};
+                            window.currentProject.engine_origin = donorName;
 
-	updateUI('engine-data', `<div>現在のエンジン</div><div>${donorName}</div>`);
-	updateUI('sound-data', `<div>現在のサウンド</div><div>${donorName}</div>`);
-
-	const soundSelect = document.getElementById('sound-select');
-	if (soundSelect) soundSelect.value = donorName;
-
-	// プロジェクトデータに記録
-	window.currentProject = window.currentProject || {};
-	window.currentProject.engine_origin = donorName;
-
-	alert(`✨ 全工程完了！\nエンジンとサウンドを ${donorName} から移植しました。\nプロジェクトを保存すれば、この状態が記録されます。`);
+                            alert(`✨ 全工程完了！\nエンジンとサウンドを ${donorName} から移植しました。\nプロジェクトを保存すれば、この状態が記録されます。`);
+                        } else {
+                            alert(`❌ 工程5失敗：サウンドのコピーに失敗しました。\n${soundRes.error}`);
+                        }
+                    } else {
+                        alert(`❌ 工程4失敗：ファイルのコピーに失敗しました。\n${copyRes.error}`);
+                    }
+                } else {
+                    alert(`❌ 工程3失敗：ドナーのファイルを読み取れませんでした。\n${readRes.error}`);
+                }
+            } else {
+                alert(`❌ 工程2失敗：自分のデータの退避に失敗しました。\n${backupRes.error}`);
+            }
+        } else {
+            // 前回のログで起きた「見つからない」という事実を報告 [Source 3, 4]
+            alert(`❌ 失敗：${res.error}\n計算された住所：${donorPath}`);
+        }
+    }
 });
