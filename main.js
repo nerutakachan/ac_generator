@@ -44,10 +44,10 @@ window.APP_CONFIG = {
 // ==========================================\n
 document.addEventListener('input', async (e) => {
 	// ★ログ1：そもそも「何か入力された」ことを検知
-	console.log(`[DEBUG-INPUT] 入力検知: ID=${e.target.id}, Tag=${e.target.tagName}`);
+	// console.log(`[DEBUG-INPUT] 入力検知: ID=${e.target.id}, Tag=${e.target.tagName}`);
 	const isInsideEditor = e.target.closest('#wrapper');
 	if (!isInsideEditor) {
-		console.warn("[DEBUG-INPUT] 警告：#wrapper の外側での入力のため無視されました");
+		// console.warn("[DEBUG-INPUT] 警告：#wrapper の外側での入力のため無視されました");
 		return;
 	}
 	// 1. 物理スペック（馬力など）の再計算

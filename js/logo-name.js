@@ -286,21 +286,62 @@ window.updateProjectSidebar = async function() {
 		if (proj.path === currentPath) return; // 編集中のものは飛ばす
 		const li = document.createElement('li');
 		li.innerHTML = `
-						<span class="p-delete-icon" style="cursor:pointer;" title="削除">🗑</span>
-						<div class="p-name-click-area" style="flex:1; cursor:pointer;">${proj.name}</div>
-						<div class="p-edit-icon_box"></div>
-				`;
+				<span class="p-delete-icon" style="cursor:pointer;" title="プロジェクトを削除">🗑</span>
+				<div class="p-name-click-area" style="flex:1; cursor:pointer;" title="このプロジェクトに切り替える">
+						<span style="margin-right:8px;">📂</span>${proj.name}
+				</div>
+				<div class="p-edit-icon_box"></div>`;
+
 		// 【切替】クリックで読み込み [3]
 		li.querySelector('.p-name-click-area').onclick = async () => {
-			if (isModified && !confirm("未保存の変更があります。破棄して切り替えますか？")) return;
-			const result = await window.electronAPI.loadProjectByPath(proj.path); // 番号を消去
-			if (result.success) {
-				window.currentProject = result.data;
-				window.currentProjectPath = proj.path;
-				window.loadProjectToUI(window.currentProject);
-				window.updateProjectSidebar();
-			}
-		};
+    // 1. 安全確認
+    if (isModified && !confirm("未保存の変更があります。破棄して切り替えますか？")) return;
+
+    // 2. ローディング開始 (0%) [5]
+    window.updateLoadingProgress(0, "プロジェクトを切り替え中...", "構成を確認しています...");
+
+    // 3. データの取得 (20%) [6, 7]
+    const result = await window.electronAPI.loadProjectByPath(proj.path);
+    if (result.success) {
+        window.updateLoadingProgress(20, "データ展開中...", "設定値をメモリへ展開しています...");
+        
+        window.currentProject = result.data;
+        window.currentProjectPath = proj.path;
+
+        // 4. 3Dモデル・UI一括反映 (60%〜90%) [8]
+        window.updateLoadingProgress(60, "3Dモデルの準備中...", "車両モデルを再配置しています...");
+        await window.loadProjectToUI(window.currentProject);
+
+        // 5. 状態のリセット（読み込んだばかりの綺麗な状態にする） [2]
+        if (window.modifiedStatus) {
+            Object.keys(window.modifiedStatus).forEach(k => window.modifiedStatus[k] = false);
+        }
+
+        window.updateLoadingProgress(90, "UI更新完了", "エディターを表示します...");
+
+        // 6. 画面の自動ジャンプ（スタートアップ画面を隠してエディターを表示） [9]
+        const hub = document.getElementById('startup-hub');
+        const editor = document.getElementById('wrapper');
+        if (hub) hub.style.display = 'none';
+        if (editor) editor.style.display = 'block';
+
+        // 7. 完了演出 (100% + SE) [10, 11]
+        const audio = new Audio('audio/complete.mp3');
+        audio.volume = 0.5;
+        audio.play().catch(e => {}); // 音が出なくてもエラーにしない
+
+        window.updateLoadingProgress(100, "切り替え完了！", "準備が整いました。");
+        window.updateProjectSidebar();
+
+        // 0.8秒後にバーを隠す
+        setTimeout(() => {
+            document.getElementById('loading-overlay')?.classList.add('hidden');
+        }, 800);
+    } else {
+        alert("読み込みに失敗しました: " + result.error);
+        document.getElementById('loading-overlay')?.classList.add('hidden');
+    }
+};
 		// 【削除】履歴から削除
 		li.querySelector('.p-delete-icon').onclick = async (e) => {
 			e.stopPropagation();
