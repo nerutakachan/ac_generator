@@ -1,34 +1,28 @@
-// ローカル開発：x.x.x-dev
-// 開発用ビルド：x.x.x-alpha / -beta
-// プレリリース：x.x.x-rc.x
-// 製品版：1.0.0
-//package.jsonへのバージョンの書き方で変わるように変更
-
-const { app, BrowserWindow, Menu, dialog, shell, ipcMain, protocol, net } = require('electron');
-const { autoUpdater } = require('electron-updater');
-
-// --- 💡 [100%の事実] 先に全てのモード判定を終わらせることでエラーを回避します ---
-const appVersion = app.getVersion(); 
-const IS_LOCAL = !app.isPackaged;                           // ① npm start
-const IS_DEV_BUILD = appVersion.includes('-dev');          // ② 開発者用ビルド
-const IS_PRERELEASE = appVersion.includes('-pre') || appVersion.includes('-beta'); // ③ プレ版
-const IS_PROD = !IS_LOCAL && !IS_DEV_BUILD && !IS_PRERELEASE; // ④ 製品版
-const IS_DEBUG = IS_LOCAL || IS_DEV_BUILD;                  // 統合デバッグ用フラグ
-const IS_DEV_MODE = IS_LOCAL;                               // 過去の変数との互換用
-// ---------------------------------------------------------------------------
-
-autoUpdater.autoDownload = false; 
-// 製品版（PROD）でなければ、プレリリース版のアップデート検知を許可します
-autoUpdater.allowPrerelease = !IS_PROD; 
-
+const {
+	app,
+	BrowserWindow,
+	Menu,
+	dialog,
+	shell,
+	ipcMain,
+	protocol,
+	net
+} = require('electron');
+const {
+	autoUpdater
+} = require('electron-updater');
+autoUpdater.autoDownload = false;
+//：プレリリース版の検知を許可
+autoUpdater.allowPrerelease = true;//製品版の時にコメントアウトを
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
-const { exec } = require('child_process');
+const {
+	exec
+} = require('child_process');
 const https = require('https');
-
-// --- 💡 以下の electron-reload の処理もここにまとめます ---
-if (IS_LOCAL) {
+const IS_DEV_MODE = !app.isPackaged;
+if (IS_DEV_MODE) {
 	try {
 		require('electron-reload')(__dirname);
 	} catch (e) {
@@ -36,8 +30,8 @@ if (IS_LOCAL) {
 	}
 }
 // ★追加：ビルドされた完成品（本番環境）の時だけ、ログ出力を空っぽ（無効）にする
-if (!IS_DEBUG) {
-    console.log = function() {};
+if (!IS_DEV_MODE) {
+	console.log = function() {};
 	console.info = function() {};
 	console.warn = function() {};
 	// ※ console.error は致命的なクラッシュ原因を探るために残すことが多いです
@@ -46,10 +40,10 @@ if (!IS_DEBUG) {
 // ★ アプリ全体の設定管理（司令塔）
 // ==========================================
 const SERVER_CONFIG = {
-  timing: {
-    // 開発関連モードなら1秒、プレリリースや製品版なら13秒に自動設定します
-    splashDuration: IS_DEBUG ? 1000 : 13000, 
-  },
+	timing: {
+		splashDuration: 13000, // スプラッシュ画面を表示する時間（ミリ秒）
+		// splashDuration: 1000, // スプラッシュ画面を表示する時間（ミリ秒）
+	},
 	flow: {
 		autoSkipLogin: true, // トークンがあれば自動ログインを試みる
 		showSplashAfterLogin: true // ログイン後にスプラッシュを表示する
@@ -76,8 +70,7 @@ const PATHS = {
 	token: path.join(app.getPath('userData'), 'discord_auth_token.json'),
 	trial: path.join(app.getPath('userData'), 'trial_db.json'),
 	recent: path.join(app.getPath('userData'), 'recent_projects.json'),
-	root: path.join(app.getPath('documents'), 'AC_Generator_Projects'),
-	skipUpdate: path.join(app.getPath('userData'), 'skipped_version.txt')
+	root: path.join(app.getPath('documents'), 'AC_Generator_Projects')
 };
 let mainWindow;
 let isProjectLoaded = false;
@@ -186,9 +179,13 @@ function createMainWindow() {
 			role: 'paste',
 			label: '貼り付け'
 		});
-		if (IS_DEBUG) {
-			menuTemplate.push({ type: 'separator' });
-			menuTemplate.push({ label: '要素を検証', click: () => {
+		if (IS_DEV_MODE) {
+			menuTemplate.push({
+				type: 'separator'
+			});
+			menuTemplate.push({
+				label: '要素を検証',
+				click: () => {
 					mainWindow.webContents.inspectElement(params.x, params.y);
 				}
 			});
@@ -200,6 +197,13 @@ function createMainWindow() {
 	// ★ ここを追加：画面の読み込みが完了したら、バージョン番号を送る
 	mainWindow.webContents.once('did-finish-load', () => {
 		mainWindow.webContents.send('send-app-version', appVersion);
+	});
+	mainWindow.webContents.on('context-menu', (e, props) => {
+		const { x, y } = props;
+		Menu.buildFromTemplate([{
+			label: '要素を検証',
+			click: () => { mainWindow.webContents.inspectElement(x, y); }
+		}]).popup(mainWindow);
 	});
 }
 const template = [{
@@ -317,7 +321,7 @@ const template = [{
 	}]
 }];
 // ★開発モード（npm start）の時だけ「開発」メニューを配列の最後に追加する
-if (IS_DEBUG) {
+if (IS_DEV_MODE) {
 	template.push({
 		label: '開発',
 		submenu: [{
@@ -354,40 +358,20 @@ app.whenReady().then(async () => {
 	});
 	// ★ ルートB：自動アップデート機能（electron-updater）
 	// アップデートが見つかった時の動作
-	// アップデートが見つかった時の動作
-autoUpdater.on('update-available', (info) => {
-  // --- 💡 [100%の事実] 以前スキップしたバージョンか確認します ---
-  let skippedVersion = "";
-  if (fs.existsSync(PATHS.skipUpdate)) {
-    skippedVersion = fs.readFileSync(PATHS.skipUpdate, 'utf8').trim();
-  }
-
-  // 見つかったバージョンが、以前スキップしたものと同じなら何もしない
-  if (info.version === skippedVersion) {
-    console.log(`[Update] バージョン ${info.version} は以前スキップされたため、通知を表示しません。`);
-    return; 
-  }
-  // ---------------------------------------------------------
-
-  const result = dialog.showMessageBoxSync({
-    type: 'info',
-    title: 'アップデートのお知らせ',
-    message: `新しいバージョン（v${info.version}）が見つかりました。\nダウンロードしてアップデートを開始しますか？`,
-    noLink: true,
-    buttons: ['はい', 'いいえ'],
-    defaultId: 0,
-    cancelId: 1
-  });
-
-  if (result === 0) {
-    autoUpdater.downloadUpdate();
-  } else {
-    // --- 💡 [100%の事実] 「いいえ」が選ばれたら、このバージョン番号をPCに記憶させます ---
-    fs.writeFileSync(PATHS.skipUpdate, info.version, 'utf8');
-    console.log(`[Update] ユーザーが v${info.version} をスキップしました。次回からこのバージョンは通知しません。`);
-    // --------------------------------------------------------------------------------
-  }
-});
+	autoUpdater.on('update-available', (info) => {
+		const result = dialog.showMessageBoxSync({
+			type: 'info',
+			title: 'アップデートのお知らせ',
+			message: `新しいバージョン（v${info.version}）が見つかりました。\nダウンロードしてアップデートを開始しますか？`,
+			noLink: true,
+			buttons: ['はい', 'いいえ'],
+			defaultId: 0,
+			cancelId: 1
+		});
+		if (result === 0) {
+			autoUpdater.downloadUpdate();
+		}
+	});
 	// アップロードされた進捗をメインプロセスで受け取り、フロントエンドへ転送する
 	autoUpdater.on('download-progress', (progressObj) => {
 		// mainWindowが存在し、読み込み済みであることを確認
@@ -445,12 +429,8 @@ function startSplashFlow() {
 						// 完全に透明になったら、タイマーを止めて窓を完全に破壊する
 						clearInterval(fadeInterval);
 						if (!splash.isDestroyed()) splash.destroy();
-
-						// 開発中(Local/DevBuild)は勝手に更新されないよう、プレ版と製品版の時だけチェックします
-						if (!IS_DEBUG) {
-								autoUpdater.checkForUpdates();
-						}
-						} else {
+						autoUpdater.checkForUpdates();
+					} else {
 						// まだ透明じゃなければ、薄さを更新する
 						if (!splash.isDestroyed()) splash.setOpacity(opacity);
 					}
