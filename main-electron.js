@@ -1,3 +1,9 @@
+// ローカル開発：x.x.x-dev
+// 開発用ビルド：x.x.x-alpha / -beta
+// プレリリース：x.x.x-rc.x
+// 製品版：1.0.0
+//package.jsonへのバージョンの書き方で変わるように変更
+
 const { app, BrowserWindow, Menu, dialog, shell, ipcMain, protocol, net } = require('electron');
 const { autoUpdater } = require('electron-updater');
 
@@ -194,13 +200,6 @@ function createMainWindow() {
 	mainWindow.webContents.once('did-finish-load', () => {
 		mainWindow.webContents.send('send-app-version', appVersion);
 	});
-	mainWindow.webContents.on('context-menu', (e, props) => {
-		const { x, y } = props;
-		Menu.buildFromTemplate([{
-			label: '要素を検証',
-			click: () => { mainWindow.webContents.inspectElement(x, y); }
-		}]).popup(mainWindow);
-	});
 }
 const template = [{
 	label: 'ファイル',
@@ -317,7 +316,7 @@ const template = [{
 	}]
 }];
 // ★開発モード（npm start）の時だけ「開発」メニューを配列の最後に追加する
-if (IS_DEV_MODE) {
+if (IS_DEBUG) {
 	template.push({
 		label: '開発',
 		submenu: [{
