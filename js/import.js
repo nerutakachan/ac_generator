@@ -608,7 +608,7 @@ export async function handleMultiFileUpload(files) {
 	const fileArray = Array.from(files);
 	// 🌟 追加：読み込み開始（5%）
 	window.updateLoadingProgress(5, "車両データを読み込み中...", "ファイルをスキャンしています...");
-	console.log("📂 [Phase 1: Sorter] ファイルスキャンを開始します...");
+	// console.log("📂 [Phase 1: Sorter] ファイルスキャンを開始します...");
 	//データファイル（ini等）が含まれている場合、その親フォルダを「保存先」として記憶する
 	for (const f of fileArray) {
 		if (f.path && (f.name.toLowerCase().endsWith('.ini') || f.name.toLowerCase() === 'ui_car.json')) {
@@ -616,7 +616,7 @@ export async function handleMultiFileUpload(files) {
 			const lastSlashIdx = filePath.lastIndexOf('/');
 			if (lastSlashIdx !== -1) {
 				window.currentDataFolderPath = filePath.substring(0, lastSlashIdx);
-				console.log(`📌 [IMPORT] 物理ファイルの保存先を特定しました: ${window.currentDataFolderPath}`);
+				// console.log(`📌 [IMPORT] 物理ファイルの保存先を特定しました: ${window.currentDataFolderPath}`);
 				break; // 1つ見つかればOK
 			}
 		}
@@ -644,7 +644,7 @@ export async function handleMultiFileUpload(files) {
 			const lastSlashIdx = fullPath.lastIndexOf('/');
 			if (lastSlashIdx !== -1) {
 				window.currentCarRootPath = fullPath.substring(0, lastSlashIdx);
-				console.log(`📌 [IMPORT] 車両のルート(KN5の階層)を特定しました: ${window.currentCarRootPath}`);
+				// console.log(`📌 [IMPORT] 車両のルート(KN5の階層)を特定しました: ${window.currentCarRootPath}`);
 			}
 		} else if (['.fbx', '.glb', '.gltf'].some(ext => name.endsWith(ext))) {
 			tasks.modelFiles.push(file);
@@ -670,12 +670,12 @@ export async function handleMultiFileUpload(files) {
 	const carTitle = tasks.carRoot ? `「${tasks.carRoot}」を読み込み中...` : "車両データを読み込み中...";
 	window.updateLoadingProgress(25, carTitle, "圧縮ファイルを展開しています...");
 	// --- STEP 2: Dispatcher (順次実行) ---
-	console.log("🚀 [Phase 2: Dispatcher] 順次読み込みを開始します...");
+	// console.log("🚀 [Phase 2: Dispatcher] 順次読み込みを開始します...");
 	if (tasks.carRoot) window.currentCarDirectoryName = tasks.carRoot;
-	console.log("DEBUG: KN5処理開始...");
+	// console.log("DEBUG: KN5処理開始...");
 	// 1. KN5展開
 	for (const kn5 of tasks.kn5ToUnpack) {
-		console.log(`📦 KN5展開中: ${kn5.name}`);
+		// console.log(`📦 KN5展開中: ${kn5.name}`);
 		const res = await window.electronAPI.unpackKn5(kn5.path);
 		if (res.success) {
 			// 💡 path.basename(res.fbxPath) の代わりにこれを使います
@@ -685,7 +685,7 @@ export async function handleMultiFileUpload(files) {
 				path: res.fbxPath,
 				isModel: true
 			});
-			console.log(`✅ [.kn5] 展開成功、FBXをモデルタスクへ追加: ${fileName}`);
+			// console.log(`✅ [.kn5] 展開成功、FBXをモデルタスクへ追加: ${fileName}`);
 		}
 	}
 	// 2. ACD展開 (物理フォルダがない時のみ)
@@ -711,7 +711,7 @@ export async function handleMultiFileUpload(files) {
 	}
 	// 🌟 追加：展開フェーズ完了（50%）
 	window.updateLoadingProgress(50, null, "3Dモデルと設定ファイルを解析しています...");
-	console.log("DEBUG: モデル読み込み開始...");
+	// console.log("DEBUG: モデル読み込み開始...");
 	// 3. 3Dモデル描写
 	for (const model of tasks.modelFiles) {
 		if (model.path && typeof window.loadModelByPath === 'function') {
@@ -743,7 +743,7 @@ export async function handleMultiFileUpload(files) {
 	}
 	// --- 6. ドキュメント内の view.ini (シート位置) を自動取得 ---
 	if (window.currentCarDirectoryName && window.electronAPI.readViewIni) {
-		console.log("💺 マイドキュメントから視点設定を読み込みます...");
+		// console.log("💺 マイドキュメントから視点設定を読み込みます...");
 		const viewRes = await window.electronAPI.readViewIni(window.currentCarDirectoryName);
 		if (viewRes.success) {
 			const parsedView = parseINI(viewRes.content);
@@ -751,7 +751,7 @@ export async function handleMultiFileUpload(files) {
 			console.log("✅ 視点設定を適用しました。");
 		}
 	}
-	console.log("DEBUG: INI/LUT解析開始...");
+	// console.log("DEBUG: INI/LUT解析開始...");
 	// --- 7. 設定ファイルの解析 (INI/LUT) ---
 	for (const ini of tasks.iniFiles) {
 		// ファイルサイズが0の場合や、FBX展開時に生成される不要ファイル(.fbx.ini)は読み飛ばす
@@ -772,7 +772,7 @@ export async function handleMultiFileUpload(files) {
 	}
 	// 🌟 追加：解析フェーズ完了（75%）
 	window.updateLoadingProgress(75, null, "最終調整を行っています...");
-	console.log("DEBUG: 全工程終了、関数を抜けます");
+	// console.log("DEBUG: 全工程終了、関数を抜けます");
 	// すべて終わったらスペック表を最終更新 [cite: 143]
 	if (typeof window.updateSpecsFromPhysics === 'function') {
 		window.updateSpecsFromPhysics();
@@ -783,7 +783,7 @@ export async function handleMultiFileUpload(files) {
 	const audio = new Audio('audio/complete.mp3'); // 音源ファイルのパスを指定
 	audio.volume = 0.7; // 🌟 ここで音量を調整（0.0 〜 1.0）
 	audio.play().catch(e => console.warn("SEの再生に失敗しました:", e));
-	console.log("✅ 全ての工程が正常に完了しました。");
+	// console.log("✅ 全ての工程が正常に完了しました。");
 	// 🌟 追加：0.8秒だけ「完了」を見せてからモーダルを隠す
 	setTimeout(() => {
 		document.getElementById('loading-overlay')?.classList.add('hidden');

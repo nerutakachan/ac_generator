@@ -576,7 +576,7 @@ window.updateSpecsFromPhysics = function() {
         }
     }
 
-    console.log("📊 [ENGINE-SYNC] 物理計算とグラフデータの準備が完了しました。");
+    // console.log("📊 [ENGINE-SYNC] 物理計算とグラフデータの準備が完了しました。");
 
     // 物理計算の結果なので false（＝スイッチONの時だけ保存）を渡します
     if (typeof window.triggerLiveSync === 'function') {

@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 		// -----------------------------------------------------
 		// ➡ 【ルートA】新規作成モード（目印がある場合）
 		// -----------------------------------------------------
-		console.log("【起動】ルートA：新規作成モードで初期化します");
+		// console.log("【起動】ルートA：新規作成モードで初期化します");
 		// 1. 次回リロード時に勝手に発動しないよう、URLの目印を消す
 		window.history.replaceState({}, document.title, window.location.pathname);
 		// 2. 画面を表示し、認証不要なのでロック画面を即座に消す
@@ -313,7 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				// メインプロセスへ、記憶領域のデータをそのまま保存依頼
 				const result = await window.electronAPI.saveProject(window.currentProject);
 				if (result.success) {
-					console.log("新規プロジェクト作成完了:", result.path);
+					// console.log("新規プロジェクト作成完了:", result.path);
 					window.currentProjectPath = result.path; // 保存先のパスをアプリに覚えさせる
 					if (typeof window.updateProjectSidebar === 'function') {
 						window.updateProjectSidebar(); // サイドバーの表示を生成する
@@ -760,7 +760,7 @@ document.addEventListener('DOMContentLoaded', () => {
 					window.currentProject.files[key] = {
 						currentData: data
 					};
-					console.log(`✅ [SAVE] ${key} を回収:`, data);
+					// console.log(`✅ [SAVE] ${key} を回収:`, data);
 				} else {
 					console.warn(`⚠️ [SAVE] ${key} は空または未定義です。`);
 				}
@@ -1244,7 +1244,7 @@ window.refreshCarList = async function(acRoot) {
     // パスの正規化：すでに content\cars が含まれているか判定 [cite: 808]
     const carsPath = (acRoot.endsWith('content\\cars') || acRoot.endsWith('content/cars')) ? acRoot : acRoot + "\\content\\cars";
     
-    console.log("🔍 [System] 車両リストを取得中:", carsPath);
+    // console.log("🔍 [System] 車両リストを取得中:", carsPath);
     const res = await window.electronAPI.getFolderList(carsPath);
 
     if (res.success) {
@@ -1406,7 +1406,7 @@ if (btnEditSelected) {
 		if (!checkOrigin) {
 			carFullPath = acRoot + "\\" + selectedCar;
 		}
-		console.log("📂 [Debug] 直接読込先:", carFullPath);
+		// console.log("📂 [Debug] 直接読込先:", carFullPath);
 		await loadCarToEditor(carFullPath, selectedCar);
 	});
 }
@@ -1415,7 +1415,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	if (typeof AppStorage !== 'undefined') {
 		const savedPath = AppStorage.load('ac_root_path');
 		if (savedPath) {
-			console.log("📂 記憶されていたACパスを復元します:", savedPath);
+			// console.log("📂 記憶されていたACパスを復元します:", savedPath);
 			refreshCarList(savedPath);
 		}
 	}

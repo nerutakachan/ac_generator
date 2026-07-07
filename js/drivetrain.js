@@ -40,7 +40,7 @@ window.initDrivetrainEditor = function(initialData = null) {
 	// ★ ギアセットが空の場合、Base Drivetrainを自動生成する（要素チェックの前に実行！）
 	// ==========================================
 	if (window.gearSetList.length === 0) {
-		console.log("⚙️ [DEBUG-DT] ギアセットが0件です。drivetrain.ini から Base Drivetrain を生成します...");
+		// console.log("⚙️ [DEBUG-DT] ギアセットが0件です。drivetrain.ini から Base Drivetrain を生成します...");
 		let baseData = initialData;
 		if (!baseData && window.currentProject && window.currentProject.files['drivetrain']) {
 			baseData = window.currentProject.files['drivetrain'].currentData;
@@ -53,7 +53,7 @@ window.initDrivetrainEditor = function(initialData = null) {
 			});
 			window.activeGearIdx = 0;
 			window.mainGearIdx = 0;
-			console.log("⚙️ [DEBUG-DT] ✅ Base Drivetrain の生成に成功しました！", window.gearSetList);
+			// console.log("⚙️ [DEBUG-DT] ✅ Base Drivetrain の生成に成功しました！", window.gearSetList);
 		} else {
 			console.warn("⚙️ [DEBUG-DT] ❌ drivetrain.ini のデータも見つからなかったため、生成できませんでした。");
 		}
