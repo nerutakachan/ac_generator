@@ -13,7 +13,7 @@ const {
 } = require('electron-updater');
 autoUpdater.autoDownload = false;
 //：プレリリース版の検知を許可
-autoUpdater.allowPrerelease = true;
+autoUpdater.allowPrerelease = true;//製品版の時にコメントアウトを
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -198,13 +198,13 @@ function createMainWindow() {
 	mainWindow.webContents.once('did-finish-load', () => {
 		mainWindow.webContents.send('send-app-version', appVersion);
 	});
-	// mainWindow.webContents.on('context-menu', (e, props) => {
-	// 	const { x, y } = props;
-	// 	Menu.buildFromTemplate([{
-	// 		label: '要素を検証',
-	// 		click: () => { mainWindow.webContents.inspectElement(x, y); }
-	// 	}]).popup(mainWindow);
-	// });
+	mainWindow.webContents.on('context-menu', (e, props) => {
+		const { x, y } = props;
+		Menu.buildFromTemplate([{
+			label: '要素を検証',
+			click: () => { mainWindow.webContents.inspectElement(x, y); }
+		}]).popup(mainWindow);
+	});
 }
 const template = [{
 	label: 'ファイル',
