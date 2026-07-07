@@ -370,6 +370,32 @@ if (btnOpenProject) {
 }
 window.loadProjectToUI = async function(projectState) {
 	console.log("🏁 [復元開始] データの復元を実行します...", projectState);
+	// ==========================================
+    // ★ 追加：以前のプロジェクトデータを完全に掃除（初期化）する
+    // ==========================================
+    // 1. メモリ変数のリセット（過去の変数名をそのまま使用）
+    window.uiCarData = {}; 
+    window.currentCarData = {};
+    window.currentSuspensionData = null;
+    window.currentTyreData = null;
+    window.currentAeroData = null;
+    window.currentEngineData = null;
+    window.currentSetupData = null;
+    window.gearSetList = [];
+    window.allCarSkins = []; // ギャラリーを空にする
+    
+    // 2. UI表示（バッジ・説明文）の物理リセット
+    const badgeImg = document.getElementById('ui-badge');
+    if (badgeImg) badgeImg.src = ""; 
+
+    const descEl = document.getElementById('ui-description');
+    if (descEl) descEl.value = ""; 
+
+    // 3. 編集フラグ（*マーク）の全消去
+    if (window.modifiedStatus) {
+        Object.keys(window.modifiedStatus).forEach(k => window.modifiedStatus[k] = false);
+    }
+    // ==========================================
 	if (!projectState) return;
 	window.isRestoring = true;
 	const env = projectState.environment || {};
