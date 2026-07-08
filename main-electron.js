@@ -24,15 +24,16 @@ const https = require ( 'https' ) ;
 
 // --- 💡 [100%の事実] 先に全てのモード判定を終わらせることでエラーを回避します --- [1]
 const appVersion = app.getVersion();
-const IS_LOCAL = !app.isPackaged;                           // ① npm start
-const IS_DEV_BUILD = appVersion.includes('-dev');          // ② 開発用ビルド
-const IS_PRERELEASE = appVersion.includes('-pre') || appVersion.includes('-beta'); // ③ プレ版
-const IS_PROD = !IS_LOCAL && !IS_DEV_BUILD && !IS_PRERELEASE; // ④ 製品版
-const IS_DEBUG = IS_LOCAL || IS_DEV_BUILD;                  // 統合デバッグ用フラグ
-const IS_DEV_MODE = IS_LOCAL;                               // 過去の変数との互換用 [1]
+const IS_LOCAL = !app.isPackaged;                                  // ① npm start
+const IS_DEV_BUILD = appVersion.includes('-dev');                  // ② 開発用ビルド (アプデ無視/要素検証あり)
+const IS_BETA = appVersion.includes('-beta');                      // ③ 開発用アプデ (beta, pre, 製品版すべて受信)
+const IS_PRE = appVersion.includes('-pre');                        // ④ プレリリース (pre, 製品版を受信)
+const IS_PROD = !IS_LOCAL && !IS_DEV_BUILD && !IS_BETA && !IS_PRE; // ⑤ 製品版 (製品版のみ受信)
+const IS_DEBUG = IS_LOCAL || IS_DEV_BUILD;                         // 統合デバッグ用フラグ
+const IS_DEV_MODE = IS_LOCAL;                                      // 過去の変数との互換用
 
-// 製品版（PROD）でなければ、プレリリース版のアップデート検知を許可します [4]
-autoUpdater.allowPrerelease = !IS_PROD; 
+// -beta と -pre のバージョンをインストールしている人だけ、プレリリースの検知を許可する
+autoUpdater.allowPrerelease = IS_BETA || IS_PRE;
 
 if ( IS_DEV_MODE ) {
 	console.log = function() {};
@@ -326,7 +327,7 @@ const template = [{
 	}]
 }];
 // ★開発モード（npm start）の時だけ「開発」メニューを配列の最後に追加する
-if (IS_DEV_MODE) {
+if (IS_LOCAL || IS_DEV_BUILD) {
 	template.push({
 		label: '開発',
 		submenu: [{
@@ -378,10 +379,15 @@ app.whenReady().then(async () => {
 
      // --- 💡 [ご要望の認識分け] ---
      const newV = info.version.toLowerCase();
-     if (IS_DEV_BUILD) return; // 開発用ビルド(-dev)はアプデスルー
+
+     // ① 開発用ビルド(-dev)はアプデを一切無視
+     if (IS_DEV_BUILD) return; 
      
-     // プレリリース版(-pre)の人が、さらに未完成な(-beta)を検知した場合は無視する
-     if (appVersion.includes('-pre') && newV.includes('-beta')) return; 
+     // ② プレリリース版(-pre)の人は、未完成な(-beta)を検知してもスルーする
+     if (IS_PRE && newV.includes('-beta')) return; 
+
+     // ※ 製品版(PROD)の人は一番上の allowPrerelease = false によって -beta/-pre は自動的に来ません。
+     // ※ 開発用アプデ(-beta)の人は上のフィルターに引っかからないので、全てのアプデ通知を受け取ります。
 
    const result = dialog . showMessageBoxSync ({
 			type: 'info',
