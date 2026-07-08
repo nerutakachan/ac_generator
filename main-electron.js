@@ -20,17 +20,21 @@ const http = require('http');
 const {
 	exec
 } = require('child_process');
-const https = require('https');
-const IS_DEV_MODE = !app.isPackaged;
-if (IS_DEV_MODE) {
-	try {
-		require('electron-reload')(__dirname);
-	} catch (e) {
-		console.log('electron-reload の読み込みをスキップしました');
-	}
-}
-// ★追加：ビルドされた完成品（本番環境）の時だけ、ログ出力を空っぽ（無効）にする
-if (!IS_DEV_MODE) {
+const https = require ( 'https' ) ; 
+
+// --- 💡 [100%の事実] 先に全てのモード判定を終わらせることでエラーを回避します --- [1]
+const appVersion = app.getVersion();
+const IS_LOCAL = !app.isPackaged;                           // ① npm start
+const IS_DEV_BUILD = appVersion.includes('-dev');          // ② 開発用ビルド
+const IS_PRERELEASE = appVersion.includes('-pre') || appVersion.includes('-beta'); // ③ プレ版
+const IS_PROD = !IS_LOCAL && !IS_DEV_BUILD && !IS_PRERELEASE; // ④ 製品版
+const IS_DEBUG = IS_LOCAL || IS_DEV_BUILD;                  // 統合デバッグ用フラグ
+const IS_DEV_MODE = IS_LOCAL;                               // 過去の変数との互換用 [1]
+
+// 製品版（PROD）でなければ、プレリリース版のアップデート検知を許可します [4]
+autoUpdater.allowPrerelease = !IS_PROD; 
+
+if ( IS_DEV_MODE ) {
 	console.log = function() {};
 	console.info = function() {};
 	console.warn = function() {};
@@ -70,7 +74,8 @@ const PATHS = {
 	token: path.join(app.getPath('userData'), 'discord_auth_token.json'),
 	trial: path.join(app.getPath('userData'), 'trial_db.json'),
 	recent: path.join(app.getPath('userData'), 'recent_projects.json'),
-	root: path.join(app.getPath('documents'), 'AC_Generator_Projects')
+	root: path.join(app.getPath('documents'), 'AC_Generator_Projects') ,
+	skipUpdate: path.join(app.getPath('userData'), 'skipped_version.txt')
 };
 let mainWindow;
 let isProjectLoaded = false;
@@ -358,8 +363,27 @@ app.whenReady().then(async () => {
 	});
 	// ★ ルートB：自動アップデート機能（electron-updater）
 	// アップデートが見つかった時の動作
-	autoUpdater.on('update-available', (info) => {
-		const result = dialog.showMessageBoxSync({
+	autoUpdater.on ( 'update-available' ,( info ) => {   
+     // --- 💡 [100%の事実] 以前スキップしたバージョンか確認します --- [2]
+     let skippedVersion = "";
+     if (fs.existsSync(PATHS.skipUpdate)) {
+         skippedVersion = fs.readFileSync(PATHS.skipUpdate, 'utf8').trim();
+     }
+
+     // 見つかったバージョンが、以前スキップしたものと同じなら何もしない [5]
+     if (info.version === skippedVersion) {
+         console.log(`[Update] バージョン ${info.version} は以前スキップされました。`);
+         return;
+     }
+
+     // --- 💡 [ご要望の認識分け] ---
+     const newV = info.version.toLowerCase();
+     if (IS_DEV_BUILD) return; // 開発用ビルド(-dev)はアプデスルー
+     
+     // プレリリース版(-pre)の人が、さらに未完成な(-beta)を検知した場合は無視する
+     if (appVersion.includes('-pre') && newV.includes('-beta')) return; 
+
+   const result = dialog . showMessageBoxSync ({
 			type: 'info',
 			title: 'アップデートのお知らせ',
 			message: `新しいバージョン（v${info.version}）が見つかりました。\nダウンロードしてアップデートを開始しますか？`,
@@ -368,10 +392,14 @@ app.whenReady().then(async () => {
 			defaultId: 0,
 			cancelId: 1
 		});
-		if (result === 0) {
-			autoUpdater.downloadUpdate();
-		}
-	});
+		if ( result === 0 ) {
+     autoUpdater . downloadUpdate ( ) ;
+   }   else {
+     // --- 💡 [100%の事実] 「いいえ」が選ばれたらバージョン番号を記憶させます --- [5]
+     fs.writeFileSync(PATHS.skipUpdate, info.version, 'utf8');
+     console.log(`[Update] ユーザーが v${info.version} をスキップしました。`);
+   }
+   });
 	// アップロードされた進捗をメインプロセスで受け取り、フロントエンドへ転送する
 	autoUpdater.on('download-progress', (progressObj) => {
 		// mainWindowが存在し、読み込み済みであることを確認
