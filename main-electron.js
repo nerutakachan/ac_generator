@@ -24,14 +24,13 @@ const https = require ( 'https' ) ;
 
 // --- 💡 [100%の事実] 先に全てのモード判定を終わらせることでエラーを回避します --- [1]
 const appVersion = app.getVersion();
-const IS_LOCAL = !app.isPackaged;                                  // ① npm start
-const IS_DEV_BUILD = appVersion.includes('-dev');                  // ② 開発用ビルド (アプデ無視/要素検証あり)
-const IS_BETA = appVersion.includes('-beta');                      // ③ 開発用アプデ (beta, pre, 製品版すべて受信)
-const IS_PRE = appVersion.includes('-pre');                        // ④ プレリリース (pre, 製品版を受信)
+const IS_LOCAL = !app.isPackaged;// ① npm start
+const IS_DEV_BUILD = appVersion.includes('-dev');// ② 開発用ビルド (アプデ無視/要素検証あり)
+const IS_BETA = appVersion.includes('-beta');// ③ 開発用アプデ (beta, pre, 製品版すべて受信)
+const IS_PRE = appVersion.includes('-pre');// ④ プレリリース (pre, 製品版を受信)
 const IS_PROD = !IS_LOCAL && !IS_DEV_BUILD && !IS_BETA && !IS_PRE; // ⑤ 製品版 (製品版のみ受信)
-const IS_DEBUG = IS_LOCAL || IS_DEV_BUILD;                         // 統合デバッグ用フラグ
-const IS_DEV_MODE = IS_LOCAL;                                      // 過去の変数との互換用
-
+const IS_DEBUG = IS_LOCAL || IS_DEV_BUILD;// 統合デバッグ用フラグ
+const IS_DEV_MODE = IS_LOCAL;// 過去の変数との互換用
 // -beta と -pre のバージョンをインストールしている人だけ、プレリリースの検知を許可する
 autoUpdater.allowPrerelease = IS_BETA || IS_PRE;
 
