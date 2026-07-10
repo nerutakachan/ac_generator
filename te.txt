@@ -8,7 +8,10 @@
 Javascript初心者の私に修正する為に行数では分からないので上の行のコードと下の行のコードを提示して分かりやすく解説してください。
 
 
-<input type="text" id="new-project-name" class="modal-input" placeholder="例: My_AE86_Grip">
+Electron側の仕様
+⁠electron-builder⁠ の仕様（⁠detectUpdateChannel⁠）により、GitHubパブリッシュ時にはバージョン名の末尾からチャンネルを自動推論しない仕組みになっています。
+⁠electron-updater⁠ がデフォルトで標準チャンネル（プレリリース用のルート）として認識・処理できる識別子はalpha⁠、beta⁠、rc⁠のみです。
+そのため、⁠-pre⁠ などのカスタム文字列を認識させるには、GitHub側ではなく、Electronアプリのコード側で ⁠autoUpdater.channel = 'pre'⁠ のように明示的にチャンネルを指定する必要があります。
 
 
 実装テスト：npm start
@@ -50,3 +53,42 @@ Release label
 製品版（無印）
 ・Release label：Latestのみ対応
 ・タイトルv0.0.0のみ通知がでる
+
+
+GitHub側とアプリ側の設定を以下のように組み合わせることで実現できます。
+
+●GitHub側の公開方法
+・無印・betaのバージョン：通常の「Release」として公開する
+・⁠alpha⁠のバージョン：「Pre-release」にチェックを入れて公開する
+
+●アプリ側の挙動
+・通常版アプリ（allowPrerelease = false）：GitHubの「Release（無印）」「Release（beta）」を認識し、「Pre-release（alpha⁠）」は無視
+・ベータ版アプリ（allowPrerelease = true）：GitHubの「Release（無印）」と「Release（beta）」と「Pre-release（alpha⁠）」の3つを認識
+
+
+"output": "D:/ダウンロード/あせコルMOD/オンラインジェネレーター/webで動作するソフト/ビルド/ビルド済み"
+
+認識した
+ギットハブのPre-releaseの状態でアップデートの認識確認。
+alphaにてインストール⁠下記のバージョンの認識を確認しました。
+・beta
+・無印
+
+ソースコード
+autoUpdater.autoDownload = false;
+//：プレリリース版の検知を許可
+autoUpdater.allowPrerelease = true;//製品版の時にコメントアウトを
+const appVersion = app.getVersion();
+
+⁠alpha
+「Release（無印）」
+
+・beta
+・無印
+この二つを「Latest」のみのに変更できますか？
+
+⁠alphaは現状のまま「Latest」・「Pre-release」どちらも認識させるようにしてください
+
+⁠alpha「Latest」・「Pre-release」どちらも認識できました。
+beta、無印「Latest」・「Pre-release」ともに反応なしでした。
+beta、無印がギットハブの「Latest」に何の反応もしないですね

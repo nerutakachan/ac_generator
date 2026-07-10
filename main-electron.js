@@ -14,8 +14,11 @@ const {
 autoUpdater.autoDownload = false;
 //：プレリリース版の検知を許可
 autoUpdater.allowPrerelease = true;//製品版の時にコメントアウトを
+const appVersion = app.getVersion();//⁠alpha・beta・無印で認識
+// const appVersion = app.getVersion();
+// autoUpdater.allowPrerelease = appVersion.includes('-alpha');
 const appVersion = app.getVersion();
-// autoUpdater.allowPrerelease = appVersion.includes('-beta');
+autoUpdater.allowPrerelease = appVersion.includes('-beta');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
