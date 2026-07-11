@@ -498,6 +498,26 @@ window.loadProjectToUI = async function(projectState) {
 	if (masterSwitch) {
 		masterSwitch.checked = window.isExtendedPhysicsEnabled;
 	}
+	// (↑ ここまでは INIデータの代入処理などが並んでいます)
+	if (files['drivetrain']) window.currentDrivetrainData = files['drivetrain'].currentData;
+
+	// =======================================================
+	// ★ ここに移動（UIを作る前にデータを確定させる）
+	// =======================================================
+	if (files['ui_car']) {
+			window.uiCarData = files['ui_car'].currentData;
+			if (typeof window.updateUiCarData === 'function') {
+					window.updateUiCarData(window.uiCarData);
+			}
+	}
+
+	if (files['drivetrain_sets']) {
+			window.gearSetList = files['drivetrain_sets'].currentData;
+			window.activeGearIdx = files['drivetrain_sets'].activeIndex || 0;
+			if (typeof window.initDrivetrainEditor === 'function') window.initDrivetrainEditor();
+			if (typeof window.renderDrivetrainUI === 'function') window.renderDrivetrainUI();
+			if (typeof window.updateGearChart === 'function') window.updateGearChart();
+	}
 	// =======================================================
 	// 3. 各画面のUI更新 (タブの中身を再描画)
 	// =======================================================
@@ -515,16 +535,6 @@ window.loadProjectToUI = async function(projectState) {
 		if (typeof window.updateUiCarData === 'function') {
 			window.updateUiCarData(window.uiCarData);
 		}
-	}
-	// =======================================================
-	// 4. DRIVETRAINの復元
-	// =======================================================
-	if (files['drivetrain_sets']) {
-		window.gearSetList = files['drivetrain_sets'].currentData;
-		window.activeGearIdx = files['drivetrain_sets'].activeIndex || 0;
-		if (typeof window.initDrivetrainEditor === 'function') window.initDrivetrainEditor();
-		if (typeof window.renderDrivetrainUI === 'function') window.renderDrivetrainUI();
-		if (typeof window.updateGearChart === 'function') window.updateGearChart();
 	}
 	// =======================================================
 	// 5. CAMERAの完全復元とUI同期

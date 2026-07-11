@@ -206,8 +206,9 @@ window.renderSetupUI = function() {
 			<article class="setup-item-${sectionName}">
 				<div class="suspension-item-title_box setup-item-title_box">
 					<p>${displaySectionName}</p>
-					<label>
+					<label class="toggle-switch">
 						<input type="checkbox" onchange="window.toggleSectionActive('${sectionName}', this.checked)" ${isActive ? 'checked' : ''}>
+						<span class="toggle-slider round"></span>
 					</label>
 				</div>
 				<div class="suspension-item_box" style="opacity: ${opacityStyle}; transition: opacity 0.2s;">
