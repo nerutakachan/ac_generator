@@ -326,6 +326,25 @@ const template = [{
 		role: 'selectAll',
 		label: 'すべて選択 (Ctrl+A)'
 	}]
+},{
+	label: 'リンク',
+	submenu: [
+		{
+			label: 'GitHubで最新版（ベータ含む）を確認',
+			click: () => {
+				// 外部ブラウザでリリース一覧ページを開く
+				shell.openExternal('https://github.com/takashi1128f-create/ac_generator/releases');
+			}
+		},
+		{ type: 'separator' },
+		{
+			label: '不具合報告（Discord）',
+			click: () => {
+				// ★修正点：ここにも shell.openExternal が必要です
+				shell.openExternal('https://discord.gg/5FH8QD7bcM');
+			}
+		}
+	]
 }];
 // ★開発モード（npm start）の時だけ「開発」メニューを配列の最後に追加する
 if (IS_DEV_MODE) {
