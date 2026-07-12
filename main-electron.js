@@ -1366,7 +1366,6 @@ function cleanupSyncBackup(folderPath, shouldRestore) {
 			});
 		}
 		if (shouldRestore && fs.existsSync(viewIniOld)) {
-			fs.copyFileSync(viewIniOld, docViewIni);
 			fs.unlinkSync(viewIniOld);
 		}
 		const backupDir = path.join(folderPath, 'sync_backup');
