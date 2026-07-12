@@ -848,9 +848,9 @@ document.addEventListener('DOMContentLoaded', () => {
 					info.style.flex = '1';
 					info.style.cursor = 'pointer';
 					info.innerHTML = `
-						<strong style="color:#fff; display:block;">${proj.name}</strong>
-						<small style="color:#888; font-size:10px;">${proj.path}</small>
-					`;
+                <strong style="color:#fff; display:block;">${proj.name}</strong>
+                <small style="color:#888; font-size:10px;">${proj.path}</small>
+            `;
 					// クリックで開く
 					info.addEventListener('click', async () => {
 						const result = await window.electronAPI.loadProjectByPath(proj.path);
@@ -1022,7 +1022,7 @@ window.electronAPI.onMenuOpen(() => {
 	if (btn) btn.click();
 });
 // =========================================================
-// メニューバーから「dataフォルダを一括読込」が選ばれた時の処理
+// ★追加：メニューバーから「dataフォルダを一括読込」が選ばれた時の処理
 // 既存のドラッグ＆ドロップ用ホワイトリスト処理をそのまま100%安全に使い回します
 // =========================================================
 if (window.electronAPI.onMenuImportFolderData) {
@@ -1243,38 +1243,39 @@ document.addEventListener('drop', async (e) => {
 // --- 1. 車両リストを更新する共通関数---
 // 拡張版：車両リストを全てのプルダウン（メイン・エンジン・サウンド）に同期する関数
 window.refreshCarList = async function(acRoot) {
-	const carSelect = document.getElementById('ac-car-select');
-	const engineSelect = document.getElementById('engine-select'); // 今回のHTML調整で追加されたID [cite: 7]
-	const soundSelect = document.getElementById('sound-select');   // 今回のHTML調整で追加されたID [cite: 7]
-	const acPathInput = document.getElementById('ac-root-path');
+    const carSelect = document.getElementById('ac-car-select');
+    const engineSelect = document.getElementById('engine-select'); // 今回のHTML調整で追加されたID [cite: 7]
+    const soundSelect = document.getElementById('sound-select');   // 今回のHTML調整で追加されたID [cite: 7]
+    const acPathInput = document.getElementById('ac-root-path');
 
-	if (!carSelect || !acRoot) return;
-	if (acPathInput) acPathInput.value = acRoot;
+    if (!carSelect || !acRoot) return;
+    if (acPathInput) acPathInput.value = acRoot;
 
-	// パスの正規化：すでに content\cars が含まれているか判定 [cite: 808]
-	const carsPath = (acRoot.endsWith('content\\cars') || acRoot.endsWith('content/cars')) ? acRoot : acRoot + "\\content\\cars";
-	
-	// console.log("🔍 [System] 車両リストを取得中:", carsPath);
-	const res = await window.electronAPI.getFolderList(carsPath);
+    // パスの正規化：すでに content\cars が含まれているか判定 [cite: 808]
+    const carsPath = (acRoot.endsWith('content\\cars') || acRoot.endsWith('content/cars')) ? acRoot : acRoot + "\\content\\cars";
+    
+    // console.log("🔍 [System] 車両リストを取得中:", carsPath);
+    const res = await window.electronAPI.getFolderList(carsPath);
 
-	if (res.success) {
-		// 1. 全てのセレクトボックスを一旦空にする（初期化）
-		carSelect.innerHTML = '<option value="">-- 車両を選択してください --</option>';
-		if (engineSelect) engineSelect.innerHTML = '<option value="">-- エンジンを選んでください --</option>';
-		if (soundSelect) soundSelect.innerHTML = '<option value="">-- サウンドを選んでください --</option>';
+    if (res.success) {
+        // 1. 全てのセレクトボックスを一旦空にする（初期化）
+        carSelect.innerHTML = '<option value="">-- 車両を選択してください --</option>';
+        if (engineSelect) engineSelect.innerHTML = '<option value="">-- エンジンを選んでください --</option>';
+        if (soundSelect) soundSelect.innerHTML = '<option value="">-- サウンドを選んでください --</option>';
 
-		// 2. 見つかったフォルダ名を全てのリストに追加していく
-		res.folders.forEach(carDir => {
-			const opt = document.createElement('option');
-			opt.value = carDir;
-			opt.textContent = carDir;
-			// 各セレクトボックスに同じ選択肢を配る（再利用）
-			carSelect.appendChild(opt.cloneNode(true));
-			if (engineSelect) engineSelect.appendChild(opt.cloneNode(true));
-			if (soundSelect) soundSelect.appendChild(opt.cloneNode(true));
-		});
-		console.log("✅ [System] 全ての車両リストを自動更新・同期しました。");
-	}
+        // 2. 見つかったフォルダ名を全てのリストに追加していく
+        res.folders.forEach(carDir => {
+            const opt = document.createElement('option');
+            opt.value = carDir;
+            opt.textContent = carDir;
+
+            // 各セレクトボックスに同じ選択肢を配る（再利用）
+            carSelect.appendChild(opt.cloneNode(true));
+            if (engineSelect) engineSelect.appendChild(opt.cloneNode(true));
+            if (soundSelect) soundSelect.appendChild(opt.cloneNode(true));
+        });
+        console.log("✅ [System] 全ての車両リストを自動更新・同期しました。");
+    }
 }
 // --- 2. ACフォルダ選択ボタン & 選択時の挙動 (更新) ---
 const btnSelectAC = document.getElementById('btn-select-ac-path');
@@ -1310,13 +1311,15 @@ async function loadCarToEditor(carFullPath, carDirName) {
 	window.currentCarDirectoryName = carDirName;
 	const engineDataBox = document.getElementById('engine-data');
 		if (engineDataBox) {
-			// ✅ 修正：もしプロジェクトデータに「エンジンの由来」が記録されていれば、それを表示する
-			const originName = (window.currentProject && window.currentProject.engine_origin) 
-				? window.currentProject.engine_origin 
-				: carDirName;
-			const color = (window.currentProject && window.currentProject.engine_origin) ? "#fbbf24" : "#4ade80";
-			engineDataBox.innerHTML = `<div>現在のエンジン</div><div style="font-weight:bold; color:${color};">${originName}</div>`;
-		}
+            // ✅ 修正：もしプロジェクトデータに「エンジンの由来」が記録されていれば、それを表示する
+            const originName = (window.currentProject && window.currentProject.engine_origin) 
+                               ? window.currentProject.engine_origin 
+                               : carDirName;
+            
+            const color = (window.currentProject && window.currentProject.engine_origin) ? "#fbbf24" : "#4ade80";
+            
+            engineDataBox.innerHTML = `<div>現在のエンジン</div><div style="font-weight:bold; color:${color};">${originName}</div>`;
+        }
 	// 1. D&Dと同じ「一括処理中フラグ」を立てて、途中のUI更新を一時停止させる
 	window.isMultiUploading = true;
 	// 2. 裏側(Electron)にフォルダ内のINIやKN5のリストアップを依頼
@@ -1388,10 +1391,6 @@ if (btnExecuteCreation) {
 		console.log("📂 [Debug] 複製元:", sourcePath);
 		const cloneRes = await window.electronAPI.cloneCarFolder(sourcePath, targetPath);
 		if (cloneRes.success) {
-			// ベース車両の view.ini を読み取り（無ければデフォルトを使用）、新しい名前でマイドキュメントへ保存
-			const viewRes = await window.electronAPI.readViewIni(selectedCar);
-			const viewContent = viewRes.success ? viewRes.content : window.downloadViewIni(true);
-			await window.electronAPI.saveViewIni(newCarName, viewContent);
 			// サウンド：(新しいパス, 元の名前, 新しい名前)
 			await window.fixCarSound(targetPath, selectedCar, newCarName);
 			await loadCarToEditor(targetPath, newCarName);
