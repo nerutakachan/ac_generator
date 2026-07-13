@@ -555,6 +555,7 @@ export function applyIniData(fileName, parsedData) {
 		window.currentTyreData = normalizedData;
 		if (typeof window.updateTyreEditorUI === 'function') window.updateTyreEditorUI(window.currentTyreData);
 	} else if (name.includes('car.ini')) {
+		console.log("【調査1】受付係：car.iniを検知しました。これより金庫へ保管し、画面更新を依頼します。");
 		// 既存のデータを捨てずに、新しいデータをマージ（合流）させる
 		if (!window.currentCarData) window.currentCarData = {};
 		
@@ -606,6 +607,15 @@ export function applyIniData(fileName, parsedData) {
 		if (typeof window.loadSetupIniForGears === 'function') {
 			window.loadSetupIniForGears(window.currentSetupData);
 		}
+		} else if (name.includes('view.ini')) {
+        if (!window.currentCarData) window.currentCarData = {};
+        if (!window.currentCarData.GRAPHICS) window.currentCarData.GRAPHICS = {};
+        if (normalizedData.CAMERA) {
+            Object.assign(window.currentCarData.GRAPHICS, normalizedData.CAMERA);
+        }
+        if (normalizedData.DRIVER_EYES_POSITION) {
+            Object.assign(window.currentCarData.GRAPHICS, normalizedData.DRIVER_EYES_POSITION);
+        }
 	} else if (name.includes('mirrors.ini')) {
 		window.currentMirrorsData = normalizedData;
 		if (typeof window.updateMirrorsVisuals === 'function') window.updateMirrorsVisuals();

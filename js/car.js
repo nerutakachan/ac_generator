@@ -26,6 +26,7 @@ window.showCustomPopup = function(messageHtml, parentElement = document.body) {
  * 車両設定（car.ini）の詳細版UI生成
  */
 window.updateCarEditorUI = function(data) {
+	console.log("【調査2】表示担当：画面更新の依頼を受けました。現在の「忙しい(isMultiUploading)」の状態は：", window.isMultiUploading);
 	if (window.isMultiUploading) return;
 	const container = document.getElementById('car-data-container');
 	if (!container || !data) return;

@@ -1230,6 +1230,7 @@ document.addEventListener('drop', async (e) => {
 			console.error("❌ [ERROR] 読み込み中に致命的なエラーを検知しました:", err);
 		} finally {
 			window.isMultiUploading = false;
+			if (typeof window.updateCarEditorUI === 'function') window.updateCarEditorUI(window.currentCarData);
 			if (typeof window.updateSpecsFromPhysics === 'function') {
 				window.updateSpecsFromPhysics();
 			}
