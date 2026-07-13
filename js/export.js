@@ -337,17 +337,25 @@ window.triggerLiveSync = function(isUiField = false) {
 			const filesToExport = [];
 			for (const file of window.EXPORT_CONFIG) {
 				// UIファイルや読み込まれていないデータはスキップ
-				if (file.id === 'view' || file.id === 'ui_car' || file.name === 'ui_car.json') continue;
-				const statusKey = (file.id === 'dash_cam') ? 'car' : file.id;
+				if (file.id === 'ui_car' || file.name === 'ui_car.json') continue;
+				const statusKey = (file.id === 'dash_cam' || file.id === 'view') ? 'car' : file.id;
 				const isInitialSync = (isUiField === false); 
-            if (!isInitialSync && (!window.modifiedStatus || !window.modifiedStatus[statusKey])) continue;
+				if (!isInitialSync && (!window.modifiedStatus || !window.modifiedStatus[statusKey])) continue;
+
 				const getFunc = window[file.func];
 				if (typeof getFunc === 'function') {
 					const content = getFunc(true);
-					if (content) filesToExport.push({
-						name: file.name,
-						content: content
-					});
+					if (content) {
+						// 【ここが重要】view.ini の時だけはマイドキュメントへ特別配送する
+						if (file.id === 'view') {
+							const carName = window.currentCarDirectoryName;
+							if (carName) await window.electronAPI.saveViewIni(carName, content);
+							console.log("✅ [LIVE SYNC] view.ini をマイドキュメントへ反映しました");
+							continue; // 他のファイル（dataフォルダ行き）のリストには入れない
+						}
+						// それ以外の物理ファイルは通常通りリストに追加
+						filesToExport.push({ name: file.name, content: content });
+					}
 				}
 			}
 			if (filesToExport.length > 0) {
