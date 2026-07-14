@@ -1,8 +1,10 @@
 // js/car.js
 // ==========================================
-// ★追加：フォーカスを破壊しない、綺麗なカスタムポップアップを表示する関数
+// フォーカスを破壊しない、綺麗なカスタムポップアップを表示する関数
 // ==========================================
-window.showCustomPopup = function(messageHtml, parentElement = document.body) {
+window.showCustomPopup = function(messageHtml) {
+	// ★表示場所のターゲット（住所）を特定します
+	const target = document.getElementById('view-overlay');
 	const overlay = document.createElement('div');
 	overlay.className = 'custom-popup-overlay';
 	const box = document.createElement('div');
@@ -13,15 +15,16 @@ window.showCustomPopup = function(messageHtml, parentElement = document.body) {
 	const btn = document.createElement('button');
 	btn.className = 'custom-popup-btn';
 	btn.textContent = 'OK';
-	// OKボタンを押したらポップアップを消す
+	// ★削除する時も、ターゲットの中から自分（overlay）を消すように修正します
 	btn.onclick = () => {
-		document.body.removeChild(overlay);
+		target.removeChild(overlay);
 	};
 	btnWrap.appendChild(btn);
 	box.appendChild(btnWrap);
 	overlay.appendChild(box);
-	parentElement.appendChild(overlay);
-};
+	// ★最後に、ターゲットの中へポップアップを設置します
+	target.appendChild(overlay);
+}
 /**
  * 車両設定（car.ini）の詳細版UI生成
  */
