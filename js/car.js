@@ -113,10 +113,21 @@ window.updateCarEditorUI = function(data) {
 			}
 			// ★追加：USE_ANIMATED_SUSPENSIONS や VIRTUAL_MIRROR_ENABLED などのON/OFFフラグはチェックボックスにする
 			if (key === 'USE_ANIMATED_SUSPENSIONS' || key === 'VIRTUAL_MIRROR_ENABLED') {
-				console.log("【調査6】スイッチ判定：", key, "はチェックボックスとして生成を開始します。");
-				const isChecked = parseInt(v) === 1 ? 'checked' : '';
-				return `<input type="checkbox" class="suspension-item-toggle text-input" data-idx="${i}" ${isChecked} style="width:auto; height:auto; transform:scale(1.2); margin-left:5px; cursor:pointer;">`;
-			}
+				const isChecked = parseInt(v) === 1;
+				const dispName = (key === 'USE_ANIMATED_SUSPENSIONS') ? "アニメーション" : "バーチャルミラー";
+            const statusClass = isChecked ? 'on' : 'off';
+            const statusText = isChecked ? `${dispName} 1 ON` : `${dispName} 0 OFF`;
+            
+            // width: auto !important; を追加して、30pxの制限を突破します
+            return `
+                <div class="extended-physics-switch-container" style="justify-content: flex-start; gap: 10px;">
+                    <label class="toggle-switch">
+                        <input type="checkbox" class="suspension-item-toggle text-input" data-idx="${i}" ${isChecked ? 'checked' : ''}>
+                        <span class="toggle-slider round"></span>
+                    </label>
+                    <span class="status-text ${statusClass}" style="width: auto !important; white-space: nowrap;">${statusText}</span>
+                </div>`;
+        }
 			const editorRule = window.getEditorStep(key, val);
 			const currentStep = typeof editorRule === 'object' ? editorRule.step : editorRule;
 			const currentMin = typeof editorRule === 'object' && editorRule.min !== "" ? ` min="${editorRule.min}"` : "";
@@ -138,12 +149,24 @@ window.updateCarEditorUI = function(data) {
 					const newVals = Array.from(inputs).map(i => i.value);
 					window.currentCarData[section][key] = newVals.join(',');
 				} else {
-					// ★修正：対象がチェックボックスの場合は 1 / 0 を、それ以外は通常の value を取得して記憶する
-					if (inputs[0].type === 'checkbox') {
-						window.currentCarData[section][key] = inputs[0].checked ? '1' : '0';
-					} else {
-						window.currentCarData[section][key] = inputs[0].value;
+					// 修正： inputs.type ではなく input.type （単数形）にします
+					if (input.type === 'checkbox') {
+						const isChecked = input.checked;
+						window.currentCarData[section][key] = isChecked ? '1' : '0';
+						
+						// 修正：ここも input.closest （単数形）にします
+						const container = input.closest('.extended-physics-switch-container');
+                        const statusTextEl = container?.querySelector('.status-text');
+                        if (statusTextEl) {
+                            const dispName = (key === 'USE_ANIMATED_SUSPENSIONS') ? "アニメーション" : "バーチャルミラー";
+                            statusTextEl.textContent = isChecked ? `${dispName} 1 ON` : `${dispName} 0 OFF`;
+                            statusTextEl.className = isChecked ? "status-text on" : "status-text off";
+                        }
+                    } else {
+                        // 修正：ここも input.value （単数形）にします
+						window.currentCarData[section][key] = input.value;
 					}
+
 					// ★追加：TOTALMASS変更時、表示を更新する
 					if (section === 'BASIC' && key === 'TOTALMASS') {
 						window.updateSpecsDisplay({
