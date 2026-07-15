@@ -395,6 +395,38 @@ window.loadProjectToUI = async function(projectState) {
 	if (!projectState) return;
 	window.isRestoring = true;
 	const env = projectState.environment || {};
+	// --- 物理パス（Route）からUIを100%復元するロジック ---
+		if (env.data_folder) {
+				const fullPath = env.data_folder.replace(/\\/g, '/'); // スラッシュを統一して解析しやすくします
+				const pathParts = fullPath.split('/');
+				
+				// content/cars の位置を探して、ルートと車両名を特定します
+				const carsIdx = pathParts.findIndex(p => p.toLowerCase() === 'cars');
+				if (carsIdx !== -1) {
+						// 1. Assetto Corsa ルートフォルダ (content より前の部分)
+						const acRoot = pathParts.slice(0, carsIdx - 1).join('\\');
+						const acRootInput = document.getElementById('ac-root-path');
+						if (acRootInput) acRootInput.value = acRoot;
+
+						// 2. ベース車両を選択 (cars の直後のフォルダ名)
+						const baseCar = pathParts[carsIdx + 1];
+						const carSelect = document.getElementById('ac-car-select');
+						if (carSelect && baseCar) {
+								// リストを更新（既存の関数を使用）してから車両を合わせます
+								if (typeof window.refreshCarList === 'function') {
+										await window.refreshCarList(acRoot);
+										carSelect.value = baseCar;
+								}
+						}
+
+						// 3. フォルダ名 (絶対に存在する物理フォルダ名から復元)
+						const nameInput = document.getElementById('new-car-project-name');
+						if (nameInput) {
+								// 保存された名前があればそれを、なければパスから抽出した名前をセット
+								nameInput.value = env.output_car_name || baseCar;
+						}
+				}
+		}
 	// 1. 車両名の入力欄を復元
 	const nameInput = document.getElementById('new-car-project-name');
 	if (nameInput && env.output_car_name) {
@@ -448,6 +480,30 @@ window.loadProjectToUI = async function(projectState) {
 	// ★追加：忘れていた「データフォルダのパス」の記憶を復元する
 	if (projectState.environment && projectState.environment.data_folder) {
 		window.currentDataFolderPath = projectState.environment.data_folder;
+		// --- ★ここから追加：v0.0.7 救済マージロジック ---
+    // バージョンが "1.0.0" のものは古いデータとして扱います
+    if (projectState.project && projectState.project.version === "1.0.0") {
+        console.log("🛠 [RESCUE] 古い形式のデータを検知しました。不足分をマージします。");
+        const carRoot = window.currentDataFolderPath.replace(/[\/]data$/i, '');
+        
+        // 既存の裏側関数を使って、実際のフォルダから全データを取得
+        const diskRes = await window.electronAPI.readCarFolderData(carRoot);
+        if (diskRes.success) {
+            // JSONに存在しないファイル（ミラーや作者情報等）だけを補完
+            diskRes.files.forEach(diskFile => {
+                const fileId = diskFile.name.replace('.ini', '').replace('.rto', '').replace('.json', '');
+                if (!projectState.files[fileId]) {
+                    console.log(`➕ [MERGE] 欠落していたファイルを補完しました: ${diskFile.name}`);
+                    // ファイル内容をパースして追加
+                    if (diskFile.name.endsWith('.json')) {
+                        projectState.files[fileId] = { currentData: JSON.parse(diskFile.content) };
+                    } else {
+                        projectState.files[fileId] = { currentData: window.parseINI(diskFile.content) };
+                    }
+                }
+            });
+        }
+    }
 	} else {
 		window.currentDataFolderPath = null;
 	}
