@@ -16,7 +16,7 @@
 	},
 	"build": {
 		"directories": {
-			"output": "D:/ダウンロード/あせコルMOD/オンラインジェネレーター/webで動作するソフト/ビルド/ビルド済み"
+			"output": "D:/フォント・ソフト/ソフト_new/ビルド/書き出し"
 		},
 		"files": ["**/*", "!dist${/*}", "!テスト${/*}"],
 		"asarUnpack": ["tools-folder/**/*"], 
