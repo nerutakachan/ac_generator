@@ -3,6 +3,12 @@ git checkout ee867d8fb9796c8ebbe348b09d026700020d8257 .
 git commit -m "⁠alpha・beta・無印で認識に戻"
 git push origin main
 
+VSコードのユーザーネーム確認
+git config user.name
+
+VSコードのユーザーネーム変更
+git config --global user.name "入れたいユーザーネーム"
+
 一緒にやる
 npm install && npm run build
 
