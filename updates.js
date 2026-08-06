@@ -15,7 +15,7 @@ const updateData = [
 	// 	items: ["engine.iniのツインターボ以上に対応", "engine.iniの複数のターボの書き出し変更","上記変更に伴いengineのグラフの調整"]
 	// },
 	{
-		version: "V0.1.7",
+		version: "V0.1.0-beta",
 		date: "2026/07/21",
 		desc: "読込み方法の変更・各種編集できるカテゴリを追加・その他",
 		items: [
