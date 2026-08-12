@@ -1011,6 +1011,9 @@ label {
 	color: #e74c3c;
 	font-weight: bold;
 }
+.info-gear.driveType-preview-box{
+	display: flex;
+}
 /* ファイナルギアの調整 */
 .final-editor-ui-title {
 	display: flex;

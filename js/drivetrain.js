@@ -82,13 +82,7 @@ window.initDrivetrainEditor = function(initialData = null) {
 	if (!container) return;
 	// ここから下はタブが開かれている（HTML要素がある）時だけ実行される描画処理
 	window.renderDrivetrainUI();
-	// INFOタブが初期選択されている場合にイラストを表示する
-	if (window.activeDrivetrainTab === 'INFO') {
-		window.updateDtInfoPreview();
-	}
-	if (window.activeDrivetrainTab === 'GEAR' || window.activeDrivetrainTab === 'FINAL') {
-		window.updateGearChart();
-	}
+	window.setDtTab(window.activeDrivetrainTab);
 	if (window.gearSetList && window.gearSetList.length > 0 && window.gearSetList[window.activeGearIdx].data) {
 		window.baseGearSnapshot = JSON.stringify(window.gearSetList[window.activeGearIdx].data.GEARS);
 	}
@@ -1001,18 +995,20 @@ window.updateDtInfoPreview = function() {
 	const layoutImg = `image/${driveType.toLowerCase()}.png`;
 
 	infoDiv.innerHTML = `
-			<div class="info-gear">
+			<div class="info-gear driveType-preview-outer-box">
 					<h2>DRIVETRAIN LAYOUT : ${driveType}</h2>
-					<div>
-							<img src="${layoutImg}" style="display: block;" 
-										onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-							<p style="display:none; color:#888;">[ イラスト: image/${driveType.toLowerCase()}.png ]</p>
-					</div>
-					<div>
-							<h3>TRACTION TYPE STATUS</h3>
-							<p>現在の設定: <strong>${driveType}</strong></p>
-							<p>馬力表示の補正係数: <strong>${factor}</strong></p>
-							<p>※この設定を変更すると「Engine」タブに表示される馬力（PS）が即座に再計算されます。</p>
+					<div class="info-gear driveType-preview-box">
+						<div>
+								<img src="${layoutImg}" style="display: block;"
+											onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+								<p style="display:none;">[ イラスト: image/${driveType.toLowerCase()}.png ]</p>
+						</div>
+						<div>
+								<h3>TRACTION TYPE STATUS</h3>
+								<p>現在の設定: <strong>${driveType}</strong></p>
+								<p>馬力表示の補正係数: <strong>${factor}</strong></p>
+								<p>※この設定を変更すると「Engine」タブに表示される馬力（PS）が即座に再計算されます。</p>
+						</div>
 					</div>
 			</div>`;
 };
