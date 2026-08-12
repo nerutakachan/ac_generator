@@ -507,9 +507,14 @@ window.updateSpecsFromPhysics = function() {
 		let baseTorque = window.getInterpolatedTorque(rpm, window.currentPowerLut);
 		let params = window.calculateEngineParams(rpm, engine, turboCount, baseTorque);
 		if (params.power > maxPowerBhp) maxPowerBhp = params.power;
-		if (params.torque > maxTorque) maxTorque = params.torque;
-	}
-	const maxPowerPs = Math.round(maxPowerBhp * 1.01387);
+			if (params.torque > maxTorque) maxTorque = params.torque;
+		}
+		// 駆動方式(TYPE)を取得し、係数を決定
+		const driveType = window.currentDrivetrainData.TRACTION.TYPE;
+		let driveFactor = 1.13; // FR (RWD) をデフォルトとする
+		if (driveType === 'FWD') driveFactor = 1.10; // FF
+		else if (driveType === 'AWD' || driveType === '4WD') driveFactor = 1.15; // 4WD
+		const maxPowerPs = Math.round(maxPowerBhp * driveFactor);
 	// 3. パワーウェイトレシオの計算
 	let pwRatio = null;
 	const currentWeight = parseFloat(window.currentSpecs.weight);
@@ -572,7 +577,14 @@ window.updateSpecsFromPhysics = function() {
             let baseTorque = window.getInterpolatedTorque(rpm, window.currentPowerLut);
             let params = window.calculateEngineParams(rpm, engine, turboCount, baseTorque);
             window.uiCarData.torqueCurve.push([rpm, Math.round(params.torque)]);
-            window.uiCarData.powerCurve.push([rpm, Math.round(params.power * 1.01387)]);
+
+            // 駆動方式による係数を適用
+            const driveType = window.currentDrivetrainData.TRACTION.TYPE;
+            let driveFactor = 1.13;
+            if (driveType === 'FWD') driveFactor = 1.10;
+            else if (driveType === 'AWD' || driveType === '4WD') driveFactor = 1.15;
+
+            window.uiCarData.powerCurve.push([rpm, Math.round(params.power * driveFactor)]);
         }
     }
 
@@ -608,12 +620,19 @@ window.updateUiCurveGraph = function() {
 	for (let rpm = 0; rpm <= limiter; rpm += 200) {
 		labels.push(rpm);
 		let baseTorque = window.getInterpolatedTorque(rpm, window.currentPowerLut);
-		// ブースト込みの数値を計算
-		let params = window.calculateEngineParams(rpm, engine, turboCount, baseTorque);
-		torqueData.push(params.torque);
-		powerData.push(params.power * 1.01387); // BHPをPS(仏馬力)に変換
-	}
-	if (window.uiCurveChartInstance) window.uiCurveChartInstance.destroy();
+        // ブースト込みの数値を計算
+        let params = window.calculateEngineParams(rpm, engine, turboCount, baseTorque);
+        torqueData.push(params.torque);
+
+        // 駆動方式による係数を適用
+        const driveType = window.currentDrivetrainData.TRACTION.TYPE;
+        let driveFactor = 1.13;
+        if (driveType === 'FWD') driveFactor = 1.10;
+        else if (driveType === 'AWD' || driveType === '4WD') driveFactor = 1.15;
+
+        powerData.push(params.power * driveFactor); 
+    }
+    if (window.uiCurveChartInstance) window.uiCurveChartInstance.destroy();
 	window.uiCurveChartInstance = new Chart(canvas, {
 		type: 'line',
 		data: {
