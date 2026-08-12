@@ -15,11 +15,11 @@ window.finalRtoList = [{
 }];
 window.gearSetList = [];
 window.activeGearIdx = 0;
-window.mainGearIdx = 0;
+window.mainGearIdx = 0; // ★追加：drivetrain.ini に書き出すメインのインデックス
 window.gearChartInstance = null;
 window.diffChartInstance = null;
 window.__lastDrivetrainData = null;
-window.activeDrivetrainTab = 'INFO'; // 開いた時の初期タブを設定
+window.activeDrivetrainTab = 'GEAR'; // 開いた時の初期タブを「ギア」に設定
 window.initDrivetrainEditor = function(initialData = null) {
 	// ★修正：データ構築を先に行うため、ログを先頭に移動
 	// console.log("⚙️ [DEBUG-DT] initDrivetrainEditor開始: 現在のギアセット数 =", window.gearSetList.length);
@@ -97,7 +97,6 @@ window.renderDrivetrainUI = function() {
 	// サブタブメニューと、コンテンツを入れる枠を作成
 	container.innerHTML = `
 		<div class="suspension-tab-menu" id="dt-subtab-menu">
-			<button class="suspension-tab-btn ${window.activeDrivetrainTab==='INFO'?'active':''}" onclick="window.setDtTab('INFO')">INFO</button>
 			<button class="suspension-tab-btn ${window.activeDrivetrainTab==='GEAR'?'active':''}" onclick="window.setDtTab('GEAR')">GEAR</button>
 			<button class="suspension-tab-btn ${window.activeDrivetrainTab==='FINAL'?'active':''}" onclick="window.setDtTab('FINAL')">FINAL</button>
 			<button class="suspension-tab-btn ${window.activeDrivetrainTab==='DIFF'?'active':''}" onclick="window.setDtTab('DIFF')">LSD</button>
@@ -269,7 +268,6 @@ window.renderDrivetrainUI = function() {
 	} else {
 		// --- ギア以外のタブ（DIFF, GEARBOX, ASSIST） ---
 		const tabMap = {
-			'INFO': ['HEADER', 'TRACTION'],
 			'DIFF': ['DIFFERENTIAL'],
 			'GEARBOX': ['GEARBOX'],
 			'ASSIST': ['AUTOCLUTCH', 'AUTOBLIP', 'DOWNSHIFT_PROFILE', 'AUTO_SHIFTER', 'CLUTCH']
@@ -326,24 +324,7 @@ window.renderDrivetrainUI = function() {
 				div.className = 'suspension-item' + (isCoord ? ' is-coordinate' : '');
 				// ★追加：SUPPORTS_SHIFTER の場合はセレクトボックスにする
 				let inputsHtml = "";
-				if (key === 'VERSION') {
-                // VERSION用のセレクトボックス
-                const options = ['1', '2', '3'];
-                if (!options.includes(val) && val !== "") options.push(val);
-                inputsHtml = `<select class="text-input" style="width: 100%; cursor: pointer;">
-                    ${options.map(opt => `<option value="${opt}" ${opt === val ? 'selected' : ''}>${opt}</option>`).join('')}
-                </select>`;
-            } else if (key === 'TYPE') {
-                // TYPE（駆動方式）用のセレクトボックス
-                const options = [
-                    { v: 'FWD', l: 'FWD (FF)' },
-                    { v: 'RWD', l: 'RWD (FR)' },
-                    { v: 'AWD', l: 'AWD (4WD)' }
-                ];
-                inputsHtml = `<select class="text-input" style="width: 100%; cursor: pointer;">
-                    ${options.map(opt => `<option value="${opt.v}" ${opt.v === val ? 'selected' : ''}>${opt.l}</option>`).join('')}
-                </select>`;
-            } else if (key === 'SUPPORTS_SHIFTER') {
+				if (key === 'SUPPORTS_SHIFTER') {
 					inputsHtml = `
 						<select class="text-input" style="width: 100%; cursor: pointer;">
 							<option value="1" ${String(val) === '1' ? 'selected' : ''}>1 (Hパターンシフター有効)</option>
@@ -369,13 +350,6 @@ window.renderDrivetrainUI = function() {
 							activeSet.data[section][key] = newVals.join(',');
 						} else {
 							activeSet.data[section][key] = inputs[0].value;
-						}
-						// 駆動方式（TYPE）が変わったら、イラストの更新と馬力の再計算を行う
-						if (key === 'TYPE') {
-								window.updateDtInfoPreview(); // イラスト更新
-								if (typeof window.updateSpecsFromPhysics === 'function') {
-										window.updateSpecsFromPhysics(); // 馬力の再計算（engine.jsの機能を再利用）
-								}
 						}
 						//デフの設定が変わったらグラフをリアルタイム更新
 						if (section === 'DIFFERENTIAL' && typeof window.updateDiffChart === 'function') {
@@ -474,7 +448,6 @@ window.setDtTab = function(tab) {
 			gearboxInfo.style.opacity = '1';
 			gearboxInfo.style.pointerEvents = 'auto';
 		}
-		
 		window.updateGearboxInfo(); // ★テキスト内容を書き込む関数を呼ぶ
 	} else if (tab === 'ASSIST') {
 		// ★追加：ASSISTタブの時は、ASSIST用の解説テキストを表示する
@@ -490,15 +463,8 @@ window.setDtTab = function(tab) {
 			gearboxInfo.style.opacity = '1';
 			gearboxInfo.style.pointerEvents = 'auto';
 		}
-		window.updateAssistInfo(); 
-		} else if (tab === 'INFO') {
-				// INFOタブの時も解説枠（gearboxInfo）を使い、イラストを表示する
-				if (gearboxInfo) {
-						gearboxInfo.style.opacity = '1';
-						gearboxInfo.style.pointerEvents = 'auto';
-				}
-				window.updateDtInfoPreview(); // イラスト表示関数を呼ぶ
-		} else {
+		window.updateAssistInfo(); // ★ASSISTのテキストを書き込む関数を呼ぶ
+	} else {
 		// ギア、デフ、ギアボックス以外の時は全部隠す（ASSISTタブなど）
 		if (gearChart) {
 			gearChart.style.opacity = '0';
@@ -513,33 +479,6 @@ window.setDtTab = function(tab) {
 			gearboxInfo.style.pointerEvents = 'none';
 		}
 	}
-};
-// --- 駆動方式のイラストプレビューを表示する関数 ---
-window.updateDtInfoPreview = function() {
-    const infoDiv = document.getElementById('gearboxInfo');
-    if (!infoDiv || window.activeDrivetrainTab !== 'INFO') return;
-
-    const activeSet = window.gearSetList[window.activeGearIdx];
-    const driveType = activeSet.data.TRACTION?.TYPE || 'RWD';
-
-    // 駆動方式に応じた画像名と説明をセット（画像は image フォルダにある前提）
-    // 例: FWDなら image/fwd_layout.png 等を表示
-    const layoutImg = `image/${driveType.toLowerCase()}.png`;
-
-    infoDiv.innerHTML = `
-        <div class="info-gear" style="text-align: center;">
-            <h2>DRIVETRAIN LAYOUT : ${driveType}</h2>
-            <div style="margin: 20px auto; width: 100%; max-width: 350px; background: #333; padding: 20px; border-radius: 10px;">
-                <img src="${layoutImg}" style="width: 100%; height: auto; display: block;" 
-                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                <p style="display:none; color:#888;">[ イラスト: image/${driveType.toLowerCase()}.png ]</p>
-            </div>
-            <div style="text-align: left; margin-top: 20px;">
-                <h3>TRACTION TYPE</h3>
-                <p>現在の設定: <strong>${driveType}</strong></p>
-                <p>※この設定は「Engine」タブに表示される馬力（PS）の補正係数にも影響します。</p>
-            </div>
-        </div>`;
 };
 // ★追加：デフ（LSD）のグラフを描画する関数
 // ★デフ（LSD）のグラフを描画する関数（1way非表示・物理演算・Y軸固定版）
