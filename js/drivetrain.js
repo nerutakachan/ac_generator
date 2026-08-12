@@ -495,12 +495,20 @@ window.setDtTab = function(tab) {
 		}
 		window.updateAssistInfo(); 
 		} else if (tab === 'INFO') {
-			// INFOタブの時も解説枠（gearboxInfo）を表示し、イラストを描画する
-			if (gearboxInfo) {
-				gearboxInfo.style.opacity = '1';
-				gearboxInfo.style.pointerEvents = 'auto';
-			}
-			window.updateDtInfoPreview();
+				// INFOタブの時も他のグラフを隠し、解説枠（gearboxInfo）を表示してイラストを描画する
+				if (gearChart) {
+					gearChart.style.opacity = '0';
+					gearChart.style.pointerEvents = 'none';
+				}
+				if (diffChart) {
+					diffChart.style.opacity = '0';
+					diffChart.style.pointerEvents = 'none';
+				}
+				if (gearboxInfo) {
+					gearboxInfo.style.opacity = '1';
+					gearboxInfo.style.pointerEvents = 'auto';
+				}
+				window.updateDtInfoPreview();
 		} else {
 		// ギア、デフ、ギアボックス以外の時は全部隠す（ASSISTタブなど）
 		if (gearChart) {
