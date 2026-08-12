@@ -19,7 +19,7 @@ window.mainGearIdx = 0; // ★追加：drivetrain.ini に書き出すメイン�
 window.gearChartInstance = null;
 window.diffChartInstance = null;
 window.__lastDrivetrainData = null;
-window.activeDrivetrainTab = 'GEAR'; // 開いた時の初期タブを「ギア」に設定
+window.activeDrivetrainTab = 'INFO';// 開いた時の初期タブを設定
 window.initDrivetrainEditor = function(initialData = null) {
 	// ★修正：データ構築を先に行うため、ログを先頭に移動
 	// console.log("⚙️ [DEBUG-DT] initDrivetrainEditor開始: 現在のギアセット数 =", window.gearSetList.length);
@@ -82,6 +82,10 @@ window.initDrivetrainEditor = function(initialData = null) {
 	if (!container) return;
 	// ここから下はタブが開かれている（HTML要素がある）時だけ実行される描画処理
 	window.renderDrivetrainUI();
+	// INFOタブが初期選択されている場合にイラストを表示する
+	if (window.activeDrivetrainTab === 'INFO') {
+		window.updateDtInfoPreview();
+	}
 	if (window.activeDrivetrainTab === 'GEAR' || window.activeDrivetrainTab === 'FINAL') {
 		window.updateGearChart();
 	}
@@ -97,6 +101,7 @@ window.renderDrivetrainUI = function() {
 	// サブタブメニューと、コンテンツを入れる枠を作成
 	container.innerHTML = `
 		<div class="suspension-tab-menu" id="dt-subtab-menu">
+			<button class="suspension-tab-btn ${window.activeDrivetrainTab==='INFO'?'active':''}" onclick="window.setDtTab('INFO')">INFO</button>
 			<button class="suspension-tab-btn ${window.activeDrivetrainTab==='GEAR'?'active':''}" onclick="window.setDtTab('GEAR')">GEAR</button>
 			<button class="suspension-tab-btn ${window.activeDrivetrainTab==='FINAL'?'active':''}" onclick="window.setDtTab('FINAL')">FINAL</button>
 			<button class="suspension-tab-btn ${window.activeDrivetrainTab==='DIFF'?'active':''}" onclick="window.setDtTab('DIFF')">LSD</button>
@@ -268,6 +273,7 @@ window.renderDrivetrainUI = function() {
 	} else {
 		// --- ギア以外のタブ（DIFF, GEARBOX, ASSIST） ---
 		const tabMap = {
+			'INFO': ['HEADER', 'TRACTION'],
 			'DIFF': ['DIFFERENTIAL'],
 			'GEARBOX': ['GEARBOX'],
 			'ASSIST': ['AUTOCLUTCH', 'AUTOBLIP', 'DOWNSHIFT_PROFILE', 'AUTO_SHIFTER', 'CLUTCH']
@@ -324,7 +330,24 @@ window.renderDrivetrainUI = function() {
 				div.className = 'suspension-item' + (isCoord ? ' is-coordinate' : '');
 				// ★追加：SUPPORTS_SHIFTER の場合はセレクトボックスにする
 				let inputsHtml = "";
-				if (key === 'SUPPORTS_SHIFTER') {
+				if (key === 'VERSION') {
+				// VERSION用のセレクトボックス (3まで対応) [2]
+				const options = ['1', '2', '3'];
+				if (!options.includes(String(val)) && val !== "") options.push(val);
+				inputsHtml = `<select class="text-input" style="width: 100%; cursor: pointer;">
+					${options.map(opt => `<option value="${opt}" ${String(opt) === String(val) ? 'selected' : ''}>${opt}</option>`).join('')}
+				</select>`;
+				} else if (key === 'TYPE') {
+					// TYPE（駆動方式）用のセレクトボックス [3]
+					const options = [
+						{ v: 'FWD', l: 'FWD (FF)' },
+						{ v: 'RWD', l: 'RWD (FR/MR/RR)' },
+						{ v: 'AWD', l: 'AWD (4WD)' }
+					];
+					inputsHtml = `<select class="text-input" style="width: 100%; cursor: pointer;">
+						${options.map(opt => `<option value="${opt.v}" ${opt.v === val ? 'selected' : ''}>${opt.l}</option>`).join('')}
+					</select>`;
+				} else if (key === 'SUPPORTS_SHIFTER') {
 					inputsHtml = `
 						<select class="text-input" style="width: 100%; cursor: pointer;">
 							<option value="1" ${String(val) === '1' ? 'selected' : ''}>1 (Hパターンシフター有効)</option>
@@ -358,6 +381,13 @@ window.renderDrivetrainUI = function() {
 						//ギアボックスの設定が変わったらテキスト枠を更新（静的テキストですが念のため）
 						if (section === 'GEARBOX' && typeof window.updateGearboxInfo === 'function') {
 							window.updateGearboxInfo();
+						}
+						// 駆動方式（TRACTION）が変わったら、イラスト更新と馬力の再計算を行う [4]
+						if (section === 'TRACTION') {
+							window.updateDtInfoPreview();
+							if (typeof window.updateSpecsFromPhysics === 'function') {
+								window.updateSpecsFromPhysics();
+							}
 						}
 					});
 				});
@@ -463,8 +493,15 @@ window.setDtTab = function(tab) {
 			gearboxInfo.style.opacity = '1';
 			gearboxInfo.style.pointerEvents = 'auto';
 		}
-		window.updateAssistInfo(); // ★ASSISTのテキストを書き込む関数を呼ぶ
-	} else {
+		window.updateAssistInfo(); 
+		} else if (tab === 'INFO') {
+			// INFOタブの時も解説枠（gearboxInfo）を表示し、イラストを描画する
+			if (gearboxInfo) {
+				gearboxInfo.style.opacity = '1';
+				gearboxInfo.style.pointerEvents = 'auto';
+			}
+			window.updateDtInfoPreview();
+		} else {
 		// ギア、デフ、ギアボックス以外の時は全部隠す（ASSISTタブなど）
 		if (gearChart) {
 			gearChart.style.opacity = '0';
@@ -939,4 +976,35 @@ window.parseFinalRto = function(text) {
 	if (window.activeDrivetrainTab === 'FINAL') {
 		window.renderDrivetrainUI();
 	}
+};
+// --- 駆動方式のイラストプレビューを表示する関数 ---
+window.updateDtInfoPreview = function() {
+	const infoDiv = document.getElementById('gearboxInfo');
+	if (!infoDiv || window.activeDrivetrainTab !== 'INFO') return;
+
+	const activeSet = window.gearSetList[window.activeGearIdx];
+	const driveType = activeSet.data.TRACTION?.TYPE || 'RWD';
+	
+	// 駆動方式による馬力補正係数の事実（engine.js [6] に準拠）
+	let factor = "1.13";
+	if (driveType === 'FWD') factor = "1.10";
+	else if (driveType === 'AWD') factor = "1.15";
+
+	const layoutImg = `image/${driveType.toLowerCase()}.png`;
+
+	infoDiv.innerHTML = `
+			<div class="info-gear">
+					<h2>DRIVETRAIN LAYOUT : ${driveType}</h2>
+					<div>
+							<img src="${layoutImg}" style="display: block;" 
+										onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+							<p style="display:none; color:#888;">[ イラスト: image/${driveType.toLowerCase()}.png ]</p>
+					</div>
+					<div>
+							<h3>TRACTION TYPE STATUS</h3>
+							<p>現在の設定: <strong>${driveType}</strong></p>
+							<p>馬力表示の補正係数: <strong>${factor}</strong></p>
+							<p>※この設定を変更すると「Engine」タブに表示される馬力（PS）が即座に再計算されます。</p>
+					</div>
+			</div>`;
 };
