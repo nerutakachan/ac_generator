@@ -2,9 +2,9 @@
 window.currentEngineData = null;
 // ★共通化：駆動方式に応じた補正係数を一元管理する
 window.getDriveFactor = function(driveType) {
-	if (driveType === 'FWD') return 1.10;
-	if (driveType === 'AWD' || driveType === '4WD') return 1.15;
-	return 1.13; // デフォルト（RWD）
+	if (driveType === 'FWD') return 1 / 1.10; // FWD (FF) 
+	if (driveType === 'AWD' || driveType === '4WD') return 1 / 1.15;
+	return 1 / 1.13;
 };
 window.currentPowerLut = [];
 window.currentPowerLutRaw = "";
