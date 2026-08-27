@@ -1013,6 +1013,45 @@ label {
 }
 .info-gear.driveType-preview-box{
 	display: flex;
+	gap: 1rem;
+}
+.driveType-preview-box .driveType-preview-img-box{
+	width: 20%;
+}
+.driveType-preview-text-box h3{
+	font-size: 1.2rem;
+}
+.driveType-preview-img-box{
+	padding: 1rem;
+	border-radius: 0.3em;
+	background-color: #ffffff57;
+}
+.driveType-preview-info-box{
+	padding: 1rem;
+	border: 1px #fff solid;
+	border-radius: 0.3em;
+}
+.driveType-preview-info-inner-box{
+	width: 40%;
+	margin-bottom: 0.5em;
+}
+.driveType-preview-info-inner-box p:not(:last-of-type){
+	margin-bottom: 0.5em;
+}
+.driveType-preview-info-inner-box p{
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+.driveType-preview-info-inner-box p strong{
+	padding: 0.2em;
+	width: 3.5em;
+	text-align: center;
+	border: 1px solid #fff;
+	line-height: 1;
+	border-radius: 0.2em;
+	background-color: #fff;
+	color: #333;
 }
 /* ファイナルギアの調整 */
 .final-editor-ui-title {

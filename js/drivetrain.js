@@ -998,16 +998,20 @@ window.updateDtInfoPreview = function() {
 			<div class="info-gear driveType-preview-outer-box">
 					<h2>DRIVETRAIN LAYOUT : ${driveType}</h2>
 					<div class="info-gear driveType-preview-box">
-						<div>
+						<div class="driveType-preview-img-box">
 								<img src="${layoutImg}" style="display: block;"
 											onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
 								<p style="display:none;">[ イラスト: image/${driveType.toLowerCase()}.png ]</p>
 						</div>
-						<div>
+						<div class="driveType-preview-text-box">
 								<h3>TRACTION TYPE STATUS</h3>
-								<p>現在の設定: <strong>${driveType}</strong></p>
-								<p>馬力表示の補正係数: <strong>${factor}</strong></p>
-								<p>※この設定を変更すると「Engine」タブに表示される馬力（PS）が即座に再計算されます。</p>
+								<div class="driveType-preview-info-box">
+									<div class="driveType-preview-info-inner-box">
+										<p class="driveType-preview-new-data">現在の設定: <strong>${driveType}</strong></p>
+										<p class="driveType-preview-ps-factor">馬力表示の補正係数: <strong>${factor}</strong></p>
+									</div>
+									<p>※この設定を変更すると「Engine」タブに表示される馬力（PS）が即座に再計算されます。</p>
+								</div>
 						</div>
 					</div>
 			</div>`;
