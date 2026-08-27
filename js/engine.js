@@ -1,5 +1,11 @@
 // js/engine.js
 window.currentEngineData = null;
+// ★共通化：駆動方式に応じた補正係数を一元管理する
+window.getDriveFactor = function(driveType) {
+	if (driveType === 'FWD') return 1.10;
+	if (driveType === 'AWD' || driveType === '4WD') return 1.15;
+	return 1.13; // デフォルト（RWD）
+};
 window.currentPowerLut = [];
 window.currentPowerLutRaw = "";
 window.ctrlTurboData = {};
@@ -259,6 +265,10 @@ window.updateEngineGraph = function() {
 	const turboCount = turboCountSelect ? parseInt(turboCountSelect.value) : 1;
 	const limiter = parseFloat(engine.ENGINE_DATA?.LIMITER) || 8000;
 	const BHP_CONSTANT = 7120.8;
+	// ★自動連動：現在アクティブなギアセット（drivetrain.js）から駆動方式（TYPE）を自動で読み取る
+		const activeSet = window.gearSetList && window.gearSetList[window.activeGearIdx] ? window.gearSetList[window.activeGearIdx].data : null;
+		const driveType = activeSet?.TRACTION?.TYPE || window.currentDrivetrainData?.TRACTION?.TYPE || 'RWD';
+		const driveFactor = window.getDriveFactor(driveType);
 	const labels = [],
 		torNa = [],
 		pwrNa = [],
@@ -269,10 +279,10 @@ window.updateEngineGraph = function() {
 		// 補間計算
 		let baseTorque = window.getInterpolatedTorque(rpm, window.currentPowerLut);
 		torNa.push(baseTorque);
-		pwrNa.push((baseTorque * rpm) / BHP_CONSTANT);
+		pwrNa.push(((baseTorque * rpm) / BHP_CONSTANT) * driveFactor);
 		const turboParams = window.calculateEngineParams(rpm, engine, turboCount, baseTorque);
 		torTu.push(turboParams.torque);
-		pwrTu.push(turboParams.power);
+		pwrTu.push(turboParams.power * driveFactor);
 	}
 	// 4. チャート再描画処理
 	if (window.engineChartInstance) {
@@ -510,11 +520,10 @@ window.updateSpecsFromPhysics = function() {
 			if (params.torque > maxTorque) maxTorque = params.torque;
 		}
 		// 駆動方式(TYPE)を取得し、係数を決定
-		const driveType = window.currentDrivetrainData.TRACTION.TYPE;
-		let driveFactor = 1.13; // FR (RWD) をデフォルトとする
-		if (driveType === 'FWD') driveFactor = 1.10; // FF
-		else if (driveType === 'AWD' || driveType === '4WD') driveFactor = 1.15; // 4WD
-		const maxPowerPs = Math.round(maxPowerBhp * driveFactor);
+	const activeSet = window.gearSetList && window.gearSetList[window.activeGearIdx] ? window.gearSetList[window.activeGearIdx].data : null;
+	const driveType = activeSet?.TRACTION?.TYPE || window.currentDrivetrainData?.TRACTION?.TYPE || 'RWD';
+	const driveFactor = window.getDriveFactor(driveType); 
+	const maxPowerPs = Math.round(maxPowerBhp * driveFactor);
 	// 3. パワーウェイトレシオの計算
 	let pwRatio = null;
 	const currentWeight = parseFloat(window.currentSpecs.weight);
@@ -625,11 +634,10 @@ window.updateUiCurveGraph = function() {
         torqueData.push(params.torque);
 
         // 駆動方式による係数を適用
-        const driveType = window.currentDrivetrainData.TRACTION.TYPE;
-        let driveFactor = 1.13;
-        if (driveType === 'FWD') driveFactor = 1.10;
-        else if (driveType === 'AWD' || driveType === '4WD') driveFactor = 1.15;
-
+        // ★自動連動：現在エディターで編集中のギアセットから駆動方式を自動で引き出す
+    	const activeSet = window.gearSetList && window.gearSetList[window.activeGearIdx] ? window.gearSetList[window.activeGearIdx].data : null;
+    	const driveType = activeSet?.TRACTION?.TYPE || window.currentDrivetrainData?.TRACTION?.TYPE || 'RWD';
+    	const driveFactor = window.getDriveFactor(driveType);
         powerData.push(params.power * driveFactor); 
     }
     if (window.uiCurveChartInstance) window.uiCurveChartInstance.destroy();

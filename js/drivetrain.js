@@ -986,11 +986,11 @@ window.updateDtInfoPreview = function() {
 
 	const activeSet = window.gearSetList[window.activeGearIdx];
 	const driveType = activeSet.data.TRACTION?.TYPE || 'RWD';
-	
-	// 駆動方式による馬力補正係数の事実（engine.js [6] に準拠）
-	let factor = "1.13";
-	if (driveType === 'FWD') factor = "1.10";
-	else if (driveType === 'AWD') factor = "1.15";
+	//engine.js に定義した共通ルールから正確な補正数値を自動で取得して文字にする
+    let factor = "1.13";
+    if (typeof window.getDriveFactor === 'function') {
+        factor = window.getDriveFactor(driveType).toFixed(2);
+    }
 
 	const layoutImg = `image/${driveType.toLowerCase()}.png`;
 
