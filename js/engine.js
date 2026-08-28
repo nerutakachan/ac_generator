@@ -1,11 +1,18 @@
 // js/engine.js
 window.currentEngineData = null;
 // ★共通化：駆動方式に応じた補正係数を一元管理する
+// window.getDriveFactor = function(driveType) {
+// 	if (driveType === 'FWD') return 1 / 1.10; // FWD (FF) 
+// 	if (driveType === 'AWD' || driveType === '4WD') return 1 / 1.15;
+// 	return 1 / 1.13;
+// };
+//下記はアセットコルサがホイール出力にてデータを扱っているため、ホイール出力から逆算してエンジン出力を表記する補正
 window.getDriveFactor = function(driveType) {
-	if (driveType === 'FWD') return 1 / 1.10; // FWD (FF) 
-	if (driveType === 'AWD' || driveType === '4WD') return 1 / 1.15;
-	return 1 / 1.13;
+	if (driveType === 'FWD') return 1.10;
+	if (driveType === 'AWD' || driveType === '4WD') return 1.15;
+	return 1.13; // デフォルト（RWD）
 };
+
 window.currentPowerLut = [];
 window.currentPowerLutRaw = "";
 window.ctrlTurboData = {};
