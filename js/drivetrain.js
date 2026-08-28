@@ -361,7 +361,7 @@ window.renderDrivetrainUI = function() {
 				// ★変更：inputタグだけでなく、selectタグも取得するように変更
 				const inputs = div.querySelectorAll('input, select');
 				inputs.forEach(input => {
-					input.addEventListener('input', () => {
+					input.addEventListener(input.tagName === 'SELECT' ? 'change' : 'input', () => {
 						if (isCoord) {
 							const newVals = Array.from(inputs).map(i => i.value);
 							activeSet.data[section][key] = newVals.join(',');
