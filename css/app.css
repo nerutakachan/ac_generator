@@ -478,6 +478,9 @@ label {
 	display: flex;
 	gap: 0.5em;
 }
+.tire-switch_box{
+	display: none;
+}
 .tyre-input-fy {
 	background-color: rgba(255, 0, 255, 0.08); /* 薄いマゼンタの背景 */
 	border-radius: 4px;
@@ -574,7 +577,7 @@ label {
 	border: none;
 	justify-content: space-between;
 	gap: 0.5rem;
-	min-height: 576px;
+	/* min-height: 576px; */
 }
 .tab-content .engine-editor_box {
 	padding-left: 0.5rem;
@@ -661,8 +664,20 @@ label {
 	display: none;
 }
 /* ギア */
-.engine-section {
+.engine-preview-container{
+	display: flex;
 	width: 100%;
+	height: 100%;
+}
+.engine-section {
+	display: flex;
+	width: 100%;
+}
+canvas#engineChart{
+	aspect-ratio: 16 / 9;
+	max-width: 760px;
+	width: 100%!important;
+	height: auto!important;
 }
 /* .workbench-control-panel,
 #gear-preview-container .workbench-control-panel {
@@ -689,6 +704,15 @@ label {
 	line-height: 1.5em;
 	display: block;
 	box-shadow: inset -2px -2px 1px 0px rgba(71, 71, 71, 0.7), inset 2px 2px 2px 0px rgba(255, 255, 255, 0.7);
+}
+.add-set-btn:hover,
+.gear-set-item button:hover {
+	box-shadow: inset -1px -1px 1px 0px rgba(71, 71, 71, 0.7), inset 1px 1px 1px 0px rgba(255, 255, 255, 0.7);
+}
+.add-set-btn:active,
+.gear-set-item button:active {
+	box-shadow: inset -2px -2px 2px 0px rgba(75, 75, 75, 0.3), inset 1px 1px 2px 1px rgba(75, 75, 75, 0.7);
+	filter: brightness(0.8);
 }
 .add-set-btn {
 	margin: 0 auto;
@@ -1604,11 +1628,15 @@ label {
 .indicator_box .tyre-peak-monitor{
 	font-family: monospace;
 	color: #fff;
-	padding: 10px;
+	padding: 10px 0;
 	font-size: 0.8em;
 }
 .indicator_box .tyre-peak-monitor h4{
 	font-size: 0.9em;
+	margin-bottom: 0.7em;
+}
+.indicator_box .tyre-peak-monitor p:not(:last-of-type){
+	margin-bottom: 0.5em;
 }
 /* =========================================
 	タイヤエディター (tires.js) 用の追加スタイル
