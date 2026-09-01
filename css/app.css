@@ -675,7 +675,7 @@ label {
 }
 canvas#engineChart{
 	aspect-ratio: 16 / 9;
-	max-width: 760px;
+	/* max-width: 760px; */
 	width: 100%!important;
 	height: auto!important;
 }
