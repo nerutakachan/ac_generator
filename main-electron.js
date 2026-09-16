@@ -1916,3 +1916,40 @@ ipcMain.handle('copy-engine-files', async (event, donorPath, targetPath) => {
 		};
 	}
 });
+
+// 3Dモデルスワップ
+ipcMain.handle('swap-car-kn5', async (event, targetPath, donorPath) => {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    
+    // 1. old-model バックアップフォルダの作成
+    const backupDir = path.join(targetPath, 'old-model');
+    if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
+
+    const targetName = path.basename(targetPath);
+    const donorName = path.basename(donorPath);
+
+    // 2. 既存の .kn5 を old-model へ退避
+    const currentKn5Files = fs.readdirSync(targetPath).filter(f => f.toLowerCase().endsWith('.kn5') && f.toLowerCase() !== 'collider.kn5');
+    currentKn5Files.forEach(file => {
+      fs.renameSync(path.join(targetPath, file), path.join(backupDir, file));
+    });
+
+    // 3. ドナーから .kn5 をコピーし、移植先の車名に合わせてリネーム
+    const donorKn5Files = fs.readdirSync(donorPath).filter(f => f.toLowerCase().endsWith('.kn5') && f.toLowerCase() !== 'collider.kn5');
+    if (donorKn5Files.length === 0) {
+      return { success: false, error: 'ドナー車両に .kn5 ファイルが見つかりませんでした。' };
+    }
+
+    donorKn5Files.forEach(file => {
+      // メインモデルの場合はターゲット車両名にリネーム
+      const newFileName = file.toLowerCase() === `${donorName.toLowerCase()}.kn5` ? `${targetName}.kn5` : file;
+      fs.copyFileSync(path.join(donorPath, file), path.join(targetPath, newFileName));
+    });
+
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});

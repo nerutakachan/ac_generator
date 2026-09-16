@@ -57,4 +57,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
 	renameCarKn5: (carPath, newName) => ipcRenderer.invoke('rename-car-kn5', carPath, newName),
 	cleanupDonorData: (donorPath) => ipcRenderer.invoke('cleanup-donor-data', donorPath),
 	swapCarSound: (targetPath, donorPath) => ipcRenderer.invoke('swap-car-sound', targetPath, donorPath),
+	swapCarKn5: (targetPath, donorPath) => ipcRenderer.invoke('swap-car-kn5', targetPath, donorPath),
 });

@@ -1340,8 +1340,9 @@ document.addEventListener('drop', async (e) => {
 // 拡張版：車両リストを全てのプルダウン（メイン・エンジン・サウンド）に同期する関数
 window.refreshCarList = async function(acRoot) {
     const carSelect = document.getElementById('ac-car-select');
-    const engineSelect = document.getElementById('engine-select'); // 今回のHTML調整で追加されたID [cite: 7]
-    const soundSelect = document.getElementById('sound-select');   // 今回のHTML調整で追加されたID [cite: 7]
+    const engineSelect = document.getElementById('engine-select');
+    const soundSelect = document.getElementById('sound-select');
+		const kn5Select = document.getElementById('kn5-select'); // ★追加: モデルスワップ用
     const acPathInput = document.getElementById('ac-root-path');
 
     if (!carSelect || !acRoot) return;
@@ -1369,6 +1370,7 @@ window.refreshCarList = async function(acRoot) {
             carSelect.appendChild(opt.cloneNode(true));
             if (engineSelect) engineSelect.appendChild(opt.cloneNode(true));
             if (soundSelect) soundSelect.appendChild(opt.cloneNode(true));
+						if (kn5Select) kn5Select.appendChild(opt.cloneNode(true)); 
         });
         console.log("✅ [System] 全ての車両リストを自動更新・同期しました。");
     }

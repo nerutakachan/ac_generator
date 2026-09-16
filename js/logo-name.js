@@ -590,3 +590,34 @@ if (engineSwapBtn) {
 		alert(`✨ ${donorName} からのエンジン・サウンド移植とデータ同期が完了しました！`);
 	});
 }
+// 3Dモデルスワップ
+const kn5SwapBtn = document.getElementById('kn5-swap_btn');
+if (kn5SwapBtn) {
+  kn5SwapBtn.addEventListener('click', async () => {
+    const donorName = document.getElementById('kn5-select').value;
+    if (!donorName || donorName.startsWith('--')) return alert("移植元（ドナー）を選択してください");
+
+    const currentDataPath = window.currentDataFolderPath;
+    if (!currentDataPath) return alert("先に車両を読み込んでください");
+
+    const carRoot = currentDataPath.replace(/[\/]data$/i, '');
+    const lastSlashIndex = Math.max(carRoot.lastIndexOf('\\'), carRoot.lastIndexOf('/'));
+    const carsFolder = carRoot.substring(0, lastSlashIndex);
+    const donorPath = carsFolder + "\\" + donorName;
+
+    if (confirm(`「${donorName}」の3Dモデル（.kn5）を移植しますか？\n（元のモデルは 'old-model' に保存されます）`)) {
+      const res = await window.electronAPI.swapCarKn5(carRoot, donorPath);
+      if (res.success) {
+        // データの再読み込みと3Dモデルの再展開・表示更新
+        const reloadRes = await window.electronAPI.readCarFolderData(carRoot);
+        if (reloadRes.success) {
+          const importModule = await import('./import.js');
+          await importModule.handleMultiFileUpload(reloadRes.files);
+        }
+        alert(`✨ ${donorName} からの3Dモデル移植が完了しました！`);
+      } else {
+        alert("スワップ失敗: " + res.error);
+      }
+    }
+  });
+}
