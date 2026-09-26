@@ -1,14 +1,13 @@
 //おまとめテスト
 window.currentProject = {
-	projectName: "名称未設定",
-	environment: {
-		model_path: "",
-		data_folder: ""
-	},
-	files: {} // ここに各iniファイルの内容が { suspensions: { currentData: {...} }, ... } の形で入る
+  projectName: "名称未設定",
+  environment: { model_path: "", data_folder: "" },
+  files: {} // ここに各iniファイルの内容が { suspensions: { currentData: {...} }, ... } の形で入る
 };
-// プロジェクトを開いた時に実行
-window.electronAPI.setProjectLoaded(true);
+
+// プロジェクトを開いた時に実行（初期状態は未編集のため false をセット）
+window.electronAPI.setProjectLoaded(false);
+
 // プロジェクトを閉じた時（または終了時）に実行
 // window.electronAPI.setProjectLoaded(false);
 // window.currentProjectPath = ""; // 現在開いているプロジェクトのパス
@@ -888,6 +887,9 @@ document.addEventListener('DOMContentLoaded', () => {
 					if (window.modifiedStatus) {
 						Object.keys(window.modifiedStatus).forEach(k => window.modifiedStatus[k] = false);
 					}
+					if (window.electronAPI && window.electronAPI.setProjectLoaded) {
+						window.electronAPI.setProjectLoaded(false);
+					}
 					window.updateProjectSidebar(); // サイドバーを再描画して「*」を消す
 					btnSaveProject.textContent = "✅ 保存完了";
 					// 履歴リストを更新
@@ -1523,24 +1525,25 @@ if (btnExecuteCreation) {
 		const cloneRes = await window.electronAPI.cloneCarFolder(sourcePath, targetPath);
 		if (cloneRes.success) {
 			// サウンド：(新しいパス, 元の名前, 新しい名前)
-			await window.fixCarSound(targetPath, selectedCar, newCarName);
+		await window.fixCarSound(targetPath, selectedCar, newCarName);
 			// --- [繋がりの復元] LIVE SYNCの対象外であるマイドキュメント側も初期化する ---
 			if (window.electronAPI.readViewIni && window.electronAPI.saveViewIni) {
-					// 1. まず複製元（selectedCar）の view.ini を読み込む
-					const viewRes = await window.electronAPI.readViewIni(selectedCar);
-					
-					if (viewRes.success) {
-							// 2. 成功したら、新しい車名で保存（フォルダも自動作成されます）
-							await window.electronAPI.saveViewIni(newCarName, viewRes.content);
-							console.log("✅ [新規作成] マイドキュメント側の視点設定を複製しました。");
-					} else {
-							// 元の車に設定がない場合は、デフォルト値でフォルダだけ先に作っておく
-							const defaultContent = "[CAMERA]\nON_BOARD_PITCH_ANGLE=0\nON_BOARD_YAW_ANGLE=0\n\n[DRIVER_EYES_POSITION]\nDRIVEREYES=0, 1.0, 0";
-							await window.electronAPI.saveViewIni(newCarName, defaultContent);
-							console.log("⚠️ [新規作成] 複製元に設定がないため、デフォルト値でフォルダを作成しました。");
-					}
+				// 1. まず複製元（selectedCar）の view.ini を読み込む
+				const viewRes = await window.electronAPI.readViewIni(selectedCar);
+				if (viewRes.success) {
+					// 2. 成功したら、新しい車名で保存（フォルダも自動作成されます）
+					await window.electronAPI.saveViewIni(newCarName, viewRes.content);
+					console.log("✅ [新規作成] マイドキュメント側の視点設定を複製しました。");
+				} else {
+					// 元の車に設定がない場合は、デフォルト値でフォルダだけ先に作っておく
+					const defaultContent = "[CAMERA]\nON_BOARD_PITCH_ANGLE=0\nON_BOARD_YAW_ANGLE=0\n\n[DRIVER_EYES_POSITION]\nDRIVEREYES=0, 1.0, 0";
+					await window.electronAPI.saveViewIni(newCarName, defaultContent);
+					console.log("⚠ [新規作成] 複製元に設定がないため、デフォルト値でフォルダを作成しました。");
+				}
 			}
 			await loadCarToEditor(targetPath, newCarName);
+			const btnSave = document.getElementById('btn-save-project');
+			if (btnSave) btnSave.click();
 		} else {
 			alert("複製エラー: " + cloneRes.error);
 		}
@@ -1565,6 +1568,8 @@ if (btnEditSelected) {
 		}
 		// console.log("📂 [Debug] 直接読込先:", carFullPath);
 		await loadCarToEditor(carFullPath, selectedCar);
+		const btnSave = document.getElementById('btn-save-project');
+		if (btnSave) btnSave.click();
 	});
 }
 // --- 3. アプリ起動時に記憶していたパスを復元する ---

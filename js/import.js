@@ -985,17 +985,20 @@ document.addEventListener('input', (e) => {
 		'section-5': 'cameras'
 	};
 	// 1. まず通常の ID マップでフラグを立てる
-	const key = idMap[content.id];
-	if (key && window.modifiedStatus) {
-		window.modifiedStatus[key] = true;
-		if (key === 'drivetrain' && window.activeDrivetrainTab === 'FINAL') {
-			window.modifiedStatus.final = true;
-		}
-		// ★ここを追加：変更を検知した瞬間にサイドバーの表示（*マーク）を更新する
-		if (typeof window.updateProjectSidebar === 'function') {
-			window.updateProjectSidebar();
-		}
-	}
+    const key = idMap[content.id];
+    if (key && window.modifiedStatus) {
+      window.modifiedStatus[key] = true;
+      if (key === 'drivetrain' && window.activeDrivetrainTab === 'FINAL') {
+        window.modifiedStatus.final = true;
+      }
+      // ★ここを追加：変更を検知した瞬間にサイドバーの表示（*マーク）を更新する
+      if (typeof window.updateProjectSidebar === 'function') {
+        window.updateProjectSidebar();
+      }
+      if (window.electronAPI && window.electronAPI.setProjectLoaded) {
+        window.electronAPI.setProjectLoaded(true);
+      }
+    }
 	// 2. 特殊なケース（power.lut のテキストエリア）を個別にチェック
 	// これを if(key) の外に出すことで、確実に検知させます
 	if (target.id === 'power-lut-textarea') {

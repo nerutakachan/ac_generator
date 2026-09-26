@@ -398,16 +398,18 @@ document.getElementById('car-name-edit').addEventListener('click', async () => {
 			// --- [PHASE 5] サウンド設定の自動修正 ---
 			await window.fixCarSound(res.newPath, oldName, newName);
 			// --- [PHASE 6] 完了通知（モーダル） ---
-			if (typeof window.showCustomPopup === 'function') {
-				window.showCustomPopup(`✅ 車両名を「<strong>${newName}</strong>」に変更しました。<br>サウンド設定も自動修正されました。`);
-			} else {
-				alert(`車両名を「${newName}」に変更しました。`);
-			}
-		} else {
-			alert("フォルダのリネームに失敗しました: " + res.error);
-		}
-	}
-});
+        if (typeof window.showCustomPopup === 'function') {
+          window.showCustomPopup(`✅ 車両名を「<strong>${newName}</strong>」に変更しました。<br>サウンド設定も自動修正されました。`);
+        } else {
+          alert(`車両名を「${newName}」に変更しました。`);
+        }
+        const btnSave = document.getElementById('btn-save-project');
+        if (btnSave) btnSave.click();
+      } else {
+        alert("フォルダのリネームに失敗しました: " + res.error);
+      }
+    }
+  });
 // ✅ 追加：「エンジンのみ」移植する新しいボタンの処理
 const engineOnlySwapBtn = document.getElementById('engine-only-swap_btn');
 if (engineOnlySwapBtn) {
