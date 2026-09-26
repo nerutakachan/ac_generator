@@ -15,6 +15,14 @@ const updateData = [
 	// 	items: ["engine.iniのツインターボ以上に対応", "engine.iniの複数のターボの書き出し変更","上記変更に伴いengineのグラフの調整"]
 	// },
 	{
+		version: "V0.3.1-beta",
+		date: "2026/09/26",
+		desc: "不具合修正",
+		items: [
+			{ title: "ボディースワップ", list: ["スキンの同時移植していなかったのを修正"] }
+		]
+	},
+	{
 		version: "V0.3.0-beta",
 		date: "2026/09/26",
 		desc: "不具合修正・機能追加",
