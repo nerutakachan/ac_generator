@@ -1962,27 +1962,46 @@ ipcMain.handle('swap-car-kn5', async (event, targetPath, donorPath) => {
   try {
     const fs = require('fs');
     const path = require('path');
-
     const targetName = path.basename(targetPath);
     const donorName = path.basename(donorPath);
 
-    // 1. 既存の .kn5 を _backup/history/kn5 へ退避
+    // 1. 既存の .kn5 を _backup/history/kn5 へ退避 [3, 4]
     const currentKn5Files = fs.readdirSync(targetPath).filter(f => f.toLowerCase().endsWith('.kn5') && f.toLowerCase() !== 'collider.kn5');
     currentKn5Files.forEach(file => {
-      backupCarAsset(targetPath, 'kn5', file, false);
+      backupCarAsset(targetPath, 'kn5', file, false); // 退避 [1, 4]
     });
 
-    // 3. ドナーから .kn5 をコピーし、移植先の車名に合わせてリネーム
+    // 2. ドナーから .kn5 をコピーしてリネーム [5]
     const donorKn5Files = fs.readdirSync(donorPath).filter(f => f.toLowerCase().endsWith('.kn5') && f.toLowerCase() !== 'collider.kn5');
     if (donorKn5Files.length === 0) {
       return { success: false, error: 'ドナー車両に .kn5 ファイルが見つかりませんでした。' };
     }
 
     donorKn5Files.forEach(file => {
-      // メインモデルの場合はターゲット車両名にリネーム
       const newFileName = file.toLowerCase() === `${donorName.toLowerCase()}.kn5` ? `${targetName}.kn5` : file;
       fs.copyFileSync(path.join(donorPath, file), path.join(targetPath, newFileName));
     });
+
+    // ★ 3. 既存の skins/ フォルダのバックアップと完全置換
+    const targetSkinsPath = path.join(targetPath, 'skins');
+    const donorSkinsPath = path.join(donorPath, 'skins');
+
+    if (fs.existsSync(targetSkinsPath)) {
+      // 1. _backup/history/skins へ既存スキンを安全に保護
+      const backupSkinsDir = path.join(targetPath, '_backup', 'history', 'skins');
+      if (!fs.existsSync(backupSkinsDir)) fs.mkdirSync(backupSkinsDir, { recursive: true });
+      fs.cpSync(targetSkinsPath, backupSkinsDir, { recursive: true });
+      console.log("📂 [skins] 既存のスキンデータを '_backup/history/skins' に保護しました。");
+
+      // 2. ターゲットの既存 skins フォルダを一度削除（旧スキンが残るのを防ぐ）
+      fs.rmSync(targetSkinsPath, { recursive: true, force: true });
+    }
+
+    // 3. ドナー車両から skins/ フォルダをまるごと新規コピー・移植
+    if (fs.existsSync(donorSkinsPath)) {
+      fs.cpSync(donorSkinsPath, targetSkinsPath, { recursive: true });
+      console.log("🚚 [skins] ドナー車両から skins フォルダを移植・置換しました。");
+    }
 
     return { success: true };
   } catch (err) {

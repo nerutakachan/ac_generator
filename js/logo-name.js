@@ -618,9 +618,14 @@ if (kn5SwapBtn) {
         // データの再読み込みと3Dモデルの再展開・表示更新
         const reloadRes = await window.electronAPI.readCarFolderData(carRoot);
         if (reloadRes.success) {
-          const importModule = await import('./import.js');
-          await importModule.handleMultiFileUpload(reloadRes.files);
-        }
+					const importModule = await import('./import.js');
+					await importModule.handleMultiFileUpload(reloadRes.files);
+
+					// ★ 追加: 最新のスキン情報を検出してギャラリーとプレビュー画像を即座に再描画
+					if (reloadRes.skins && typeof window.initSkinGallery === 'function') {
+						window.initSkinGallery(reloadRes.skins);
+					}
+				}
         alert(`✨ ${donorName} からの3Dモデル移植が完了しました！`);
       } else {
         alert("スワップ失敗: " + res.error);

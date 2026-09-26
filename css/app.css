@@ -18,6 +18,8 @@
 html{
 	background-color: #efefef;
 	height: 100%;
+	/* user-select: none;*/
+	/* テキストの選択を出来ないようにする*/
 }
 html, body {
 	overflow: hidden;
@@ -1882,7 +1884,7 @@ canvas#engineChart{
 .color-preview_box,
 .torque-graph_box,
 .logo-editor-img-outer_box{
-	padding: 1rem;
+	padding: 0.5em;
 }
 .visibility-controls{
 	padding: 0.2em 0.5em;
@@ -2133,6 +2135,8 @@ canvas#engineChart{
 	box-shadow: -1px -1px 5px 0px rgba(255, 255, 255, 0.5), 1px 1px 5px 0px rgba(255, 255, 255, 0.5);
 	flex: 0 0 18%;
 	list-style: none;
+	display: flex;
+	align-items: center;
 }
 #sound-data,
 #engine-data,
@@ -2141,13 +2145,13 @@ canvas#engineChart{
 	gap: 0.5em;
 }
 #sound-data > div:nth-of-type(2){
-	color: #addaeb;
+	color: #00bbff;
 }
 #engine-data > div:nth-of-type(2){
-	color: #ebadbc;
+	color: #e7003a;
 }
 #kn5-data > div:nth-of-type(2){
-	color: #ebdcad;
+	color: #d8a200;
 }
 .engine-sound-outer_box{
 	display: flex;
