@@ -1867,8 +1867,7 @@ canvas#engineChart{
 .logo-editor_box{
 	width: 30%;
 }
-.logo-editor-img_box,
-.logo-editor-img_box img{
+.logo-editor-img_box{
 	aspect-ratio: 1;
 }
 .torque-graph_box,
@@ -1952,6 +1951,10 @@ canvas#engineChart{
 	max-width: 128px;
 	background: #fff;
 	margin: 1rem auto;
+	height: auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 .logo-editor-img_box img{
 	width: 100%;
@@ -2070,6 +2073,7 @@ canvas#engineChart{
 	font-size: 0.8em;
 	height: 100%;
 	resize: none;
+	padding: 0.5em;
 }
 /* 車輛の複製とエンジン・サウンドスワップ */
 .car-select-outer_box{
