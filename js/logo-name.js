@@ -390,7 +390,7 @@ document.getElementById('car-name-edit').addEventListener('click', async () => {
 	if (confirm(`フォルダ名を「${newName}」に変更しますか？`)) {
 		const res = await window.electronAPI.renameCarFolder(oldPath, newName);
 		if (res.success) {
-			// 修正：バックスラッシュは必ず2つ（\\）書く [cite: 302]
+			// 修正：バックスラッシュは必ず2つ（\\）書く
 			window.currentDataFolderPath = res.newPath + "\\data";
 			window.currentCarDirectoryName = newName;
 			console.log("💎 [PHASE 4] 3Dモデルファイル（.kn5）をリネーム中...");
@@ -424,28 +424,31 @@ if (engineOnlySwapBtn) {
         const carsFolder = carRoot.substring(0, lastSlashIndex);
         const donorPath = carsFolder + "\\" + donorName;
 
-        // 1. 物理チェック（engine.iniがあるか、ACDなら展開 [cite: 723, 724]）
+        // 1. 物理チェック（engine.iniがあるか、ACDなら展開）
         const res = await window.electronAPI.checkEngineFiles(donorPath);
         if (!res.success) return alert(`❌ 移植失敗：${res.error}`);
 
-        // 2. エンジンファイルのみコピー（サウンドは触らない [cite: 727]）
+        // 2. エンジンファイルのみコピー（サウンドは触らない）
         const copyRes = await window.electronAPI.copyEngineFiles(donorPath, currentDataPath);
         if (!copyRes.success) return alert(`❌ コピー失敗：${copyRes.error}`);
 
-        // 🌟 修正ポイント：もしACDから一時展開していたら後片付けをする [cite: 448, 725]
+        // 🌟 修正ポイント：もしACDから一時展開していたら後片付けをする
         if (res.wasAcd) {
             await window.electronAPI.cleanupDonorData(donorPath);
         }
 
-        // 3. 由来情報の記録（エンジンのみ更新 [cite: 298]）
-        if (!window.currentProject) window.currentProject = {};
-        window.currentProject.engine_origin = donorName;
+        // 3. 由来情報の記録（エンジンのみ更新）
+				if (!window.currentProject) window.currentProject = {};
+				window.currentProject.engine_origin = donorName;
 
-        // 4. エディター画面の数値を最新の状態にリロード [cite: 694, 802]
-        const newData = await window.electronAPI.readCarFolderData(carRoot);
-        if (newData.success) {
-            window.loadProjectToUI({ files: newData.files });
-        }
+				// ★追加：エンジン看板の表示を黄色い文字でドナー車名に更新
+				const engineDataBox = document.getElementById('engine-data');
+				if (engineDataBox) {
+					engineDataBox.innerHTML = `<div>現在のエンジン</div><div>${donorName}</div>`;
+				}
+
+				// 4. エディター画面の数値を最新の状態にリロード
+				const newData = await window.electronAPI.readCarFolderData(carRoot);
 
         alert(`✨ ${donorName} からの「エンジンのみ」移植が完了しました！`);
     });
@@ -455,7 +458,7 @@ if (engineOnlySwapBtn) {
 // ==========================================
 window.fixCarSound = async function(carPath, oldName, newName) {
 	console.log(`🎵 [SFX] サウンド修正を開始: ${oldName} -> ${newName}`);
-	// preload.js で作った窓口を通じて、裏側の物理操作（リネーム・置換）を実行 [cite: 850]
+	// preload.js で作った窓口を通じて、裏側の物理操作（リネーム・置換）を実行
 	const res = await window.electronAPI.updateCarSound(carPath, oldName, newName);
 	if (res.success) {
 		console.log("✅ [SFX] サウンドの自動修正が完了しました。");
@@ -605,9 +608,13 @@ if (kn5SwapBtn) {
     const carsFolder = carRoot.substring(0, lastSlashIndex);
     const donorPath = carsFolder + "\\" + donorName;
 
-    if (confirm(`「${donorName}」の3Dモデル（.kn5）を移植しますか？\n（元のモデルは 'old-model' に保存されます）`)) {
+    if (confirm(`「${donorName}」の3Dモデル（.kn5）を移植しますか？`)) {
       const res = await window.electronAPI.swapCarKn5(carRoot, donorPath);
       if (res.success) {
+        // ★追加：3Dモデルのスワップ元情報を記憶
+        if (!window.currentProject) window.currentProject = {};
+        window.currentProject.kn5_origin = donorName;
+
         // データの再読み込みと3Dモデルの再展開・表示更新
         const reloadRes = await window.electronAPI.readCarFolderData(carRoot);
         if (reloadRes.success) {

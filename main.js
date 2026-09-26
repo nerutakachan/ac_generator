@@ -695,15 +695,19 @@ window.currentProject = projectState;
 
 	// ★ 修正：サウンドはサウンド用の記憶（sound_origin）から個別に復元します
 	if (env.sound_origin) {
-			window.currentProject.sound_origin = env.sound_origin;
-			const soundDataBox = document.getElementById('sound-data');
-			if (soundDataBox) {
-					soundDataBox.innerHTML = `<div>現在のサウンド</div><div>${env.sound_origin}</div>`;
-			}
-	}
-	if (typeof window.updateProjectSidebar === 'function') {
-		window.updateProjectSidebar();
-	}
+    window.currentProject.sound_origin = env.sound_origin;
+    const soundDataBox = document.getElementById('sound-data');
+    if (soundDataBox) {
+      soundDataBox.innerHTML = `<div>現在のサウンド</div><div style="font-weight:bold; color:#fbbf24;">${env.sound_origin}</div>`;
+    }
+  }
+  // ★追加：3Dモデル(kn5)のスワップ情報も記憶
+  if (env.kn5_origin) {
+    window.currentProject.kn5_origin = env.kn5_origin;
+  }
+  if (typeof window.updateProjectSidebar === 'function') {
+    window.updateProjectSidebar();
+  }
 	// =======================================================
 	// 3. 各画面のUI更新 (タブの中身を再描画)
 	// =======================================================
@@ -815,9 +819,10 @@ document.addEventListener('DOMContentLoaded', () => {
 				model_path: window.currentProject.environment?.model_path || "",
 				// ★最重要：置換ボタンで選ばれた「新しいロゴ画像の絶対パス」を記録！
 				custom_badge_path: window.pendingBadgePath || "",
-				// スワップしたエンジンの名前を保存データに含めます
-				engine_origin: window.currentProject ? window.currentProject.engine_origin : null,
-				sound_origin: window.currentProject ? window.currentProject.sound_origin : null
+				// スワップしたエンジン・サウンド・3Dモデルの名前を保存データに保持
+				engine_origin: (window.currentProject && window.currentProject.engine_origin) ? window.currentProject.engine_origin : (window.currentProject?.environment?.engine_origin || null),
+				sound_origin: (window.currentProject && window.currentProject.sound_origin) ? window.currentProject.sound_origin : (window.currentProject?.environment?.sound_origin || null),
+				kn5_origin: (window.currentProject && window.currentProject.kn5_origin) ? window.currentProject.kn5_origin : (window.currentProject?.environment?.kn5_origin || null)
 			};
 			// 2. 画面のデータをすべて回収（最新の全ファイルに対応）
 			const dataMap = {
@@ -1408,16 +1413,17 @@ async function loadCarToEditor(carFullPath, carDirName) {
 	window.currentDataFolderPath = carFullPath + "\\data";
 	window.currentCarDirectoryName = carDirName;
 	const engineDataBox = document.getElementById('engine-data');
-		if (engineDataBox) {
-            // ✅ 修正：もしプロジェクトデータに「エンジンの由来」が記録されていれば、それを表示する
-            const originName = (window.currentProject && window.currentProject.engine_origin) 
-                               ? window.currentProject.engine_origin 
-                               : carDirName;
-            
-            const color = (window.currentProject && window.currentProject.engine_origin) ? "#fbbf24" : "#4ade80";
-            
-            engineDataBox.innerHTML = `<div>現在のエンジン</div><div style="font-weight:bold; color:${color};">${originName}</div>`;
-        }
+  if (engineDataBox) {
+    const originName = (window.currentProject && window.currentProject.engine_origin) ? window.currentProject.engine_origin : carDirName;
+    const statusClass = (window.currentProject && window.currentProject.engine_origin) ? "swapped" : "original";
+    engineDataBox.innerHTML = `<div>現在のエンジン</div><div class="origin-name ${statusClass}">${originName}</div>`;
+  }
+  const soundDataBox = document.getElementById('sound-data');
+  if (soundDataBox) {
+    const originSound = (window.currentProject && window.currentProject.sound_origin) ? window.currentProject.sound_origin : carDirName;
+    const soundStatusClass = (window.currentProject && window.currentProject.sound_origin) ? "swapped" : "original";
+    soundDataBox.innerHTML = `<div>現在のサウンド</div><div class="origin-name ${soundStatusClass}">${originSound}</div>`;
+  }
 	// 1. D&Dと同じ「一括処理中フラグ」を立てて、途中のUI更新を一時停止させる
 	window.isMultiUploading = true;
 	// 2. 裏側(Electron)にフォルダ内のINIやKN5のリストアップを依頼
