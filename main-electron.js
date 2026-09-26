@@ -738,48 +738,132 @@ const PROJECTS_ROOT = path.join(app.getPath('documents'), 'AC_Generator_Projects
 if (!fs.existsSync(PROJECTS_ROOT)) fs.mkdirSync(PROJECTS_ROOT, {
 	recursive: true
 });
+// ★追加：散らばっていた物理バックアップを _backup フォルダへ一括集約する共通関数
+function backupCarAsset(carRootPath, subFolder, fileName, isOriginal = false) {
+  try {
+    const category = isOriginal ? 'original' : 'history';
+    const backupDir = path.join(carRootPath, '_backup', category, subFolder);
+    if (!fs.existsSync(backupDir)) {
+      fs.mkdirSync(backupDir, { recursive: true });
+    }
+
+    const srcPath = path.join(carRootPath, subFolder === 'kn5' ? '' : subFolder, fileName);
+    const destPath = path.join(backupDir, fileName);
+
+    if (fs.existsSync(srcPath) && !fs.existsSync(destPath)) {
+      fs.copyFileSync(srcPath, destPath);
+      console.log(`📁 [_backup] ${subFolder}/${fileName} を退避しました。`);
+    }
+  } catch (err) {
+    console.error(`❌ [_backup] 退避エラー: ${err.message}`);
+  }
+}
+
+// ★追加【案A】：プロジェクト読み込み時、過去に作られた旧形式バックアップを自動引越しする関数
+function migrateOldBackups(carPath) {
+  try {
+    // 1. old-engine (data/old-engine または old-engine) の引越し
+    const oldEnginePaths = [
+      path.join(carPath, 'data', 'old-engine'),
+      path.join(carPath, 'old-engine')
+    ];
+    oldEnginePaths.forEach(oldDir => {
+      if (fs.existsSync(oldDir)) {
+        const files = fs.readdirSync(oldDir);
+        files.forEach(f => backupCarAsset(carPath, 'data', f, false));
+        fs.rmSync(oldDir, { recursive: true, force: true });
+        console.log("🧹 [Migrate] 古い old-engine フォルダを _backup/history/data へ移動・統合しました。");
+      }
+    });
+
+    // 2. old-sound (sfx/old-sound または old-sound) の引越し
+    const oldSoundPaths = [
+      path.join(carPath, 'sfx', 'old-sound'),
+      path.join(carPath, 'old-sound')
+    ];
+    oldSoundPaths.forEach(oldDir => {
+      if (fs.existsSync(oldDir)) {
+        const files = fs.readdirSync(oldDir);
+        files.forEach(f => backupCarAsset(carPath, 'sfx', f, false));
+        fs.rmSync(oldDir, { recursive: true, force: true });
+        console.log("🧹 [Migrate] 古い old-sound フォルダを _backup/history/sfx へ移動・統合しました。");
+      }
+    });
+
+    // 3. old-model の引越し
+    const oldModelDir = path.join(carPath, 'old-model');
+    if (fs.existsSync(oldModelDir)) {
+      const files = fs.readdirSync(oldModelDir);
+      files.forEach(f => backupCarAsset(carPath, 'kn5', f, false));
+      fs.rmSync(oldModelDir, { recursive: true, force: true });
+      console.log("🧹 [Migrate] 古い old-model フォルダを _backup/history/kn5 へ移動・統合しました。");
+    }
+
+    // 4. data_backup (手動書き出し時) の引越し
+    const dataBackupDir = path.join(carPath, 'data', 'data_backup');
+    if (fs.existsSync(dataBackupDir)) {
+      const files = fs.readdirSync(dataBackupDir);
+      files.forEach(f => backupCarAsset(carPath, 'data', f, false));
+      fs.rmSync(dataBackupDir, { recursive: true, force: true });
+      console.log("🧹 [Migrate] 古い data_backup フォルダを _backup/history/data へ移動・統合しました。");
+    }
+
+    // 5. ui_backup (UI手動書き出し時) の引越し
+    const uiBackupDir = path.join(carPath, 'ui', 'ui_backup');
+    if (fs.existsSync(uiBackupDir)) {
+      const files = fs.readdirSync(uiBackupDir);
+      files.forEach(f => backupCarAsset(carPath, 'ui', f, false));
+      fs.rmSync(uiBackupDir, { recursive: true, force: true });
+      console.log("🧹 [Migrate] 古い ui_backup フォルダを _backup/history/ui へ移動・統合しました。");
+    }
+  } catch (err) {
+    console.error("❌ [Migrate] 旧バックアップ引越しエラー:", err.message);
+  }
+}
 ipcMain.handle('open-project', async () => {
-	const result = await dialog.showOpenDialog(mainWindow, {
-		title: 'プロジェクトフォルダを選択',
-		defaultPath: PROJECTS_ROOT,
-		properties: ['openDirectory']
-	});
-	if (mainWindow) mainWindow.focus(); // ★追加：ダイアログが閉じたらメイン画面にピントを強制的に戻す
-	if (result.canceled || result.filePaths.length === 0) return {
-		success: false
-	};
-	try {
-		const filePath = path.join(result.filePaths[0], 'project.json');
-		if (!fs.existsSync(filePath)) throw new Error('指定されたフォルダに project.json が見つかりません。');
-		const projectData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-		saveToRecent(projectData.projectName || "名称未設定", filePath);
-		return {
-			success: true,
-			data: projectData,
-			path: filePath
-		};
-	} catch (err) {
-		return {
-			success: false,
-			error: err.message
-		};
-	}
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'プロジェクトフォルダを選択',
+    defaultPath: PROJECTS_ROOT,
+    properties: ['openDirectory']
+  });
+  if (mainWindow) mainWindow.focus(); // ★追加：ダイアログが閉じたらメイン画面にピントを強制的に戻す
+  if (result.canceled || result.filePaths.length === 0) return { success: false };
+  try {
+    const filePath = path.join(result.filePaths, 'project.json');
+    if (!fs.existsSync(filePath)) throw new Error('指定されたフォルダに project.json が見つかりません。');
+    const projectData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    saveToRecent(projectData.projectName || "名称未設定", filePath);
+
+    // ★【引越し実行】プロジェクト読み込み時、対象車両フォルダ内に旧バックアップがあれば _backup へ引越し
+    if (projectData.environment && projectData.environment.data_folder) {
+      const carPath = projectData.environment.data_folder.replace(/[\/]data$/i, '');
+      if (fs.existsSync(carPath)) {
+        migrateOldBackups(carPath);
+      }
+    }
+
+    return { success: true, data: projectData, path: filePath };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
 });
 ipcMain.handle('load-project-path', async (event, filePath) => {
-	try {
-		const projectData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-		saveToRecent(projectData.projectName || "名称未設定", filePath);
-		return {
-			success: true,
-			data: projectData,
-			path: filePath
-		};
-	} catch (err) {
-		return {
-			success: false,
-			error: err.message
-		};
-	}
+  try {
+    const projectData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    saveToRecent(projectData.projectName || "名称未設定", filePath);
+
+    // ★【引越し実行】プロジェクト読み込み時、対象車両フォルダ内に旧バックアップがあれば _backup へ引越し
+    if (projectData.environment && projectData.environment.data_folder) {
+      const carPath = projectData.environment.data_folder.replace(/[\/]data$/i, '');
+      if (fs.existsSync(carPath)) {
+        migrateOldBackups(carPath);
+      }
+    }
+
+    return { success: true, data: projectData, path: filePath };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
 });
 ipcMain.handle('save-project', async (event, projectData) => {
 	try {
@@ -1082,55 +1166,41 @@ ipcMain.handle('read-car-folder-data', async (event, carPath) => {
 // ★引数を (event, baseDir, folderName, files, isOverwrite, sourcePath) であることを確認
 ipcMain.handle('export-files-to-folder', async (event, baseDir, folderName, files, isOverwrite, sourcePath, imageSource) => {
 	try {
-		let targetDir = "";
-		if (isOverwrite) {
-			// 🔄 【スイッチON：元のデータに上書き】
-			if (!sourcePath) {
-				const result = await dialog.showOpenDialog({
-					properties: ['openDirectory'],
-					title: '上書き先のデータフォルダを選択してください'
-				});
-				if (result.canceled || result.filePaths.length === 0) return {
-					success: false,
-					error: 'キャンセルされました'
-				};
-				targetDir = result.filePaths;
-			} else {
-				targetDir = sourcePath;
-			}
-			// 🌟 修正ポイント：手動の上書き（folderNameが空ではない）の時だけバックアップを実行
-			if (folderName !== "") {
-				// 1. ui_backup の作成（UI関連ファイルの保護）
-				const carRoot = (targetDir.toLowerCase().endsWith('data') || targetDir.toLowerCase().endsWith('ui')) ? path.dirname(targetDir) : targetDir;
-				const uiPath = path.join(carRoot, 'ui');
-				if (fs.existsSync(uiPath)) {
-					const uiBackupDir = path.join(uiPath, 'ui_backup');
-					if (!fs.existsSync(uiBackupDir)) fs.mkdirSync(uiBackupDir, {
-						recursive: true
-					});
-					['ui_car.json', 'badge.png'].forEach(f => {
-						const src = path.join(uiPath, f);
-						if (fs.existsSync(src)) fs.copyFileSync(src, path.join(uiBackupDir, f));
-					});
-					console.log("📂 [Overwrite] 手動上書きのため ui_backup を作成しました。");
-				}
-				// 2. data_backup の作成（INIファイルの保護）
-				const isUiFolder = targetDir.replace(/[\/]$/, '').toLowerCase().endsWith('ui');
-				if (!isUiFolder) {
-					const backupDir = path.join(targetDir, 'data_backup');
-					if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, {
-						recursive: true
-					});
-					for (const file of files) {
-						const srcFile = path.join(targetDir, file.name);
-						const destFile = path.join(backupDir, file.name);
-						if (fs.existsSync(srcFile) && !fs.existsSync(destFile)) {
-							fs.copyFileSync(srcFile, destFile);
-						}
-					}
-					console.log("📂 [Overwrite] 手動上書きのため data_backup を作成しました。");
-				}
-			} // 🌟 ここまでが手動上書き専用のバックアップ処理
+		let isUiFolder = false;
+    if (isOverwrite) {
+      // 🔄 【スイッチON：元のデータに上書き】
+      if (!sourcePath) {
+        const result = await dialog.showOpenDialog({ properties: ['openDirectory'], title: '上書き先のデータフォルダを選択してください' });
+        if (result.canceled || result.filePaths.length === 0) return { success: false, error: 'キャンセルされました' };
+        targetDir = result.filePaths;
+      } else {
+        targetDir = sourcePath;
+      }
+
+      // ★修正：isUiFolder の定義を if (folderName !== "") の外側に移動し、未定義エラーを防止
+      isUiFolder = targetDir.replace(/[\/]$/, '').toLowerCase().endsWith('ui');
+
+      // 🌟 修正ポイント：手動の上書き（folderNameが空ではない）の時だけバックアップを実行
+      if (folderName !== "") {
+        const carRoot = (targetDir.toLowerCase().endsWith('data') || targetDir.toLowerCase().endsWith('ui')) ? path.dirname(targetDir) : targetDir;
+
+        // 1. UI関連ファイル（ui_car.json, badge.png）の退避
+        const uiPath = path.join(carRoot, 'ui');
+        if (fs.existsSync(uiPath)) {
+          ['ui_car.json', 'badge.png'].forEach(f => {
+            backupCarAsset(carRoot, 'ui', f, false);
+          });
+          console.log("📂 [Overwrite] 手動上書きのため _backup/history/ui へ退避しました。");
+        }
+
+        // 2. INIファイルの退避
+        if (!isUiFolder) {
+          for (const file of files) {
+            backupCarAsset(carRoot, 'data', file.name, false);
+          }
+          console.log("📂 [Overwrite] 手動上書きのため _backup/history/data へ退避しました。");
+        }
+      } // 🌟 ここまでが手動上書き専用のバックアップ処理
 		} else {
 			// 💾 【スイッチOFF：新規書き出し】
 			// バックアップは絶対に作らない
@@ -1191,30 +1261,25 @@ ipcMain.handle('export-files-to-folder', async (event, baseDir, folderName, file
 			}
 		}
 		// 🌟 修正ポイント：コピー先を targetDir から uiDir に変更します
-		if (imageSource && fs.existsSync(imageSource)) {
-			// uiフォルダが作られていることを確認（新規書き出し対策）
-			if (!fs.existsSync(uiDir)) fs.mkdirSync(uiDir, {
-				recursive: true
-			});
-			const destPath = path.join(uiDir, 'badge.png');
-			fs.copyFileSync(imageSource, destPath);
-			console.log("✅ [Export/Overwrite] badge.png を更新しました:", destPath);
-		}
-		// 🌟 [通常の「一括書き出し」専用] 
-		// 保存先が通常のフォルダ（data等）で、sourcePathが指定されている場合（古い仕様の互換用）
-		else if (sourcePath && fs.existsSync(sourcePath) && !isUiFolder) {
-			const uiDirPath = path.join(targetDir, 'ui');
-			if (!fs.existsSync(uiDirPath)) {
-				fs.mkdirSync(uiDirPath, {
-					recursive: true
-				});
-			}
-			const destPath = path.join(uiDirPath, 'badge.png');
-			if (fs.statSync(sourcePath).isFile()) {
-				fs.copyFileSync(sourcePath, destPath);
-				console.log("✅ 通常書き出し: バッジ画像をコピーしました:", destPath);
-			}
-		}
+    if (imageSource && fs.existsSync(imageSource)) {
+      // uiフォルダが作られていることを確認（新規書き出し対策）
+      if (!fs.existsSync(uiDir)) fs.mkdirSync(uiDir, { recursive: true });
+      const destPath = path.join(uiDir, 'badge.png');
+      fs.copyFileSync(imageSource, destPath);
+      console.log("✅ [Export/Overwrite] badge.png を更新しました:", destPath);
+    }
+    // 🌟 [通常の「一括書き出し」専用]
+    // 保存先が通常のフォルダ（data等）で、sourcePathが指定されている場合（古い仕様の互換用）
+    else if (sourcePath && fs.existsSync(sourcePath) && !isUiFolder) {
+      if (!fs.existsSync(uiDir)) {
+        fs.mkdirSync(uiDir, { recursive: true });
+      }
+      const destPath = path.join(uiDir, 'badge.png');
+      if (fs.statSync(sourcePath).isFile()) {
+        fs.copyFileSync(sourcePath, destPath);
+        console.log("✅ 通常書き出し: バッジ画像をコピーしました:", destPath);
+      }
+    }
 		return {
 			success: true,
 			path: targetDir
@@ -1604,30 +1669,23 @@ ipcMain.handle('clone-car-folder', async (event, sourcePath, targetPath) => {
 });
 // 物理サウンドスワップAPI
 ipcMain.handle('swap-car-sound', async (event, targetCarPath, donorCarPath) => {
-	const fs = require('fs');
-	const path = require('path');
-	try {
-		const targetSfx = path.join(targetCarPath, 'sfx');
-		const donorSfx = path.join(donorCarPath, 'sfx');
-		// ★修正：バックアップ先を sfx フォルダの中に変更
-		const backupSfx = path.join(targetSfx, 'old-sound');
-		// [PHASE 2] バックアップ作成（sfxフォルダ内へ）
-		if (fs.existsSync(targetSfx) && !fs.existsSync(backupSfx)) {
-			fs.mkdirSync(backupSfx, {
-				recursive: true
-			}); // まずフォルダを作る
-			// sfxの中身をループして、ファイルだけを old-sound にコピーする
-			const currentFiles = fs.readdirSync(targetSfx);
-			for (const file of currentFiles) {
-				if (file === 'old-sound') continue; // 自分自身（バックアップフォルダ）はコピーしない
-				const src = path.join(targetSfx, file);
-				const dest = path.join(backupSfx, file);
-				if (fs.statSync(src).isFile()) {
-					fs.copyFileSync(src, dest);
-				}
-			}
-			console.log("📂 [SFX] オリジナル音源を 'sfx/old-sound' に保護しました。");
-		}
+  const fs = require('fs');
+  const path = require('path');
+  try {
+    const targetSfx = path.join(targetCarPath, 'sfx');
+    const donorSfx = path.join(donorCarPath, 'sfx');
+
+    // [PHASE 2] バックアップ作成（一括フォルダ _backup 内へ退避）
+    if (fs.existsSync(targetSfx)) {
+      const currentFiles = fs.readdirSync(targetSfx);
+      for (const file of currentFiles) {
+        const src = path.join(targetSfx, file);
+        if (fs.statSync(src).isFile()) {
+          backupCarAsset(targetCarPath, 'sfx', file, false);
+        }
+      }
+      console.log("📂 [SFX] 音源データを '_backup/history/sfx' に保護しました。");
+    }
 		// [PHASE 3] ドナーからの物理コピー
 		if (fs.existsSync(donorSfx)) {
 			fs.cpSync(donorSfx, targetSfx, {
@@ -1837,37 +1895,19 @@ ipcMain.handle('cleanup-donor-data', async (event, donorPath) => {
 	}
 });
 ipcMain.handle('create-engine-backup', async (event, dataPath) => {
-	const fs = require('fs');
-	const path = require('path');
-	const backupDir = path.join(dataPath, 'old-engine');
-	try {
-		// 1. 避難所（フォルダ）がなければ作る
-		if (!fs.existsSync(backupDir)) {
-			fs.mkdirSync(backupDir, {
-				recursive: true
-			});
-			console.log(`📁 [Main] 避難所を作成しました: ${backupDir}`);
-		}
-		// 2. 現在のエンジンデータを避難所へコピー（資産：engine.ini と power.lut）
-		const filesToBackUp = ['engine.ini', 'power.lut'];
-		filesToBackUp.forEach(file => {
-			const src = path.join(dataPath, file);
-			if (fs.existsSync(src)) {
-				fs.copyFileSync(src, path.join(backupDir, file));
-				console.log(`💾 [Main] 退避成功: ${file}`);
-			}
-		});
-		return {
-			success: true,
-			path: backupDir
-		};
-	} catch (err) {
-		console.error(`❌ [Main] 避難所作成エラー: ${err.message}`);
-		return {
-			success: false,
-			error: err.message
-		};
-	}
+  const fs = require('fs');
+  const path = require('path');
+  const carRootPath = path.dirname(dataPath); // data フォルダの親（車両ルート）
+  try {
+    const filesToBackUp = ['engine.ini', 'power.lut'];
+    filesToBackUp.forEach(file => {
+      backupCarAsset(carRootPath, 'data', file, false);
+    });
+    return { success: true, path: path.join(carRootPath, '_backup', 'history', 'data') };
+  } catch (err) {
+    console.error(`❌ [Main] 避難所作成エラー: ${err.message}`);
+    return { success: false, error: err.message };
+  }
 });
 ipcMain.handle('read-text-file', async (event, filePath) => {
 	const fs = require('fs');
@@ -1922,18 +1962,14 @@ ipcMain.handle('swap-car-kn5', async (event, targetPath, donorPath) => {
   try {
     const fs = require('fs');
     const path = require('path');
-    
-    // 1. old-model バックアップフォルダの作成
-    const backupDir = path.join(targetPath, 'old-model');
-    if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
 
     const targetName = path.basename(targetPath);
     const donorName = path.basename(donorPath);
 
-    // 2. 既存の .kn5 を old-model へ退避
+    // 1. 既存の .kn5 を _backup/history/kn5 へ退避
     const currentKn5Files = fs.readdirSync(targetPath).filter(f => f.toLowerCase().endsWith('.kn5') && f.toLowerCase() !== 'collider.kn5');
     currentKn5Files.forEach(file => {
-      fs.renameSync(path.join(targetPath, file), path.join(backupDir, file));
+      backupCarAsset(targetPath, 'kn5', file, false);
     });
 
     // 3. ドナーから .kn5 をコピーし、移植先の車名に合わせてリネーム
