@@ -694,11 +694,11 @@ window.currentProject = projectState;
 	}
 
 	// ★ 修正：サウンドはサウンド用の記憶（sound_origin）から個別に復元します
-	if (env.sound_origin) {
+  if (env.sound_origin) {
     window.currentProject.sound_origin = env.sound_origin;
     const soundDataBox = document.getElementById('sound-data');
     if (soundDataBox) {
-      soundDataBox.innerHTML = `<div>現在のサウンド</div><div style="font-weight:bold; color:#fbbf24;">${env.sound_origin}</div>`;
+      soundDataBox.innerHTML = `<div>現在のサウンド</div><div class="origin-name swapped">${env.sound_origin}</div>`;
     }
   }
   // ★追加：3Dモデル(kn5)のスワップ情報も記憶

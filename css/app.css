@@ -2140,14 +2140,19 @@ canvas#engineChart{
 	display: flex;
 	gap: 0.5em;
 }
-#sound-data > div:nth-of-type(2),
-#engine-data > div:nth-of-type(2),
+#sound-data > div:nth-of-type(2){
+	color: #addaeb;
+}
+#engine-data > div:nth-of-type(2){
+	color: #ebadbc;
+}
 #kn5-data > div:nth-of-type(2){
-	color: chocolate;
+	color: #ebdcad;
 }
 .engine-sound-outer_box{
 	display: flex;
 	flex-direction: column;
+	justify-content: space-between;
 }
 .engine-sound-outer_box .car-select-outer_box > div{
 	width: 50%;

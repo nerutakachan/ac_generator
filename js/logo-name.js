@@ -441,10 +441,10 @@ if (engineOnlySwapBtn) {
 				if (!window.currentProject) window.currentProject = {};
 				window.currentProject.engine_origin = donorName;
 
-				// ★追加：エンジン看板の表示を黄色い文字でドナー車名に更新
+				// ★追加：エンジン看板の表示クラスを swapped に更新
 				const engineDataBox = document.getElementById('engine-data');
 				if (engineDataBox) {
-					engineDataBox.innerHTML = `<div>現在のエンジン</div><div>${donorName}</div>`;
+					engineDataBox.innerHTML = `<div>現在のエンジン</div><div class="origin-name swapped">${donorName}</div>`;
 				}
 
 				// 4. エディター画面の数値を最新の状態にリロード
@@ -509,10 +509,10 @@ document.getElementById('sound-swap_btn').addEventListener('click', async () => 
 				}
 				console.log("🔄 [System] エンジン関連データのみを最新に同期しました。");
 			}
-			// ★UIの表示を更新（黄色い文字と「移植済み」を追加）
+			// ★UIの表示を更新（クラス名を swapped に設定）
 			const soundDataBox = document.getElementById('sound-data');
 			if (soundDataBox) {
-				soundDataBox.innerHTML = `<div>現在のサウンド</div><div>${donorName}</div>`;
+				soundDataBox.innerHTML = `<div>現在のサウンド</div><div class="origin-name swapped">${donorName}</div>`;
 			}
 			// ★修正2：プロジェクトデータへの記憶（階層を合わせる）
 			// 保存ボタン（main.js）は window.currentProject.engine_origin を見に行きます
@@ -577,14 +577,14 @@ if (engineSwapBtn) {
 				}
 				console.log("🔄 [System] エンジン関連データのみを最新に同期しました。");
 		}
-		// 看板の更新（styleは書きません）
+		// 看板の更新（swapped クラスを付与）
 		const engineDataBox = document.getElementById('engine-data');
 		if (engineDataBox) {
-				engineDataBox.innerHTML = `<div>現在のエンジン</div><div>${donorName}</div>`;
+			engineDataBox.innerHTML = `<div>現在のエンジン</div><div class="origin-name swapped">${donorName}</div>`;
 		}
 		const soundDataBox = document.getElementById('sound-data');
 		if (soundDataBox) {
-				soundDataBox.innerHTML = `<div>現在のサウンド</div><div>${donorName}</div>`;
+			soundDataBox.innerHTML = `<div>現在のサウンド</div><div class="origin-name swapped">${donorName}</div>`;
 		}
 		// 由来の記録
 		if (!window.currentProject) window.currentProject = {};
