@@ -651,9 +651,9 @@ window.currentProject = projectState;
 		restoredFiles.forEach(key => {
 			const statusKey = key.replace('.ini', '');
 			if (window.modifiedStatus[statusKey] !== undefined) {
-				window.modifiedStatus[statusKey] = true;
+				window.modifiedStatus[statusKey] = false;
 			}
-			if (key === 'camera_configs') window.modifiedStatus.cameras = true;
+			if (key === 'camera_configs') window.modifiedStatus.cameras = false;
 		});
 	}
 	// =======================================================
@@ -666,6 +666,9 @@ window.currentProject = projectState;
 	}
 	console.log("✅ [同期完了] すべてのデータが復元されました。");
 	window.isRestoring = false;
+	if (window.electronAPI && window.electronAPI.setProjectLoaded) {
+		window.electronAPI.setProjectLoaded(false);
+	}
 	if (window.currentProject && window.currentProject.environment) {
 		const env = window.currentProject.environment;
 		const badgeImg = document.getElementById('ui-badge');
@@ -823,6 +826,15 @@ document.addEventListener('DOMContentLoaded', () => {
 				sound_origin: (window.currentProject && window.currentProject.sound_origin) ? window.currentProject.sound_origin : (window.currentProject?.environment?.sound_origin || null),
 				kn5_origin: (window.currentProject && window.currentProject.kn5_origin) ? window.currentProject.kn5_origin : (window.currentProject?.environment?.kn5_origin || null)
 			};
+			// 保存に伴い、全編集フラグを未編集（false）状態にして保存用データを作成
+			const cleanModifiedStatus = {};
+			if (window.modifiedStatus) {
+				Object.keys(window.modifiedStatus).forEach(k => {
+					window.modifiedStatus[k] = false;
+					cleanModifiedStatus[k] = false;
+				});
+			}
+
 			// 2. 画面のデータをすべて回収（最新の全ファイルに対応）
 			const dataMap = {
 				'suspensions': window.currentSuspensionData,
@@ -835,8 +847,8 @@ document.addEventListener('DOMContentLoaded', () => {
 				'mirrors': window.currentMirrorsData,
 				'power_lut_raw': window.currentPowerLutRaw,
 				'final_rto_list': window.finalRtoList,
-				// 編集状態フラグ（オレンジ色のタグを復元するため）
-				'modified_status': window.modifiedStatus,
+				// 編集状態フラグ（保存時はすべて未編集状態として記録）
+				'modified_status': cleanModifiedStatus,
 				// カメラ
 				'camera_configs': window.cameraConfigs,
 				'camera_raw': window.originalRawData,
