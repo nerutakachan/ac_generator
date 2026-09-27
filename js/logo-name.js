@@ -409,11 +409,29 @@ document.getElementById('car-name-edit').addEventListener('click', async () => {
 				}
 				const btnSave = document.getElementById('btn-save-project');
 				if (btnSave) btnSave.click();
-			} else {
-				alert("フォルダのリネームに失敗しました: " + res.error);
-			}
+		} else {
+			alert("フォルダのリネームに失敗しました: " + res.error);
 		}
-	});
+	}
+});
+
+// ★共通化：HTML構造を保持したまま、.origin-name のテキストとクラスのみ安全に更新する関数
+window.updateSwapOriginDisplay = function(type, name, isSwapped = false) {
+	const box = document.getElementById(`${type}-data`);
+	if (!box) return;
+	const valueEl = box.querySelector('.origin-name');
+	if (valueEl) {
+		valueEl.textContent = name;
+		if (isSwapped) {
+			valueEl.classList.add('swapped');
+			valueEl.classList.remove('original');
+		} else {
+			valueEl.classList.remove('swapped');
+			valueEl.classList.add('original');
+		}
+	}
+};
+
 // ✅ 追加：「エンジンのみ」移植する新しいボタンの処理
 const engineOnlySwapBtn = document.getElementById('engine-only-swap_btn');
 if (engineOnlySwapBtn) {
@@ -447,11 +465,8 @@ if (engineOnlySwapBtn) {
 				if (!window.currentProject) window.currentProject = {};
 				window.currentProject.engine_origin = donorName;
 
-				// ★追加：エンジン看板の表示クラスを swapped に更新
-				const engineDataBox = document.getElementById('engine-data');
-				if (engineDataBox) {
-					engineDataBox.innerHTML = `<div>現在のエンジン：</div><div class="origin-name swapped">${donorName}</div>`;
-				}
+				// ★共通関数を呼び出して表示更新（HTML構造は保持）
+				window.updateSwapOriginDisplay('engine', donorName, true);
 
 				// 4. エディター画面の数値を最新の状態にリロード
 				const newData = await window.electronAPI.readCarFolderData(carRoot);
@@ -515,20 +530,17 @@ document.getElementById('sound-swap_btn').addEventListener('click', async () => 
 				}
 				console.log("🔄 [System] エンジン関連データのみを最新に同期しました。");
 			}
-			// ★UIの表示を更新（クラス名を swapped に設定）
-			const soundDataBox = document.getElementById('sound-data');
-			if (soundDataBox) {
-				soundDataBox.innerHTML = `<div>現在のサウンド：</div><div class="origin-name swapped">${donorName}</div>`;
-			}
+			// ★UIの表示を更新（共通関数を呼び出し：HTML構造は保持）
+				window.updateSwapOriginDisplay('sound', donorName, true);
 
-			// ★修正2：プロジェクトデータへの記憶（階層を合わせる）
+				// ★修正2：プロジェクトデータへの記憶（階層を合わせる）
 			// 保存ボタン（main.js）は window.currentProject.engine_origin を見に行きます
 			if (!window.currentProject) window.currentProject = {};
 			window.currentProject.sound_origin = donorName;
 
 			// --- [PHASE 5] 完了通知 ---
 			if (typeof window.showCustomPopup === 'function') {
-				window.showCustomPopup(`✅ <strong>${donorName}</strong> のサウンドを移植しました。<br>元の音は 'old-sound' フォルダに保管されています。`);
+				window.showCustomPopup(`✅ <strong>${donorName}</strong> のサウンドを移植しました。`);
 			} else {
 				alert("サウンドのスワップが完了しました。");
 			}
@@ -587,15 +599,10 @@ if (engineSwapBtn) {
 				}
 				console.log("🔄 [System] エンジン関連データのみを最新に同期しました。");
 		}
-		// 看板の更新（swapped クラスを付与）
-		const engineDataBox = document.getElementById('engine-data');
-		if (engineDataBox) {
-			engineDataBox.innerHTML = `<div>現在のエンジン：</div><div class="origin-name swapped">${donorName}</div>`;
-		}
-		const soundDataBox = document.getElementById('sound-data');
-		if (soundDataBox) {
-			soundDataBox.innerHTML = `<div>現在のサウンド：</div><div class="origin-name swapped">${donorName}</div>`;
-		}
+		// 看板の更新（共通関数を呼び出し：HTML構造は保持）
+		window.updateSwapOriginDisplay('engine', donorName, true);
+		window.updateSwapOriginDisplay('sound', donorName, true);
+
 		// 由来の記録
 		if (!window.currentProject) window.currentProject = {};
 		window.currentProject.engine_origin = donorName;
@@ -627,11 +634,9 @@ if (kn5SwapBtn) {
 				// ★追加：3Dモデルのスワップ元情報を記憶
 				if (!window.currentProject) window.currentProject = {};
 				window.currentProject.kn5_origin = donorName;
-				// 看板の更新（swapped クラスを付与）
-				const kn5DataBox = document.getElementById('kn5-data');
-				if (kn5DataBox) {
-					kn5DataBox.innerHTML = `<div>現在のモデル：</div><div class="origin-name swapped">${donorName}</div>`;
-				}
+				// 看板の更新（共通関数を呼び出し：HTML構造は保持）
+				window.updateSwapOriginDisplay('kn5', donorName, true);
+
 				// データの再読み込みと3Dモデルの再展開・表示更新
 				const reloadRes = await window.electronAPI.readCarFolderData(carRoot);
 				if (reloadRes.success) {

@@ -687,29 +687,21 @@ window.currentProject = projectState;
 		}
 	}
 	// エンジンスワップ情報の復元
-	if (env.engine_origin) {
-		window.currentProject.engine_origin = env.engine_origin;
-		const engineDataBox = document.getElementById('engine-data');
-		if (engineDataBox) {
-			engineDataBox.innerHTML = `<div>現在のエンジン：</div><div class="origin-name swapped">${env.engine_origin}</div>`;
+		if (env.engine_origin) {
+			window.currentProject.engine_origin = env.engine_origin;
+			window.updateSwapOriginDisplay('engine', env.engine_origin, true);
 		}
-	}
 
-	// ★ 修正：サウンドはサウンド用の記憶（sound_origin）から個別に復元します
-  if (env.sound_origin) {
-    window.currentProject.sound_origin = env.sound_origin;
-    const soundDataBox = document.getElementById('sound-data');
-    if (soundDataBox) {
-      soundDataBox.innerHTML = `<div>現在のサウンド：</div><div class="origin-name swapped">${env.sound_origin}</div>`;
-    }
-  }
-  // ★追加：3Dモデル(kn5)のスワップ情報も記憶
+		// ★ 修正：サウンドはサウンド用の記憶（sound_origin）から個別に復元します
+		if (env.sound_origin) {
+			window.currentProject.sound_origin = env.sound_origin;
+			window.updateSwapOriginDisplay('sound', env.sound_origin, true);
+		}
+
+		// ★追加：3Dモデル(kn5)のスワップ情報も記憶
 		if (env.kn5_origin) {
 			window.currentProject.kn5_origin = env.kn5_origin;
-			const kn5DataBox = document.getElementById('kn5-data');
-			if (kn5DataBox) {
-				kn5DataBox.innerHTML = `<div>現在のモデル：</div><div class="origin-name swapped">${env.kn5_origin}</div>`;
-			}
+			window.updateSwapOriginDisplay('kn5', env.kn5_origin, true);
 		}
   if (typeof window.updateProjectSidebar === 'function') {
     window.updateProjectSidebar();
@@ -1429,26 +1421,21 @@ async function loadCarToEditor(carFullPath, carDirName) {
 	}
 	// 読み込みを開始した瞬間にパスを「絶対に」記憶させる
 	window.currentDataFolderPath = carFullPath + "\\data";
-	window.currentCarDirectoryName = carDirName;
-	const engineDataBox = document.getElementById('engine-data');
-  if (engineDataBox) {
-    const originName = (window.currentProject && window.currentProject.engine_origin) ? window.currentProject.engine_origin : carDirName;
-    const statusClass = (window.currentProject && window.currentProject.engine_origin) ? "swapped" : "original";
-    engineDataBox.innerHTML = `<div>現在のエンジン：</div><div class="origin-name ${statusClass}">${originName}</div>`;
-  }
-  const soundDataBox = document.getElementById('sound-data');
-  if (soundDataBox) {
-    const originSound = (window.currentProject && window.currentProject.sound_origin) ? window.currentProject.sound_origin : carDirName;
-    const soundStatusClass = (window.currentProject && window.currentProject.sound_origin) ? "swapped" : "original";
-    soundDataBox.innerHTML = `<div>現在のサウンド：</div><div class="origin-name ${soundStatusClass}">${originSound}</div>`;
-  }
-	const kn5DataBox = document.getElementById('kn5-data');
-		if (kn5DataBox) {
-			const originKn5 = (window.currentProject && window.currentProject.kn5_origin) ? window.currentProject.kn5_origin : carDirName;
-			const kn5StatusClass = (window.currentProject && window.currentProject.kn5_origin) ? "swapped" : "original";
-			kn5DataBox.innerHTML = `<div>現在のモデル：</div><div class="origin-name ${kn5StatusClass}">${originKn5}</div>`;
-		}
-	// 1. D&Dと同じ「一括処理中フラグ」を立てて、途中のUI更新を一時停止させる
+		window.currentCarDirectoryName = carDirName;
+
+		const originEngine = (window.currentProject && window.currentProject.engine_origin) ? window.currentProject.engine_origin : carDirName;
+		const isEngineSwapped = !!(window.currentProject && window.currentProject.engine_origin);
+		window.updateSwapOriginDisplay('engine', originEngine, isEngineSwapped);
+
+		const originSound = (window.currentProject && window.currentProject.sound_origin) ? window.currentProject.sound_origin : carDirName;
+		const isSoundSwapped = !!(window.currentProject && window.currentProject.sound_origin);
+		window.updateSwapOriginDisplay('sound', originSound, isSoundSwapped);
+
+		const originKn5 = (window.currentProject && window.currentProject.kn5_origin) ? window.currentProject.kn5_origin : carDirName;
+		const isKn5Swapped = !!(window.currentProject && window.currentProject.kn5_origin);
+		window.updateSwapOriginDisplay('kn5', originKn5, isKn5Swapped);
+
+		// 1. D&Dと同じ「一括処理中フラグ」を立てて、途中のUI更新を一時停止させる
 	window.isMultiUploading = true;
 	// 2. 裏側(Electron)にフォルダ内のINIやKN5のリストアップを依頼
 	const res = await window.electronAPI.readCarFolderData(carFullPath);
