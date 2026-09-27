@@ -1936,6 +1936,17 @@ ipcMain.handle('copy-engine-files', async (event, donorPath, targetPath) => {
 	const fs = require('fs');
 	const path = require('path');
 	try {
+		// 既存エンジンデータのバックアップ（_backup/history/data へ退避：初回のみ）
+		const carRootPath = path.dirname(targetPath);
+		const backupDataDir = path.join(carRootPath, '_backup', 'history', 'data');
+		if (fs.existsSync(targetPath) && !fs.existsSync(backupDataDir)) {
+			const filesToBackUp = ['engine.ini', 'power.lut'];
+			filesToBackUp.forEach(file => {
+				backupCarAsset(carRootPath, 'data', file, false);
+			});
+			console.log("📂 [data] 既存のエンジンデータを '_backup/history/data' に保護しました。");
+		}
+
 		// 移植対象のセット（この2つは常にペアで動く事実に基づきます [cite: 309, 313]）
 		const filesToCopy = ['engine.ini', 'power.lut'];
 		filesToCopy.forEach(file => {
@@ -1946,15 +1957,10 @@ ipcMain.handle('copy-engine-files', async (event, donorPath, targetPath) => {
 				console.log(`🚚 [Main] 移植成功: ${file}`);
 			}
 		});
-		return {
-			success: true
-		};
+		return { success: true };
 	} catch (err) {
 		console.error(`❌ [Main] 移植エラー: ${err.message}`);
-		return {
-			success: false,
-			error: err.message
-		};
+		return { success: false, error: err.message };
 	}
 });
 

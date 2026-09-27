@@ -204,16 +204,16 @@ window.initSkinGallery = function(skins) {
 	window.setupGalleryArrows();
 };
 window.selectSkin = function(idx) {
-    if (idx < 0 || idx >= window.allCarSkins.length) return;
-    window.currentSkinIdx = idx;
-    if (!window.currentProject) window.currentProject = {};
-    if (!window.currentProject.environment) window.currentProject.environment = {};
-    window.currentProject.environment.current_skin_idx = idx;
-    window.currentProject.environment.all_car_skins = window.allCarSkins;
-    const skin = window.allCarSkins[idx];
-    const mainPreview = document.getElementById('car-color-preview');
-    // メインプレビューの画像を差し替え
-    mainPreview.innerHTML = `<img src="file:///${skin.path}">`;
+		if (idx < 0 || idx >= window.allCarSkins.length) return;
+		window.currentSkinIdx = idx;
+		if (!window.currentProject) window.currentProject = {};
+		if (!window.currentProject.environment) window.currentProject.environment = {};
+		window.currentProject.environment.current_skin_idx = idx;
+		window.currentProject.environment.all_car_skins = window.allCarSkins;
+		const skin = window.allCarSkins[idx];
+		const mainPreview = document.getElementById('car-color-preview');
+		// メインプレビューの画像を差し替え
+		mainPreview.innerHTML = `<img src="file:///${skin.path}">`;
 	// 選択中の <li> に枠を付ける（is-activeクラス）
 	const items = document.querySelectorAll('.color-list_box li');
 	items.forEach((item, i) => {
@@ -306,53 +306,53 @@ window.updateProjectSidebar = async function() {
 
 		// 【切替】クリックで読み込み [3]
 		li.querySelector('.p-name-click-area').onclick = async () => {
-    // 1. 安全確認
-    if (isModified && !confirm("未保存の変更があります。破棄して切り替えますか？")) return;
+		// 1. 安全確認
+		if (isModified && !confirm("未保存の変更があります。破棄して切り替えますか？")) return;
 
-    // 2. ローディング開始 (0%) [5]
-    window.updateLoadingProgress(0, "プロジェクトを切り替え中...", "構成を確認しています...");
+		// 2. ローディング開始 (0%) [5]
+		window.updateLoadingProgress(0, "プロジェクトを切り替え中...", "構成を確認しています...");
 
-    // 3. データの取得 (20%) [6, 7]
-    const result = await window.electronAPI.loadProjectByPath(proj.path);
-    if (result.success) {
-        window.updateLoadingProgress(20, "データ展開中...", "設定値をメモリへ展開しています...");
-        
-        window.currentProject = result.data;
-        window.currentProjectPath = proj.path;
+		// 3. データの取得 (20%) [6, 7]
+		const result = await window.electronAPI.loadProjectByPath(proj.path);
+		if (result.success) {
+				window.updateLoadingProgress(20, "データ展開中...", "設定値をメモリへ展開しています...");
+				
+				window.currentProject = result.data;
+				window.currentProjectPath = proj.path;
 
-        // 4. 3Dモデル・UI一括反映 (60%〜90%) [8]
-        window.updateLoadingProgress(60, "3Dモデルの準備中...", "車両モデルを再配置しています...");
-        await window.loadProjectToUI(window.currentProject);
+				// 4. 3Dモデル・UI一括反映 (60%〜90%) [8]
+				window.updateLoadingProgress(60, "3Dモデルの準備中...", "車両モデルを再配置しています...");
+				await window.loadProjectToUI(window.currentProject);
 
-        // 5. 状態のリセット（読み込んだばかりの綺麗な状態にする） [2]
-        if (window.modifiedStatus) {
-            Object.keys(window.modifiedStatus).forEach(k => window.modifiedStatus[k] = false);
-        }
+				// 5. 状態のリセット（読み込んだばかりの綺麗な状態にする） [2]
+				if (window.modifiedStatus) {
+						Object.keys(window.modifiedStatus).forEach(k => window.modifiedStatus[k] = false);
+				}
 
-        window.updateLoadingProgress(90, "UI更新完了", "エディターを表示します...");
+				window.updateLoadingProgress(90, "UI更新完了", "エディターを表示します...");
 
-        // 6. 画面の自動ジャンプ（スタートアップ画面を隠してエディターを表示） [9]
-        const hub = document.getElementById('startup-hub');
-        const editor = document.getElementById('wrapper');
-        if (hub) hub.style.display = 'none';
-        if (editor) editor.style.display = 'block';
+				// 6. 画面の自動ジャンプ（スタートアップ画面を隠してエディターを表示） [9]
+				const hub = document.getElementById('startup-hub');
+				const editor = document.getElementById('wrapper');
+				if (hub) hub.style.display = 'none';
+				if (editor) editor.style.display = 'block';
 
-        // 7. 完了演出 (100% + SE) [10, 11]
-        const audio = new Audio('audio/complete.mp3');
-        audio.volume = 0.5;
-        audio.play().catch(e => {}); // 音が出なくてもエラーにしない
+				// 7. 完了演出 (100% + SE) [10, 11]
+				const audio = new Audio('audio/complete.mp3');
+				audio.volume = 0.5;
+				audio.play().catch(e => {}); // 音が出なくてもエラーにしない
 
-        window.updateLoadingProgress(100, "切り替え完了！", "準備が整いました。");
-        window.updateProjectSidebar();
+				window.updateLoadingProgress(100, "切り替え完了！", "準備が整いました。");
+				window.updateProjectSidebar();
 
-        // 0.8秒後にバーを隠す
-        setTimeout(() => {
-            document.getElementById('loading-overlay')?.classList.add('hidden');
-        }, 800);
-    } else {
-        alert("読み込みに失敗しました: " + result.error);
-        document.getElementById('loading-overlay')?.classList.add('hidden');
-    }
+				// 0.8秒後にバーを隠す
+				setTimeout(() => {
+						document.getElementById('loading-overlay')?.classList.add('hidden');
+				}, 800);
+		} else {
+				alert("読み込みに失敗しました: " + result.error);
+				document.getElementById('loading-overlay')?.classList.add('hidden');
+		}
 };
 		// 【削除】履歴から削除
 		li.querySelector('.p-delete-icon').onclick = async (e) => {
@@ -402,48 +402,48 @@ document.getElementById('car-name-edit').addEventListener('click', async () => {
 			// --- [PHASE 5] サウンド設定の自動修正 ---
 			await window.fixCarSound(res.newPath, oldName, newName);
 			// --- [PHASE 6] 完了通知（モーダル） ---
-        if (typeof window.showCustomPopup === 'function') {
-          window.showCustomPopup(`✅ 車両名を「<strong>${newName}</strong>」に変更しました。<br>サウンド設定も自動修正されました。`);
-        } else {
-          alert(`車両名を「${newName}」に変更しました。`);
-        }
-        const btnSave = document.getElementById('btn-save-project');
-        if (btnSave) btnSave.click();
-      } else {
-        alert("フォルダのリネームに失敗しました: " + res.error);
-      }
-    }
-  });
+				if (typeof window.showCustomPopup === 'function') {
+					window.showCustomPopup(`✅ 車両名を「<strong>${newName}</strong>」に変更しました。<br>サウンド設定も自動修正されました。`);
+				} else {
+					alert(`車両名を「${newName}」に変更しました。`);
+				}
+				const btnSave = document.getElementById('btn-save-project');
+				if (btnSave) btnSave.click();
+			} else {
+				alert("フォルダのリネームに失敗しました: " + res.error);
+			}
+		}
+	});
 // ✅ 追加：「エンジンのみ」移植する新しいボタンの処理
 const engineOnlySwapBtn = document.getElementById('engine-only-swap_btn');
 if (engineOnlySwapBtn) {
-    engineOnlySwapBtn.addEventListener('click', async () => {
-        // 今あるセレクトボックス（engine-select）から値を取得（追加はしません）
-        const donorName = document.getElementById('engine-select').value;
-        if (!donorName || donorName.startsWith('--')) return alert("移植元（ドナー）を選択してください");
-        
-        const currentDataPath = window.currentDataFolderPath;
-        if (!currentDataPath) return alert("先に車両を読み込んでください");
+		engineOnlySwapBtn.addEventListener('click', async () => {
+				// 今あるセレクトボックス（engine-select）から値を取得（追加はしません）
+				const donorName = document.getElementById('engine-select').value;
+				if (!donorName || donorName.startsWith('--')) return alert("移植元（ドナー）を選択してください");
+				
+				const currentDataPath = window.currentDataFolderPath;
+				if (!currentDataPath) return alert("先に車両を読み込んでください");
 
-        const carRoot = currentDataPath.replace(/[/\\]data$/i, '');
-        const lastSlashIndex = Math.max(carRoot.lastIndexOf('\\'), carRoot.lastIndexOf('/'));
-        const carsFolder = carRoot.substring(0, lastSlashIndex);
-        const donorPath = carsFolder + "\\" + donorName;
+				const carRoot = currentDataPath.replace(/[/\\]data$/i, '');
+				const lastSlashIndex = Math.max(carRoot.lastIndexOf('\\'), carRoot.lastIndexOf('/'));
+				const carsFolder = carRoot.substring(0, lastSlashIndex);
+				const donorPath = carsFolder + "\\" + donorName;
 
-        // 1. 物理チェック（engine.iniがあるか、ACDなら展開）
-        const res = await window.electronAPI.checkEngineFiles(donorPath);
-        if (!res.success) return alert(`❌ 移植失敗：${res.error}`);
+				// 1. 物理チェック（engine.iniがあるか、ACDなら展開）
+				const res = await window.electronAPI.checkEngineFiles(donorPath);
+				if (!res.success) return alert(`❌ 移植失敗：${res.error}`);
 
-        // 2. エンジンファイルのみコピー（サウンドは触らない）
-        const copyRes = await window.electronAPI.copyEngineFiles(donorPath, currentDataPath);
-        if (!copyRes.success) return alert(`❌ コピー失敗：${copyRes.error}`);
+				// 2. エンジンファイルのみコピー（サウンドは触らない）
+				const copyRes = await window.electronAPI.copyEngineFiles(donorPath, currentDataPath);
+				if (!copyRes.success) return alert(`❌ コピー失敗：${copyRes.error}`);
 
-        // 🌟 修正ポイント：もしACDから一時展開していたら後片付けをする
-        if (res.wasAcd) {
-            await window.electronAPI.cleanupDonorData(donorPath);
-        }
+				// 🌟 修正ポイント：もしACDから一時展開していたら後片付けをする
+				if (res.wasAcd) {
+						await window.electronAPI.cleanupDonorData(donorPath);
+				}
 
-        // 3. 由来情報の記録（エンジンのみ更新）
+				// 3. 由来情報の記録（エンジンのみ更新）
 				if (!window.currentProject) window.currentProject = {};
 				window.currentProject.engine_origin = donorName;
 
@@ -456,8 +456,8 @@ if (engineOnlySwapBtn) {
 				// 4. エディター画面の数値を最新の状態にリロード
 				const newData = await window.electronAPI.readCarFolderData(carRoot);
 
-        alert(`✨ ${donorName} からの「エンジンのみ」移植が完了しました！`);
-    });
+				alert(`✨ ${donorName} からの「エンジンのみ」移植が完了しました！`);
+		});
 }
 // ==========================================
 // ★ 新設：サウンドの整合性を整える共通司令塔
@@ -488,7 +488,7 @@ document.getElementById('sound-swap_btn').addEventListener('click', async () => 
 	const donorPath = pathParts.join('\\') + "\\" + donorName;
 	console.log(`🎵 スワップ元: ${donorName} -> スワップ先: ${targetName}`);
 	// --- [PHASE 2 & 3] 物理スワップ（バックアップ保護付き） ---
-	if (confirm(`「${donorName}」のサウンドを移植しますか？\n（現在の音は 'old-sound' に保存されます）`)) {
+	if (confirm(`「${donorName}」のサウンドを移植しますか？`)) {
 		const res = await window.electronAPI.swapCarSound(targetPath, donorPath);
 		if (res.success) {
 			// --- [PHASE 4] 再利用：移植された音の中身を今の車に適合させる ---
@@ -520,16 +520,20 @@ document.getElementById('sound-swap_btn').addEventListener('click', async () => 
 			if (soundDataBox) {
 				soundDataBox.innerHTML = `<div>現在のサウンド：</div><div class="origin-name swapped">${donorName}</div>`;
 			}
+
 			// ★修正2：プロジェクトデータへの記憶（階層を合わせる）
 			// 保存ボタン（main.js）は window.currentProject.engine_origin を見に行きます
 			if (!window.currentProject) window.currentProject = {};
 			window.currentProject.sound_origin = donorName;
-			// --- [PHASE 5] 完了通知 --- 
+
+			// --- [PHASE 5] 完了通知 ---
 			if (typeof window.showCustomPopup === 'function') {
 				window.showCustomPopup(`✅ <strong>${donorName}</strong> のサウンドを移植しました。<br>元の音は 'old-sound' フォルダに保管されています。`);
 			} else {
 				alert("サウンドのスワップが完了しました。");
 			}
+			const btnSave = document.getElementById('btn-save-project');
+			if (btnSave) btnSave.click();
 		} else {
 			alert("スワップ失敗: " + res.error);
 		}
@@ -596,55 +600,58 @@ if (engineSwapBtn) {
 		if (!window.currentProject) window.currentProject = {};
 		window.currentProject.engine_origin = donorName;
 		window.currentProject.sound_origin = donorName;
+
 		alert(`✨ ${donorName} からのエンジン・サウンド移植とデータ同期が完了しました！`);
+		const btnSave = document.getElementById('btn-save-project');
+		if (btnSave) btnSave.click();
 	});
 }
 // 3Dモデルスワップ
 const kn5SwapBtn = document.getElementById('kn5-swap_btn');
 if (kn5SwapBtn) {
-  kn5SwapBtn.addEventListener('click', async () => {
-    const donorName = document.getElementById('kn5-select').value;
-    if (!donorName || donorName.startsWith('--')) return alert("移植元（ドナー）を選択してください");
+	kn5SwapBtn.addEventListener('click', async () => {
+		const donorName = document.getElementById('kn5-select').value;
+		if (!donorName || donorName.startsWith('--')) return alert("移植元（ドナー）を選択してください");
 
-    const currentDataPath = window.currentDataFolderPath;
-    if (!currentDataPath) return alert("先に車両を読み込んでください");
+		const currentDataPath = window.currentDataFolderPath;
+		if (!currentDataPath) return alert("先に車両を読み込んでください");
 
-    const carRoot = currentDataPath.replace(/[\/]data$/i, '');
-    const lastSlashIndex = Math.max(carRoot.lastIndexOf('\\'), carRoot.lastIndexOf('/'));
-    const carsFolder = carRoot.substring(0, lastSlashIndex);
-    const donorPath = carsFolder + "\\" + donorName;
+		const carRoot = currentDataPath.replace(/[\/]data$/i, '');
+		const lastSlashIndex = Math.max(carRoot.lastIndexOf('\\'), carRoot.lastIndexOf('/'));
+		const carsFolder = carRoot.substring(0, lastSlashIndex);
+		const donorPath = carsFolder + "\\" + donorName;
 
-    if (confirm(`「${donorName}」の3Dモデル（.kn5）を移植しますか？`)) {
-      const res = await window.electronAPI.swapCarKn5(carRoot, donorPath);
-      if (res.success) {
-        // ★追加：3Dモデルのスワップ元情報を記憶
-        if (!window.currentProject) window.currentProject = {};
-        window.currentProject.kn5_origin = donorName;
+		if (confirm(`「${donorName}」の3Dモデル（.kn5）を移植しますか？`)) {
+			const res = await window.electronAPI.swapCarKn5(carRoot, donorPath);
+			if (res.success) {
+				// ★追加：3Dモデルのスワップ元情報を記憶
+				if (!window.currentProject) window.currentProject = {};
+				window.currentProject.kn5_origin = donorName;
 				// 看板の更新（swapped クラスを付与）
 				const kn5DataBox = document.getElementById('kn5-data');
 				if (kn5DataBox) {
 					kn5DataBox.innerHTML = `<div>現在のモデル：</div><div class="origin-name swapped">${donorName}</div>`;
 				}
-        // データの再読み込みと3Dモデルの再展開・表示更新
-        const reloadRes = await window.electronAPI.readCarFolderData(carRoot);
-        if (reloadRes.success) {
+				// データの再読み込みと3Dモデルの再展開・表示更新
+				const reloadRes = await window.electronAPI.readCarFolderData(carRoot);
+				if (reloadRes.success) {
 					const importModule = await import('./import.js');
 					await importModule.handleMultiFileUpload(reloadRes.files);
 
 					// ★ 追加: 最新のスキン情報を検出してギャラリーとプレビュー画像を即座に再描画
-                    if (reloadRes.skins && typeof window.initSkinGallery === 'function') {
-                        window.initSkinGallery(reloadRes.skins);
-                        if (!window.currentProject.environment) window.currentProject.environment = {};
-                        window.currentProject.environment.all_car_skins = reloadRes.skins;
-                        window.currentProject.environment.current_skin_idx = 0;
-                    }
-                }
-                alert(`✨ ${donorName} からの3Dモデル移植が完了しました！`);
-                const btnSave = document.getElementById('btn-save-project');
-                if (btnSave) btnSave.click();
-            } else {
-        alert("スワップ失敗: " + res.error);
-      }
-    }
-  });
+										if (reloadRes.skins && typeof window.initSkinGallery === 'function') {
+												window.initSkinGallery(reloadRes.skins);
+												if (!window.currentProject.environment) window.currentProject.environment = {};
+												window.currentProject.environment.all_car_skins = reloadRes.skins;
+												window.currentProject.environment.current_skin_idx = 0;
+										}
+								}
+								alert(`✨ ${donorName} からの3Dモデル移植が完了しました！`);
+								const btnSave = document.getElementById('btn-save-project');
+								if (btnSave) btnSave.click();
+						} else {
+				alert("スワップ失敗: " + res.error);
+			}
+		}
+	});
 }

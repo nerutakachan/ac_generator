@@ -688,11 +688,11 @@ window.currentProject = projectState;
 	}
 	// エンジンスワップ情報の復元
 	if (env.engine_origin) {
-			window.currentProject.engine_origin = env.engine_origin;
-			const engineDataBox = document.getElementById('engine-data');
-			if (engineDataBox) {
-					engineDataBox.innerHTML = `<div>現在のエンジン：</div><div>${env.engine_origin}</div>`;
-			}
+		window.currentProject.engine_origin = env.engine_origin;
+		const engineDataBox = document.getElementById('engine-data');
+		if (engineDataBox) {
+			engineDataBox.innerHTML = `<div>現在のエンジン：</div><div class="origin-name swapped">${env.engine_origin}</div>`;
+		}
 	}
 
 	// ★ 修正：サウンドはサウンド用の記憶（sound_origin）から個別に復元します
