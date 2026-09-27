@@ -1950,7 +1950,7 @@ canvas#engineChart{
 .logo-editor-img_box{
 	max-width: 128px;
 	background: #fff;
-	margin: 1rem auto;
+	margin: 0 auto;
 	height: auto;
 	display: flex;
 	align-items: center;
@@ -2110,6 +2110,7 @@ canvas#engineChart{
 .color-preview,
 .color-preview-inner_box{
 	aspect-ratio: 16 / 9;
+	overflow: hidden;
 }
 .color-preview-list_box{
 	text-align: center;

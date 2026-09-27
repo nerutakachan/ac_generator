@@ -624,12 +624,17 @@ if (kn5SwapBtn) {
 					await importModule.handleMultiFileUpload(reloadRes.files);
 
 					// ★ 追加: 最新のスキン情報を検出してギャラリーとプレビュー画像を即座に再描画
-					if (reloadRes.skins && typeof window.initSkinGallery === 'function') {
-						window.initSkinGallery(reloadRes.skins);
-					}
-				}
-        alert(`✨ ${donorName} からの3Dモデル移植が完了しました！`);
-      } else {
+                    if (reloadRes.skins && typeof window.initSkinGallery === 'function') {
+                        window.initSkinGallery(reloadRes.skins);
+                        if (!window.currentProject.environment) window.currentProject.environment = {};
+                        window.currentProject.environment.all_car_skins = reloadRes.skins;
+                        window.currentProject.environment.current_skin_idx = 0;
+                    }
+                }
+                alert(`✨ ${donorName} からの3Dモデル移植が完了しました！`);
+                const btnSave = document.getElementById('btn-save-project');
+                if (btnSave) btnSave.click();
+            } else {
         alert("スワップ失敗: " + res.error);
       }
     }
