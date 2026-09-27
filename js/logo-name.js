@@ -204,12 +204,16 @@ window.initSkinGallery = function(skins) {
 	window.setupGalleryArrows();
 };
 window.selectSkin = function(idx) {
-	if (idx < 0 || idx >= window.allCarSkins.length) return;
-	window.currentSkinIdx = idx;
-	const skin = window.allCarSkins[idx];
-	const mainPreview = document.getElementById('car-color-preview');
-	// メインプレビューの画像を差し替え
-	mainPreview.innerHTML = `<img src="file:///${skin.path}">`;
+    if (idx < 0 || idx >= window.allCarSkins.length) return;
+    window.currentSkinIdx = idx;
+    if (!window.currentProject) window.currentProject = {};
+    if (!window.currentProject.environment) window.currentProject.environment = {};
+    window.currentProject.environment.current_skin_idx = idx;
+    window.currentProject.environment.all_car_skins = window.allCarSkins;
+    const skin = window.allCarSkins[idx];
+    const mainPreview = document.getElementById('car-color-preview');
+    // メインプレビューの画像を差し替え
+    mainPreview.innerHTML = `<img src="file:///${skin.path}">`;
 	// 選択中の <li> に枠を付ける（is-activeクラス）
 	const items = document.querySelectorAll('.color-list_box li');
 	items.forEach((item, i) => {
