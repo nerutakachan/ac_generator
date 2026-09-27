@@ -1675,17 +1675,18 @@ ipcMain.handle('swap-car-sound', async (event, targetCarPath, donorCarPath) => {
     const targetSfx = path.join(targetCarPath, 'sfx');
     const donorSfx = path.join(donorCarPath, 'sfx');
 
-    // [PHASE 2] バックアップ作成（一括フォルダ _backup 内へ退避）
-    if (fs.existsSync(targetSfx)) {
-      const currentFiles = fs.readdirSync(targetSfx);
-      for (const file of currentFiles) {
-        const src = path.join(targetSfx, file);
-        if (fs.statSync(src).isFile()) {
-          backupCarAsset(targetCarPath, 'sfx', file, false);
-        }
-      }
-      console.log("📂 [SFX] 音源データを '_backup/history/sfx' に保護しました。");
-    }
+    // [PHASE 2] バックアップ作成（一括フォルダ _backup 内へ退避：初回のみ）
+		const backupSfxDir = path.join(targetCarPath, '_backup', 'history', 'sfx');
+		if (fs.existsSync(targetSfx) && !fs.existsSync(backupSfxDir)) {
+			const currentFiles = fs.readdirSync(targetSfx);
+			for (const file of currentFiles) {
+				const src = path.join(targetSfx, file);
+				if (fs.statSync(src).isFile()) {
+					backupCarAsset(targetCarPath, 'sfx', file, false);
+				}
+			}
+			console.log("📂 [SFX] 音源データを '_backup/history/sfx' に保護しました。");
+		}
 		// [PHASE 3] ドナーからの物理コピー
 		if (fs.existsSync(donorSfx)) {
 			fs.cpSync(donorSfx, targetSfx, {
@@ -1965,11 +1966,14 @@ ipcMain.handle('swap-car-kn5', async (event, targetPath, donorPath) => {
     const targetName = path.basename(targetPath);
     const donorName = path.basename(donorPath);
 
-    // 1. 既存の .kn5 を _backup/history/kn5 へ退避 [3, 4]
-    const currentKn5Files = fs.readdirSync(targetPath).filter(f => f.toLowerCase().endsWith('.kn5') && f.toLowerCase() !== 'collider.kn5');
-    currentKn5Files.forEach(file => {
-      backupCarAsset(targetPath, 'kn5', file, false); // 退避 [1, 4]
-    });
+    // 1. 既存の .kn5 を _backup/history/kn5 へ退避（初回のみ）
+		const backupKn5Dir = path.join(targetPath, '_backup', 'history', 'kn5');
+		if (!fs.existsSync(backupKn5Dir)) {
+			const currentKn5Files = fs.readdirSync(targetPath).filter(f => f.toLowerCase().endsWith('.kn5') && f.toLowerCase() !== 'collider.kn5');
+			currentKn5Files.forEach(file => {
+				backupCarAsset(targetPath, 'kn5', file, false); // 退避
+			});
+		}
 
     // 2. ドナーから .kn5 をコピーしてリネーム [5]
     const donorKn5Files = fs.readdirSync(donorPath).filter(f => f.toLowerCase().endsWith('.kn5') && f.toLowerCase() !== 'collider.kn5');
@@ -1983,19 +1987,20 @@ ipcMain.handle('swap-car-kn5', async (event, targetPath, donorPath) => {
     });
 
     // ★ 3. 既存の skins/ フォルダのバックアップと完全置換
-    const targetSkinsPath = path.join(targetPath, 'skins');
-    const donorSkinsPath = path.join(donorPath, 'skins');
+		const targetSkinsPath = path.join(targetPath, 'skins');
+		const donorSkinsPath = path.join(donorPath, 'skins');
+		if (fs.existsSync(targetSkinsPath)) {
+			// 1. _backup/history/skins へ既存スキンを安全に保護（初回のみ）
+			const backupSkinsDir = path.join(targetPath, '_backup', 'history', 'skins');
+			if (!fs.existsSync(backupSkinsDir)) {
+				fs.mkdirSync(backupSkinsDir, { recursive: true });
+				fs.cpSync(targetSkinsPath, backupSkinsDir, { recursive: true });
+				console.log("📂 [skins] 既存のスキンデータを '_backup/history/skins' に保護しました。");
+			}
 
-    if (fs.existsSync(targetSkinsPath)) {
-      // 1. _backup/history/skins へ既存スキンを安全に保護
-      const backupSkinsDir = path.join(targetPath, '_backup', 'history', 'skins');
-      if (!fs.existsSync(backupSkinsDir)) fs.mkdirSync(backupSkinsDir, { recursive: true });
-      fs.cpSync(targetSkinsPath, backupSkinsDir, { recursive: true });
-      console.log("📂 [skins] 既存のスキンデータを '_backup/history/skins' に保護しました。");
-
-      // 2. ターゲットの既存 skins フォルダを一度削除（旧スキンが残るのを防ぐ）
-      fs.rmSync(targetSkinsPath, { recursive: true, force: true });
-    }
+			// 2. ターゲットの既存 skins フォルダを一度削除（旧スキンが残るのを防ぐ）
+			fs.rmSync(targetSkinsPath, { recursive: true, force: true });
+		}
 
     // 3. ドナー車両から skins/ フォルダをまるごと新規コピー・移植
     if (fs.existsSync(donorSkinsPath)) {
