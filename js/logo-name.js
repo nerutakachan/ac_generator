@@ -450,7 +450,7 @@ if (engineOnlySwapBtn) {
 				// ★追加：エンジン看板の表示クラスを swapped に更新
 				const engineDataBox = document.getElementById('engine-data');
 				if (engineDataBox) {
-					engineDataBox.innerHTML = `<div>現在のエンジン</div><div class="origin-name swapped">${donorName}</div>`;
+					engineDataBox.innerHTML = `<div>現在のエンジン：</div><div class="origin-name swapped">${donorName}</div>`;
 				}
 
 				// 4. エディター画面の数値を最新の状態にリロード
@@ -518,7 +518,7 @@ document.getElementById('sound-swap_btn').addEventListener('click', async () => 
 			// ★UIの表示を更新（クラス名を swapped に設定）
 			const soundDataBox = document.getElementById('sound-data');
 			if (soundDataBox) {
-				soundDataBox.innerHTML = `<div>現在のサウンド</div><div class="origin-name swapped">${donorName}</div>`;
+				soundDataBox.innerHTML = `<div>現在のサウンド：</div><div class="origin-name swapped">${donorName}</div>`;
 			}
 			// ★修正2：プロジェクトデータへの記憶（階層を合わせる）
 			// 保存ボタン（main.js）は window.currentProject.engine_origin を見に行きます
@@ -586,11 +586,11 @@ if (engineSwapBtn) {
 		// 看板の更新（swapped クラスを付与）
 		const engineDataBox = document.getElementById('engine-data');
 		if (engineDataBox) {
-			engineDataBox.innerHTML = `<div>現在のエンジン</div><div class="origin-name swapped">${donorName}</div>`;
+			engineDataBox.innerHTML = `<div>現在のエンジン：</div><div class="origin-name swapped">${donorName}</div>`;
 		}
 		const soundDataBox = document.getElementById('sound-data');
 		if (soundDataBox) {
-			soundDataBox.innerHTML = `<div>現在のサウンド</div><div class="origin-name swapped">${donorName}</div>`;
+			soundDataBox.innerHTML = `<div>現在のサウンド：</div><div class="origin-name swapped">${donorName}</div>`;
 		}
 		// 由来の記録
 		if (!window.currentProject) window.currentProject = {};
@@ -620,7 +620,11 @@ if (kn5SwapBtn) {
         // ★追加：3Dモデルのスワップ元情報を記憶
         if (!window.currentProject) window.currentProject = {};
         window.currentProject.kn5_origin = donorName;
-
+				// 看板の更新（swapped クラスを付与）
+				const kn5DataBox = document.getElementById('kn5-data');
+				if (kn5DataBox) {
+					kn5DataBox.innerHTML = `<div>現在のモデル：</div><div class="origin-name swapped">${donorName}</div>`;
+				}
         // データの再読み込みと3Dモデルの再展開・表示更新
         const reloadRes = await window.electronAPI.readCarFolderData(carRoot);
         if (reloadRes.success) {
